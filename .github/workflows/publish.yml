@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+name: Publish to npm
+
+# Publishes @openmixer/omx-skins to npmjs.org by npm trusted publishing (OIDC, no token anywhere). npmjs.com
+# trusts the CALLER of the publish by repository + workflow filename (+ environment when one is set there; none is), so:
+#   Repository: FreeMixer/omx-skins    Workflow filename: publish.yml    Environment: (none)
+# A version tag publishes; any other ref (a manual dispatch) is a dry run. Only the public repository
+# publishes: a tag on any other copy of this tree stops before npm.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.repository == 'FreeMixer/omx-skins'
+    runs-on: ubuntu-latest
+    # job-level: a workflow-level id-token grant does not reliably reach the job, and without the token npm never
+    # attempts the OIDC exchange and fails with ENEEDAUTH
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+      - name: npm 11 (trusted publishing needs >= 11.5.1)
+        run: |
+          npm install -g npm@'^11'
+          npm --version
+      - run: npm ci
+      - name: The package is proven before it is published
+        run: |
+          set -o pipefail
+          npm test
+          make check
+
+      - name: The tag is the package version
+        if: github.ref_type == 'tag'
+        run: |
+          v=$(node -p "require('./package.json').version")
+          [ "${GITHUB_REF_NAME}" = "v$v" ] || { echo "tag ${GITHUB_REF_NAME} is not v$v"; exit 1; }
+      - name: Publish @openmixer/omx-skins
+        env:
+          DRY: ${{ github.ref_type != 'tag' && '--dry-run' || '' }}
+        run: npm publish --provenance --access public $DRY
