@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FreeMixer/omx-skins/schema/skin-package.schema.json",
+  "title": "A skin package's skin.json",
+  "description": "The file inside a skin package that says how one plugin's panel is drawn. The package is a directory named after the plugin id; this file overrides what the panel description gives (its sections, labels, roles, displays) and names the art and the view the skin brings. It restates no range, unit or scale: the plugin's own description holds those and the skin refers to controls by id.",
+  "$defs": {
+    "floor": {
+      "description": "A floor: \">=\" and a three-part version. No ceiling and no exact pin is accepted.",
+      "type": "string",
+      "pattern": "^>= ?[0-9]+\\.[0-9]+\\.[0-9]+$"
+    }
+  },
+  "type": "object",
+  "required": ["requires", "plugin", "licence"],
+  "additionalProperties": false,
+  "properties": {
+    "requires": {
+      "description": "What a reader must provide to read this file, each as a floor (\">= MAJOR.MINOR.PATCH\"), never a ceiling. \"omx-skins-schema\" is the version of this schema the file was written for. A file with no requires, or none for the schema, is refused.",
+      "type": "object",
+      "required": ["omx-skins-schema"],
+      "additionalProperties": { "$ref": "#/$defs/floor" },
+      "properties": {
+        "omx-skins-schema": { "$ref": "#/$defs/floor" }
+      }
+    },
+    "plugin": {
+      "description": "The id of the plugin this skin draws: a CLAP id or an LV2 URI.",
+      "type": "string",
+      "minLength": 1
+    },
+    "licence": {
+      "description": "The SPDX identifier of the licence the skin is under. Which identifiers are allowed is the loader's rule, not this schema's.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]*$"
+    },
+    "source": {
+      "description": "Where the package came from.",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["own", "generated", "modgui"] },
+        "bundle": { "type": "string", "minLength": 1 },
+        "licenceEvidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "fingerprint": {
+      "description": "The fingerprint of the plugin description the skin was made against.",
+      "type": "string",
+      "minLength": 1
+    },
+    "family": {
+      "description": "The panel family the skin draws the plugin as.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "roles": {
+      "description": "Control id to the role a skin binds it by.",
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "controls"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$" },
+          "labelKey": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "controls": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "labels": {
+      "description": "Control id to the label the skin shows.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "labelKey": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "visibleWhen": {
+      "description": "Control id to the control and values that make it visible.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["param", "values"],
+        "additionalProperties": false,
+        "properties": {
+          "param": { "type": "string", "minLength": 1 },
+          "values": { "type": "array", "items": { "type": "number" } }
+        }
+      }
+    },
+    "displays": {
+      "description": "The displays the panel draws: each names its kind and what feeds it.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": { "kind": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "houseView": {
+      "description": "The family of the house view to use in place of a view of the skin's own.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "look": { "type": "string", "minLength": 1 },
+    "backdrop": {
+      "description": "A file under the package's art/ directory.",
+      "type": "string",
+      "pattern": "^art/(?!(?:.*/)?\\.\\.?(?:/|$))[^\\\\]+$"
+    },
+    "view": {
+      "description": "A view of the skin's own: its entry file under view/, and the skin API version it was written for (MAJOR.MINOR).",
+      "type": "object",
+      "required": ["entry", "api"],
+      "additionalProperties": false,
+      "properties": {
+        "entry": { "type": "string", "pattern": "^view/(?!(?:.*/)?\\.\\.?(?:/|$))[^\\\\]+$" },
+        "api": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" }
+      }
+    }
+  }
+}
