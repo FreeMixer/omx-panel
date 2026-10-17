@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	dh_auto_install -- PREFIX=/usr DATADIR=/usr/share

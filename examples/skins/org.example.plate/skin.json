@@ -1,0 +1,15 @@
+{
+  "requires": { "omx-skins-schema": ">= 1.0.0" },
+  "plugin": "org.example.plate",
+  "licence": "GPL-3.0-or-later",
+  "source": { "kind": "own" },
+  "family": "reverb",
+  "roles": { "decay": "time", "mix": "mix" },
+  "sections": [
+    { "key": "main", "label": "Plate", "controls": ["decay", "damping", "mix"] }
+  ],
+  "labels": { "decay": { "label": "Decay" } },
+  "visibleWhen": { "damping": { "param": "mode", "values": [1, 2] } },
+  "backdrop": "art/plate.png",
+  "view": { "entry": "view/index.js", "api": "1.1" }
+}
