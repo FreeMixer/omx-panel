@@ -1,0 +1,18 @@
+Source: omx-skins
+Section: misc
+Priority: optional
+Maintainer: Pau Aliagas <linuxnow@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/FreeMixer/omx-skins
+Rules-Requires-Root: no
+
+Package: omx-skins
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: the skin format for openmixer panels
+ A skin tells a panel how to draw its standard widgets: knobs, faders,
+ switches, selectors, meters and curves. This package carries the schema of a
+ skin package's skin.json and the directory skins are installed into, so
+ anyone can add a skin by putting a skin package there.

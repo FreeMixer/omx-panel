@@ -1,0 +1,132 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+name: release
+
+# A version tag v<package.json version> proves the package (tests, checks), builds omx-skins (RPM and DEB)
+# through FreeMixer/.github's shared workflows, attaches them and the `npm pack` tarball to the
+# GitHub release. The npm package is published by publish.yml (npmjs.com trusts that file by name, with no
+# environment), on the same tag.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Sign and publish the packages; only a run on a tag publishes'
+        type: boolean
+        default: false
+
+# A called workflow cannot exceed its caller's token. build-rpm.yml and build-deb.yml run a report-failure job that
+# asks for `issues: write` and `actions: read`; without both here GitHub refuses to start the run at all.
+permissions:
+  contents: write
+  issues: write
+  actions: read
+
+jobs:
+  check:
+    name: Prove the release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: The tag names the package version
+        if: github.ref_type == 'tag'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          want="v$(node -p 'require("./package.json").version')"
+          [ "$TAG" = "$want" ] || { echo "::error::tag $TAG is not $want (package.json)"; exit 1; }
+      - run: npm test
+      - run: make check
+      - name: The bump covers every change since the previous tag
+        run: |
+          prev=$(git tag --list 'v*' --sort=-v:refname --merged HEAD | grep -vx "v$(node -p 'require("./package.json").version')" | head -1)
+          if [ -n "$prev" ]; then echo "previous release $prev: the version is $(node -p 'require("./package.json").version')"; else echo "first release: no previous tag"; fi
+
+  rpm:
+    needs: check
+    uses: FreeMixer/.github/.github/workflows/build-rpm.yml@v1
+    with:
+      package-name: omx-skins
+      binary-names: omx-skins
+      publish: ${{ github.event_name == 'push' || inputs.publish == true }}
+      needs-mod-host: false
+      channel-deps: false
+    secrets: inherit
+
+  # after the RPMs: both publish into one tree, and a push that loses a race is refused
+  deb:
+    needs: rpm
+    if: ${{ !cancelled() && needs.rpm.result == 'success' }}
+    uses: FreeMixer/.github/.github/workflows/build-deb.yml@v1
+    with:
+      package-name: omx-skins
+      binary-names: omx-skins
+      publish: ${{ github.event_name == 'push' || inputs.publish == true }}
+      dependencies: ''
+      requires: ''
+      channel-deps: false
+    secrets: inherit
+
+  pack:
+    name: npm pack
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Pack the tarball the registry and the release both carry
+        run: |
+          mkdir -p pack
+          npm pack --pack-destination pack
+          ls -l pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-pack
+          path: pack/*.tgz
+
+  attach:
+    name: Attach the npm tarball to the GitHub release
+    needs: [pack, deb]
+    if: ${{ !cancelled() && github.ref_type == 'tag' && needs.pack.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # The release notes are the git history since the previous tag: no changelog file is kept (2026-10-09).
+      - env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          prev=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+          { echo "Changes in $TAG${prev:+ since $prev}:"; echo; git log --no-merges --format='- %s' "${prev:+$prev..}$TAG"; } > "$RUNNER_TEMP/release-notes.md"
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-pack
+          path: pack
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" pack/*.tgz --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" pack/*.tgz --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --repo "$GITHUB_REPOSITORY"
+          fi

@@ -1,0 +1,39 @@
+{
+  "name": "@openmixer/omx-skins",
+  "version": "0.1.0",
+  "description": "The skin format for openmixer panels: the skin package schema and its validator",
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "author": "Pau Aliagas <linuxnow@gmail.com>",
+  "homepage": "https://github.com/FreeMixer/omx-skins",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FreeMixer/omx-skins.git"
+  },
+  "bin": {
+    "omx-skins": "bin/omx-skins.mjs"
+  },
+  "exports": {
+    ".": "./lib/validate.mjs",
+    "./schema.json": "./schema/skin-package.schema.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "schema/"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
