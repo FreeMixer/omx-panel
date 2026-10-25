@@ -2,7 +2,8 @@ Source: omx-panel
 Section: misc
 Priority: optional
 Maintainer: Pau Aliagas <linuxnow@gmail.com>
-Build-Depends: debhelper-compat (= 13), nodejs (>= 18), npm, libomx-contract-dev (>= 3.0.0), plugin-hostd-dev (>= 0.7.0), omx-plugins-dev,
+Build-Depends: debhelper-compat (= 13),
+               pkgconf,
                nodejs (>= 18),
                npm,
                libomx-contract-dev (>= 3.0.0) <!nocheck>,
@@ -15,7 +16,7 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), libomx-contract-dev (>= 3.0.0), plugin-hostd-dev (>= 0.7.0), ${misc:Depends}
+Depends: nodejs (>= 18), pkgconf, libomx-contract-dev (>= 3.0.0), plugin-hostd-dev (>= 0.7.0), ${misc:Depends}
 Recommends: omx-plugins-dev
 Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
  omx-panel makes panels for LV2 and CLAP plugins from what each plugin
