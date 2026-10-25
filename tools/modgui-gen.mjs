@@ -69,6 +69,14 @@ export function travelOf(c) {
   return undefined;
 }
 
+/** The range a readout (a read-only control) shows, `{ min, max }`, or none for one with no range. */
+function readoutRange(c) {
+  if (c.kind === 'travel') return { min: c.travel.min, max: c.travel.max };
+  if (c.kind === 'toggle') return { min: 0, max: 1 };
+  if (c.kind === 'choice') return { min: Math.min(...c.values), max: Math.max(...c.values) };
+  return {};
+}
+
 /** The labelled values of a travel, `{value, label}` from min up, or undefined. */
 const choicesOf = (p) => p.points;
 
@@ -142,6 +150,10 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
       seen.add(symbol);
       const c = controls.find((x) => (x.symbol ?? x.id) === symbol);
       if (!c) throw new Error(`modgui-gen: panel names '${symbol}', which '${stem}' has no control for`);
+      if (c.readonly) {
+        if (panel.widgets?.[symbol] !== undefined) throw new Error(`modgui-gen: '${symbol}' is a readout and takes no widget`);
+        return { symbol, name: c.name, widget: 'display', ...readoutRange(c) };
+      }
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
@@ -219,6 +231,12 @@ function drawFader(c, cx, top, h, f, col) {
   roundRect(c, cx - (g.faderW * (h / g.knob)) / 2, y + cap / 2 - 0.5, g.faderW * (h / g.knob), 1, 0, col.accent);
 }
 
+/** A readout's display: the selector's frame, empty (a reading has no default to show). */
+function drawDisplay(c, x, y, w, h, col) {
+  roundRect(c, x, y, w, h, Math.min(4, h / 4), col.rim);
+  roundRect(c, x + 1, y + 1, w - 2, h - 2, Math.min(3, h / 4), col.body);
+}
+
 function drawSwitch(c, x, y, w, h, on, col) {
   roundRect(c, x, y, w, h, h / 2, on ? col.accent : col.body);
   const r = h / 2 - h * 0.15;
@@ -242,7 +260,9 @@ export function renderFace(lay, tok, scale) {
     roundRect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g.sectionRadius * s, col.section);
     for (const k of sec.controls) {
       const x = sec.x + k.x, y = sec.y + k.y;
-      if (k.widget === 'switch') {
+      if (k.widget === 'display') {
+        drawDisplay(c, (x + (g.cellW - g.selectorW) / 2) * s, (y + g.selectorTop) * s, g.selectorW * s, g.selectorH * s, col);
+      } else if (k.widget === 'switch') {
         drawSwitch(c, (x + (g.cellW - g.switchW) / 2) * s, (y + g.switchTop) * s, g.switchW * s, g.switchH * s, k.def >= 0.5, col);
       } else if (k.widget === 'selector') {
         const at = Math.max(0, k.options.findIndex((o) => o.value === k.def));
@@ -295,11 +315,12 @@ const files = (stem) => ({
 /** Whether any control of the panel is drawn with `widget`. */
 const draws = (panel, widget) => panel.sections.some((x) => x.controls.some((k) => k.widget === widget));
 
-/** `modgui.ttl`: the gui resource, and `modgui:port` for every control of the FIRST section;
- * a modgui:port's lv2:index is its order on the pedal, its symbol and name the LV2 port's. */
+/** `modgui.ttl`: the gui resource, and `modgui:port` for every input control of the FIRST section (a readout is
+ * none); a modgui:port's lv2:index is its order on the pedal, its symbol and name the LV2 port's. */
 export function emitModguiTtl(panel, source) {
   const f = files(panel.stem);
   const ports = panel.sections[0].controls
+    .filter((k) => k.widget !== 'display')
     .map((k, i) => `            lv2:index ${i} ;\n            lv2:symbol "${k.symbol}" ;\n            lv2:name ${ttlStr(k.name)} ;\n`)
     .join('        ] , [\n');
   return `${banner('# ', source).join('\n')}
@@ -315,9 +336,9 @@ export function emitModguiTtl(panel, source) {
         modgui:thumbnail <${f.thumbnail}> ;
         modgui:brand ${ttlStr(panel.brand)} ;
         modgui:label ${ttlStr(panel.name)} ;
-        modgui:port [
+${ports ? `        modgui:port [
 ${ports}        ] ;
-    ] .
+` : ''}    ] .
 `;
 }
 
@@ -325,6 +346,14 @@ ${ports}        ] ;
 export function emitTemplate(panel, lay, source) {
   const g = GEOMETRY;
   const control = (k) => {
+    // a readout is a display: its symbol and range, no default and no port role (MOD has none for an output port)
+    if (k.widget === 'display') {
+      const range = k.min === undefined ? '' : ` data-min="${k.min}" data-max="${k.max}"`;
+      return `            <div class="omx-control omx-display" style="left:${k.x}px;top:${k.y}px" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}>
+                <div class="omx-display-image"></div>
+                <span class="omx-control-title">${esc(k.name)}</span>
+            </div>`;
+    }
     const data = `data-symbol="${k.symbol}" data-min="${k.min}" data-max="${k.max}" data-default="${k.def}"`;
     // a selector is MOD's custom-select over the port's values: the shown value and one option each
     const options = (k.options ?? []).map((o) => `\n                    <div class="omx-selector-option" mod-role="enumeration-option" mod-port-value="${o.value}">${esc(o.label)}</div>`).join('');
@@ -406,6 +435,7 @@ ${P} .omx-selector-list { display: none; position: absolute; left: 0; top: ${g.s
 ${P} .omx-selector-image.selecting .omx-selector-list, ${P} .omx-selector-image.open .omx-selector-list { display: block; }
 ${P} .omx-selector-option { padding: 2px 6px; font-size: 10px; text-align: left; white-space: nowrap; }
 ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
+` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ` : ''}`;
 }
 
