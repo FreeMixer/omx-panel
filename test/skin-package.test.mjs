@@ -16,6 +16,7 @@ import {
   decodeSkinId,
   encodeSkinId,
   MODGUI_FILE_PROPERTIES,
+  MODGUI_FONT_ROUTE,
   MODGUI_GUI_PROPERTIES,
   MODGUI_IMPORT_REFUSALS,
   MODGUI_PORT_PROPERTIES,
@@ -245,5 +246,7 @@ describe('§6.6 the licence map and the allow-list (§12 Q6)', () => {
     for (const p of MODGUI_TEMPLATE_PROPERTIES) assert.ok(MODGUI_FILE_PROPERTIES.includes(p), p);
     assert.ok(s.includes("mod-ui's `/resources/` route (`MODGUI_RESOURCES_ROUTE`"));
     assert.equal(MODGUI_RESOURCES_ROUTE, '/resources/');
+    assert.ok(s.includes("mod-ui's own font route, `/fonts/<name>/...` (`MODGUI_FONT_ROUTE`)"));
+    assert.equal(MODGUI_FONT_ROUTE, '/fonts/');
   });
 });
