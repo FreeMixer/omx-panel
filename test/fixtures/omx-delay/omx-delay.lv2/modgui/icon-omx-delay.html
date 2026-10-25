@@ -1,0 +1,73 @@
+<div class="omx-pedal{{{cns}}} omx-family-delay" style="width:408px;height:166px">
+    <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+    <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
+    <!-- GENERATED — DO NOT EDIT BY HAND. Produced by tools/modgui-gen.mjs from -->
+    <!-- plugins/omx-delay/omx-delay.decl.json (its panel block) and tools/look.json -->
+    <!-- Regenerate: `node tools/modgui-gen.mjs`, then commit the result. -->
+    <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
+         MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
+         and {{{ns}}} scoping, MOD's own drag-handle, bypass and jack roles. Credited, not copied. -->
+    <div mod-role="drag-handle" class="mod-drag-handle"></div>
+    <div class="omx-head" style="height:40px">
+        <span class="omx-brand">{{brand}}</span>
+        <span class="omx-label">{{label}}</span>
+        <div class="omx-bypass" mod-role="bypass"><div class="omx-bypass-light" mod-role="bypass-light"></div></div>
+    </div>
+        <div class="omx-section" data-section="delay" style="left:16px;top:52px;width:376px;height:98px">
+            <h2 class="omx-section-title">Delay</h2>
+            <div class="omx-control omx-switch" style="left:8px;top:18px" title="Pingpong" data-symbol="pingpong" data-min="0" data-max="1" data-default="0">
+                <div class="omx-switch-image" mod-role="input-control-port" mod-port-symbol="pingpong" mod-widget="switch"></div>
+                <span class="omx-control-title">Pingpong</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:80px;top:18px" title="Time" data-symbol="fxDelayTime" data-min="0" data-max="2000" data-default="300">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="fxDelayTime"></div>
+                <span class="omx-control-title">Time</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:152px;top:18px" title="Feedback" data-symbol="fxDelayFeedback" data-min="0" data-max="0.99" data-default="0.3">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="fxDelayFeedback"></div>
+                <span class="omx-control-title">Feedback</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:224px;top:18px" title="Mix" data-symbol="mix" data-min="0" data-max="1" data-default="0.3">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="mix"></div>
+                <span class="omx-control-title">Mix</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:296px;top:18px" title="Tone" data-symbol="tone" data-min="0" data-max="1" data-default="0.3">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="tone"></div>
+                <span class="omx-control-title">Tone</span>
+            </div>
+        </div>
+    <div class="mod-pedal-input">
+        {{#effect.ports.audio.input}}
+        <div class="mod-input mod-input-disconnected" title="{{name}}" mod-role="input-audio-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-input-image"></div>
+        </div>
+        {{/effect.ports.audio.input}}
+        {{#effect.ports.midi.input}}
+        <div class="mod-input mod-input-disconnected" title="{{name}}" mod-role="input-midi-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-input-image"></div>
+        </div>
+        {{/effect.ports.midi.input}}
+        {{#effect.ports.cv.input}}
+        <div class="mod-input mod-input-disconnected" title="{{name}}" mod-role="input-cv-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-input-image"></div>
+        </div>
+        {{/effect.ports.cv.input}}
+    </div>
+    <div class="mod-pedal-output">
+        {{#effect.ports.audio.output}}
+        <div class="mod-output mod-output-disconnected" title="{{name}}" mod-role="output-audio-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-output-image"></div>
+        </div>
+        {{/effect.ports.audio.output}}
+        {{#effect.ports.midi.output}}
+        <div class="mod-output mod-output-disconnected" title="{{name}}" mod-role="output-midi-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-output-image"></div>
+        </div>
+        {{/effect.ports.midi.output}}
+        {{#effect.ports.cv.output}}
+        <div class="mod-output mod-output-disconnected" title="{{name}}" mod-role="output-cv-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-output-image"></div>
+        </div>
+        {{/effect.ports.cv.output}}
+    </div>
+</div>

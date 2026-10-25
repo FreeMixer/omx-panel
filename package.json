@@ -1,7 +1,7 @@
 {
   "name": "@freemixer/omx-panel",
-  "version": "0.1.0",
-  "description": "Panels for LV2 and CLAP plugins: the skin package schema and its validator",
+  "version": "0.2.0",
+  "description": "Panels for LV2 and CLAP plugins from what each plugin declares: the layout, the MOD GUI generator, the omx look, the skin package and the MOD GUI importer",
   "type": "module",
   "license": "GPL-3.0-or-later",
   "author": "Pau Aliagas <linuxnow@gmail.com>",
@@ -11,26 +11,71 @@
     "url": "git+https://github.com/FreeMixer/omx-panel.git"
   },
   "bin": {
-    "omx-panel": "bin/omx-panel.mjs"
+    "omx-panel": "dist/bin/omx-panel.mjs"
   },
   "exports": {
-    ".": "./lib/validate.mjs",
-    "./schema.json": "./schema/skin-package.schema.json",
+    ".": {
+      "types": "./dist/src/skin-package.d.ts",
+      "default": "./dist/src/skin-package.js"
+    },
+    "./skin-package": {
+      "types": "./dist/src/skin-package.d.ts",
+      "default": "./dist/src/skin-package.js"
+    },
+    "./validate": {
+      "types": "./dist/lib/validate.d.mts",
+      "default": "./dist/lib/validate.mjs"
+    },
+    "./panel-description": {
+      "types": "./dist/tools/panel-description.d.mts",
+      "default": "./dist/tools/panel-description.mjs"
+    },
+    "./vocabulary": {
+      "types": "./dist/tools/vocabulary.d.mts",
+      "default": "./dist/tools/vocabulary.mjs"
+    },
+    "./modgui-gen": {
+      "types": "./dist/tools/modgui-gen.d.mts",
+      "default": "./dist/tools/modgui-gen.mjs"
+    },
+    "./modgui-import": {
+      "types": "./dist/tools/modgui-import.d.mts",
+      "default": "./dist/tools/modgui-import.mjs"
+    },
+    "./turtle-read": {
+      "types": "./dist/tools/turtle-read.d.mts",
+      "default": "./dist/tools/turtle-read.mjs"
+    },
+    "./look": {
+      "types": "./dist/tools/look.d.mts",
+      "default": "./dist/tools/look.mjs"
+    },
+    "./raster": {
+      "types": "./dist/tools/raster.d.mts",
+      "default": "./dist/tools/raster.mjs"
+    },
+    "./schema/skin-package.schema.json": "./dist/schema/skin-package.schema.json",
+    "./schema/panel.schema.json": "./dist/schema/panel.schema.json",
+    "./tokens.css": "./dist/tools/look/tokens.css",
     "./package.json": "./package.json"
   },
   "files": [
-    "bin/",
-    "lib/",
-    "schema/"
+    "dist/"
   ],
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "build": "tsc -p tsconfig.json && node tools/copy-data.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "ajv": "^8.17.1"
   },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0"
+  },
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
   },
   "publishConfig": {
     "access": "public",

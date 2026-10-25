@@ -1,10 +1,10 @@
 {
-  "requires": { "omx-skins-schema": ">= 1.0.0" },
+  "schema": 1,
   "plugin": "org.example.plate",
   "licence": "GPL-3.0-or-later",
   "source": { "kind": "own" },
   "family": "reverb",
-  "roles": { "decay": "time", "mix": "mix" },
+  "roles": { "decay": "decay", "mix": "mix" },
   "sections": [
     { "key": "main", "label": "Plate", "controls": ["decay", "damping", "mix"] }
   ],
