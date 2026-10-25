@@ -37,6 +37,7 @@ const PRIVATE = [
 /** Exemptions: `file` matches the path, `line` (optional) the offending line; `why` is the reason. */
 export const ALLOW = [
   { file: /^tools\/check-public-sources\.mjs$/, why: 'this check names what it forbids' },
+  { file: /^test\/skin-package\.test\.mjs$/, line: /h\.vue\.h\(/, why: 'a view reaches Vue through the skin host, h.vue, never a .vue file' },
 ];
 
 /** The offences of one file's text: `[{ line, kind }]`. */
