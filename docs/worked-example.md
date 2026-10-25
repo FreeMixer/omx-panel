@@ -7,13 +7,18 @@ scan into a descriptor, the layout, the MOD GUI and the test that holds it to th
 the LV2 one to where Zynthian looks for it.
 
 - **LV2**: ZamComp, Damien Zammit's mono compressor (`urn:zamaudio:ZamComp`), from Fedora's `lv2-zam-plugins`.
-  Zynthian installs the same plugins from Debian's `zam-plugins`.
+  Section 4 reads, from Zynthian's sources, where it would look for it.
 - **CLAP**: LSP Limiter Mono (`in.lsp-plug.limiter_mono`), from Fedora's `lsp-plugins-clap`.
 
-Every command below was run as written, from the root of this repository, and its output is shown under it or
-is the committed file it writes, under [`examples/worked-example/`](../examples/worked-example/). A `[exit N]`
-line is the command's exit status when it is not 0. Nothing here was run on a Zynthian or a MOD: the last
-section says what comes from Zynthian's sources and what is still to be seen on one.
+Every command below was run as written, from the root of this repository, and its output is shown under it, or
+is the committed file it writes under [`examples/worked-example/`](../examples/worked-example/). What each
+command printed is also committed, one file per command, in
+[`examples/worked-example/transcript/`](../examples/worked-example/transcript/), written by
+[`repeat.sh`](../examples/worked-example/repeat.sh) (run it after the setup of the next section; a command that
+prints nothing leaves no file). The output shown here is that transcript, line for line. A `[exit N]` line is
+the command's exit status when it is not 0. The `rpm -q` and `lv2ls` lines and the package versions are those of
+the container the run was made in. Nothing here was run on a Zynthian or a MOD: the last section says what
+comes from Zynthian's sources and what is still to be seen on one.
 
 ## Where it ran
 
@@ -35,8 +40,11 @@ On a stock Fedora 44, the FreeMixer channel comes first, as this repository's CI
 image carries the channel), and `python3-lilv` and `sord` are installed with the rest (the image carries them:
 `python3-lilv-0.26.4`, `sord-0.16.22`, `lv2-1.18.10`).
 
-`omx-panel` is this checkout at `0e28468`, run as `omx-panel` through the link above (`/usr/local/bin` comes
-before `/usr/bin` on the path). The released omx-panel 0.2.5, installed last, is run as `/usr/bin/omx-panel`
+`omx-panel` is this checkout, run as `omx-panel` through the link above (`/usr/local/bin` comes before
+`/usr/bin` on the path). The commands ran at `3ebf9b7`, the commit that adds `repeat.sh`; its omx-panel is
+`origin/main` at `15cc25bb9` (pull request 26 merged, so the readout fix of omx-panel#25 is in), and the branch
+adds only the example, this document, a line of the README and the exemption of the example's output files in
+`tools/check-spdx.mjs`. The released omx-panel 0.2.5, installed last, is run as `/usr/bin/omx-panel`
 once: it stops on ZamComp ([section 3](#the-released-025-on-zamcomp)). Every other
 command runs as an unprivileged user.
 
@@ -70,7 +78,9 @@ $ omx-clap-scan /usr/lib64/clap/lsp-plugins.clap | sed -n '/^  plugin in.lsp-plu
 
 [`zamcomp/lv2info.txt`](../examples/worked-example/zamcomp/lv2info.txt) is ZamComp as lilv reads it: three
 audio ports, eight input controls (`att`, `rel`, `kn`, `rat`, `thr`, `mak`, `slew`, `sidech`, ports 3 to 10)
-and two output controls, the readouts `gr` (gain reduction) and `outlevel` (ports 11 and 12).
+and two output controls, the readouts `gr` (gain reduction) and `outlevel` (ports 11 and 12). lilv lists the
+three presets in an order that changes from run to run, so a repeat can differ from the committed file in those
+three lines and nowhere else.
 [`lsp-limiter-mono/omx-clap-scan.txt`](../examples/worked-example/lsp-limiter-mono/omx-clap-scan.txt) is the
 limiter as omx-clap-scan lists it, version 1.0.33, 28 parameters; the scan of the whole `lsp-plugins.clap`
 lists every plugin the file holds, and `sed` keeps this one.
@@ -312,14 +322,27 @@ omx-panel: examples/worked-example/lsp-limiter-mono/filter_mono.descriptor.json:
 [exit 1]
 ```
 
-That is omx-panel#27. Nine other lsp CLAP plugins tried (limiter, compressor, gate, clipper, flanger,
-autogain, loudness compensator, delay compensator and surge filter, each mono) lay out.
+That is omx-panel#27. [`survey-lsp-mono.sh`](../examples/worked-example/survey-lsp-mono.sh) scans and lays out
+every mono plugin of the file:
+
+```
+$ bash examples/worked-example/survey-lsp-mono.sh
+refused in.lsp-plug.filter_mono: omx-panel: <descriptor>: 'Filter mode' is a control twice
+refused in.lsp-plug.sampler_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+refused in.lsp-plug.trigger_midi_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+refused in.lsp-plug.trigger_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+59 laid out, 4 refused
+```
+
+With `--all` it also lists the 59 plugins that lay out, one `ok` line each
+([`transcript/27a-survey-lsp-mono-all.txt`](../examples/worked-example/transcript/27a-survey-lsp-mono-all.txt)).
+The four refusals have the cause of Filter Mono's, a name two parameters share.
 
 ## 4. Zynthian
 
 What follows comes from Zynthian's sources (zynthian-ui `f46b018` and zynthian-sys `0774a58`, both on their
-`vangelis` branch, 2026-10-19), the omx-plugins README, and the lilv runs shown. None of it was seen on a
-Zynthian.
+`vangelis` branch, 2026-10-19; zynthian-plugins `648c84a`, its `master`), the omx-plugins README, and the lilv
+runs shown. Each file and line cited is at those commits. None of it was seen on a Zynthian.
 
 ### Where Zynthian looks for LV2 bundles and their MOD GUIs
 
@@ -331,12 +354,17 @@ Zynthian.
   webconf upload copies it there through `add_engine` (`zynthian_lv2.py:386`), and the omx-plugins README has a
   Zynthian without the apt channel copy its `lv2/` bundles there and rescan the LV2 plugins from the admin
   menu. A plugin the rescan finds for the first time is disabled until enabled (`zynthian_lv2.py:619`).
-- The zynthian-plugins repository (`dssi/`, `ladspa/`, `lv2/` of prebuilt bundles) was last pushed in 2016;
-  a current image creates an empty `$ZYNTHIAN_PLUGINS_DIR/lv2` and installs its plugins from apt,
-  `zam-plugins` among them (zynthian-sys `scripts/setup_plugins_rbpi.sh:52`), into `/usr/lib/lv2`.
+- The last commit of the zynthian-plugins repository (directories `dssi`, `ladspa`, `lv2`, `vst`) is
+  `648c84a`, dated 2016-09-21. The image's setup script installs LV2 plugins with `apt-get`, and the list
+  names `zam-plugins` (zynthian-sys `scripts/setup_plugins_rbpi.sh:42-52`, the name on line 52); the recipe
+  that builds zam-plugins from source, `scripts/recipes/install_zam.sh`, is commented out at
+  `setup_plugins_rbpi.sh:94`. That the Debian package carries the same ZamComp as Fedora's, and puts it in
+  `/usr/lib/lv2`, is not read from these sources.
 - A MOD GUI is drawn by MOD-UI, which Zynthian runs as an engine of its own (zynthian-ui
-  `zyngine/zynthian_engine_modui.py`; zynthian's mod-ui fork, `scripts/recipes/install_mod-ui.sh`), with the
-  same `LV2_PATH` (`etc/systemd/mod-ui.service:11`). The touchscreen never draws a MOD GUI.
+  `zyngine/zynthian_engine_modui.py`; zynthian's mod-ui fork, `scripts/recipes/install_mod-ui.sh`, run by
+  `setup_system_raspioslite_64bit_trixie.sh:562`). Its service takes an `LV2_PATH`
+  (`etc/systemd/mod-ui.service:11`) that `scripts/update_zynthian_sys.sh:527` fills from the value set at `:188`:
+  the same directories as above plus `/usr/lib/$arch_libdir/lv2` and `$ZYNTHIAN_PLUGINS_DIR/lv2-presets`.
 
 ### How the bundle gets there
 
@@ -454,10 +482,11 @@ error: Property <http://moddevices.com/ns/mod#label> has no label
 error: Object not in range <http://lv2plug.in/ns/lv2core#ExtensionData>
 ```
 
-On a Zynthian, then, ZamComp is already installed in `/usr/lib/lv2/ZamComp.lv2`, first on `LV2_PATH`. A copy
-of the bundle in `/zynthian/zynthian-plugins/lv2` would be ignored by lilv as above, and the webconf upload
-refuses a plugin already installed unless forced (`zynthian_lv2.py`, `add_engine`). The MOD GUI therefore
-goes into the bundle lilv takes: copy `modgui.ttl` and `modgui/` from
+On a Zynthian where the Debian package has put ZamComp in `/usr/lib/lv2/ZamComp.lv2` (not read from the
+sources, see above), that bundle is first on `LV2_PATH`, and a copy of the bundle in
+`/zynthian/zynthian-plugins/lv2` would be ignored by lilv as above. `add_engine` refuses a plugin whose engine
+is already registered unless `force` is set (`zynthian_lv2.py:411-424`). The MOD GUI then goes into the bundle
+lilv takes: copy `modgui.ttl` and `modgui/` from
 `examples/worked-example/zamcomp/with-panel/ZamComp.lv2/` into `/usr/lib/lv2/ZamComp.lv2/`, append the same
 `rdfs:seeAlso` line to its `manifest.ttl`, and restart MOD-UI. That step was not run, and a `zam-plugins`
 upgrade would overwrite the manifest. The descriptor should be the scan of the Zynthian's own ZamComp, whose
@@ -487,15 +516,16 @@ $ grep -c -E 'portgroups|pg:group|displayPriority' /usr/lib64/lv2/ZamComp.lv2/Za
 So, by those rules, Zynthian shows ZamComp as `Params 1` (Attack, Release, Knee, Ratio), `Params 2`
 (Threshold, Makeup, Slew, Sidechain) and `Params 3` (bypass), and neither `gr` nor `outlevel`. This is read
 from the source, not seen. The layout's sections do not reach Zynthian's screens: an LV2 bundle would carry
-them as `pg:group` in its TTL, which the MOD GUI generator does not write. Zynthian hosts no CLAP plugin
-upstream (no file of zynthian-ui on `vangelis` is named for CLAP, and its LV2 and jalv engines name none), so
-the limiter's pages are not shown there.
+them as `pg:group` in its TTL, which the MOD GUI generator does not write. The word `clap` appears in no file
+of zynthian-ui at `f46b018` (`grep -ri clap` finds nothing), and in zynthian-sys at `0774a58` only once, in
+a name misspelt "Claption" in a plugin description (`config/engine_config.json:7932`), so those sources name no
+CLAP host or plugin and the limiter's pages are not shown there.
 
 ## What is verified, and what is not
 
 Verified, by the commands above: both plugins come from Fedora 44's own packages; `plugin-hostd-probe
 describe` writes a `scanned` descriptor of each; `omx-panel layout` lays out ZamComp with and without a panel
-file and the limiter, and stops on Filter Mono (omx-panel#27); `omx-panel modgui` writes ZamComp's MOD GUI with
+file and the limiter, and stops on Filter Mono and three more of the 63 mono lsp plugins (omx-panel#27); `omx-panel modgui` writes ZamComp's MOD GUI with
 and without a panel file, each bundle passing `tools/modgui-test.sh`, and refuses the CLAP limiter by name;
 omx-panel 0.2.5 stops on ZamComp's readout (omx-panel#25); lilv reads the MOD GUI from a copy of the bundle
 once its manifest names `modgui.ttl`, and keeps the first of two bundles of one plugin on `LV2_PATH`.
