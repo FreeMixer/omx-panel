@@ -1,0 +1,16 @@
+error: Object not in range <http://lv2plug.in/ns/lv2core#ExtensionData>
+
+--
+error: Use of undefined property
+       urn:zamaudio:ZamComp
+--
+error: Property <http://moddevices.com/ns/mod#brand> has no label
+       urn:zamaudio:ZamComp
+--
+error: Use of undefined property
+       urn:zamaudio:ZamComp
+--
+error: Property <http://moddevices.com/ns/mod#label> has no label
+       urn:zamaudio:ZamComp
+--
+error: Object not in range <http://lv2plug.in/ns/lv2core#ExtensionData>

@@ -1,0 +1,28 @@
+PASS modgui-gen --check ZamComp
+PASS template draws thr with its declared travel and default
+PASS template draws rat with its declared travel and default
+PASS template draws kn with its declared travel and default
+PASS template draws att with its declared travel and default
+PASS template draws rel with its declared travel and default
+PASS template draws slew with its declared travel and default
+PASS template draws sidech with its declared travel and default
+PASS template draws mak with its declared travel and default
+PASS template draws readout gr as a display with its declared range
+PASS template draws readout outlevel as a display with its declared range
+PASS template draws exactly the 10 declared parameters
+error: Object not in range <http://lv2plug.in/ns/lv2core#ExtensionData>
+
+error: Use of undefined property
+       urn:zamaudio:ZamComp
+error: Property <http://moddevices.com/ns/mod#brand> has no label
+       urn:zamaudio:ZamComp
+error: Use of undefined property
+       urn:zamaudio:ZamComp
+error: Property <http://moddevices.com/ns/mod#label> has no label
+       urn:zamaudio:ZamComp
+error: Object not in range <http://lv2plug.in/ns/lv2core#ExtensionData>
+FAIL sord_validate ZamComp.lv2/*.ttl (Found 27 errors among 89 files (checked 2194 restrictions))
+PASS sord_validate refuses a modgui property outside modgui-terms.ttl
+PASS a moved default makes modgui-gen --check fail
+modgui-test: 1 check(s) failed
+[exit 1]

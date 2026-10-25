@@ -1,0 +1,34 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {"omx-contract-schema": ">= 3.0.0"},
+  "origin": "scanned",
+  "plugin": {"id": "urn:zamaudio:ZamComp", "format": "lv2", "uri": "urn:zamaudio:ZamComp", "name": "ZamComp", "vendor": "Damien Zammit", "doc": "A powerful mono compressor strip. Adds real beef to a kick or snare drum with the right settings.", "features": ["audio-effect"]},
+  "controls": [
+    {"id": "att", "name": "Attack", "kind": "travel", "travel": {"min": 0.10000000149, "max": 100, "unit": "ms", "default": 10, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#att"}},
+    {"id": "rel", "name": "Release", "kind": "travel", "travel": {"min": 1, "max": 500, "unit": "ms", "default": 80, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#rel"}},
+    {"id": "kn", "name": "Knee", "kind": "travel", "travel": {"min": 0, "max": 8, "unit": "dB", "default": 0, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#kn"}},
+    {"id": "rat", "name": "Ratio", "kind": "travel", "travel": {"min": 1, "max": 20, "unit": "unknown", "default": 4, "scale": "log"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#rat"}},
+    {"id": "thr", "name": "Threshold", "kind": "travel", "travel": {"min": -80, "max": 0, "unit": "dB", "default": 0, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#thr"}},
+    {"id": "mak", "name": "Makeup", "kind": "travel", "travel": {"min": 0, "max": 30, "unit": "dB", "default": 0, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#mak"}},
+    {"id": "slew", "name": "Slew", "kind": "travel", "travel": {"min": 1, "max": 150, "unit": "unknown", "default": 1, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#slew"}},
+    {"id": "sidech", "name": "Sidechain", "kind": "travel", "travel": {"min": 0, "max": 1, "unit": "unknown", "default": 0, "scale": "linear"}, "meaning": "unknown", "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#sidech"}},
+    {"id": "gr", "name": "Gain Reduction", "kind": "travel", "travel": {"min": 0, "max": 20, "unit": "dB", "scale": "linear"}, "meaning": "unknown", "readonly": true, "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#gr"}},
+    {"id": "outlevel", "name": "Output Level", "kind": "travel", "travel": {"min": -45, "max": 20, "unit": "dB", "scale": "linear"}, "meaning": "unknown", "readonly": true, "source": {"from": "ZamComp.lv2/ZamComp_dsp.ttl#outlevel"}}
+  ],
+  "ports": [
+    {"id": "lv2_audio_in_1", "name": "Audio Input 1", "kind": "audio", "direction": "in", "role": "main", "channels": 1, "layout": "mono"},
+    {"id": "lv2_sidechain_in", "name": "Sidechain Input", "kind": "audio", "direction": "in", "role": "sidechain", "channels": 1, "layout": "mono"},
+    {"id": "lv2_audio_out_1", "name": "Audio Output 1", "kind": "audio", "direction": "out", "role": "main", "channels": 1, "layout": "mono"}
+  ],
+  "needs": {"extensions": {"required": ["opts:options", "urid:map"], "optional": ["bufsz:boundedBlockLength", "lv2:hardRTCapable"]}},
+  "latency": {"reports": false},
+  "extensions": {"lv2": {
+    "doap:license": "http://spdx.org/licenses/GPL-2.0-or-later.html",
+    "lv2:binary": "ZamComp.lv2/ZamComp_dsp.so",
+    "lv2:extensionData": ["http://kxstudio.sf.net/ns/lv2ext/programs#Interface", "opts:interface"],
+    "lv2:microVersion": "0",
+    "lv2:minorVersion": "6",
+    "opts:supportedOption": ["bufsz:maxBlockLength", "param:sampleRate", "bufsz:nominalBlockLength"],
+    "rdf:type": ["doap:Project", "lv2:CompressorPlugin", "lv2:Plugin"]
+  }}
+}

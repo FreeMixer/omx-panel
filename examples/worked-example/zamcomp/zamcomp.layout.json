@@ -1,0 +1,205 @@
+{
+  "origin": "scanned",
+  "family": "none",
+  "sections": [
+    {
+      "key": "controls",
+      "labelKey": null,
+      "label": "Controls"
+    }
+  ],
+  "controls": [
+    {
+      "symbol": "att",
+      "param": "att",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Attack",
+      "visible": null,
+      "mask": "0",
+      "unit": "ms",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "rel",
+      "param": "rel",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Release",
+      "visible": null,
+      "mask": "0",
+      "unit": "ms",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "kn",
+      "param": "kn",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Knee",
+      "visible": null,
+      "mask": "0",
+      "unit": "dB",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "rat",
+      "param": "rat",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Ratio",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "thr",
+      "param": "thr",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Threshold",
+      "visible": null,
+      "mask": "0",
+      "unit": "dB",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "mak",
+      "param": "mak",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Makeup",
+      "visible": null,
+      "mask": "0",
+      "unit": "dB",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "slew",
+      "param": "slew",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Slew",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "sidech",
+      "param": "sidech",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Sidechain",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "gr",
+      "param": "gr",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "auto",
+      "standard": {
+        "widget": "meter",
+        "measurement": null
+      },
+      "labelKey": null,
+      "label": "Gain Reduction",
+      "visible": null,
+      "mask": "0",
+      "unit": "dB",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "outlevel",
+      "param": "outlevel",
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "auto",
+      "standard": {
+        "widget": "meter",
+        "measurement": null
+      },
+      "labelKey": null,
+      "label": "Output Level",
+      "visible": null,
+      "mask": "0",
+      "unit": "dB",
+      "meaning": "unknown"
+    }
+  ],
+  "roles": [],
+  "unpublished": [],
+  "displays": [],
+  "defaults": [],
+  "ports": {
+    "inputs": [
+      {
+        "id": "lv2_audio_in_1",
+        "name": "Audio Input 1",
+        "role": "main",
+        "channels": 1
+      },
+      {
+        "id": "lv2_sidechain_in",
+        "name": "Sidechain Input",
+        "role": "sidechain",
+        "channels": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "lv2_audio_out_1",
+        "name": "Audio Output 1",
+        "role": "main",
+        "channels": 1
+      }
+    ],
+    "sidechain": true,
+    "notes": false
+  }
+}

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# GENERATED — DO NOT EDIT BY HAND. Produced by tools/modgui-gen.mjs from
+# examples/worked-example/zamcomp/zamcomp.descriptor.json and examples/worked-example/zamcomp/zamcomp.panel.json and tools/look.json
+# Regenerate: `node tools/modgui-gen.mjs`, then commit the result.
+@prefix lv2:    <http://lv2plug.in/ns/lv2core#> .
+@prefix modgui: <http://moddevices.com/ns/modgui#> .
+
+<urn:zamaudio:ZamComp>
+    modgui:gui [
+        modgui:resourcesDirectory <modgui> ;
+        modgui:iconTemplate <modgui/icon-ZamComp.html> ;
+        modgui:stylesheet <modgui/stylesheet-ZamComp.css> ;
+        modgui:screenshot <modgui/screenshot-ZamComp.png> ;
+        modgui:thumbnail <modgui/thumbnail-ZamComp.png> ;
+        modgui:brand "Damien Zammit" ;
+        modgui:label "ZamComp" ;
+        modgui:port [
+            lv2:index 0 ;
+            lv2:symbol "thr" ;
+            lv2:name "Threshold" ;
+        ] , [
+            lv2:index 1 ;
+            lv2:symbol "rat" ;
+            lv2:name "Ratio" ;
+        ] , [
+            lv2:index 2 ;
+            lv2:symbol "kn" ;
+            lv2:name "Knee" ;
+        ] , [
+            lv2:index 3 ;
+            lv2:symbol "att" ;
+            lv2:name "Attack" ;
+        ] , [
+            lv2:index 4 ;
+            lv2:symbol "rel" ;
+            lv2:name "Release" ;
+        ] , [
+            lv2:index 5 ;
+            lv2:symbol "slew" ;
+            lv2:name "Slew" ;
+        ] , [
+            lv2:index 6 ;
+            lv2:symbol "sidech" ;
+            lv2:name "Sidechain" ;
+        ] ;
+    ] .
