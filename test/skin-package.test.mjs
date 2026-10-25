@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
  * The skin package's pure half (src/skin-package.ts, built): the id encoding (§6.1), the version rule (§7.2), the
- * override's schema and application (§6.3) and the view lint (§7.3) of the panel spec. Moved from the console's
+ * override's schema and application (§6.3) and the view lint (§7.3). Moved from the console's
  * core with its assertions unchanged; each `expect` there is an `assert` here.
  */
 import assert from 'node:assert/strict';
