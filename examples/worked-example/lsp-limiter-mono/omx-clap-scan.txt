@@ -1,0 +1,33 @@
+  plugin in.lsp-plug.limiter_mono "Limiter Mono" vendor LSP CLAP version 1.0.33
+    features audio-effect limiter mono
+    param 1244225361 Show pre-mix overlay [0 .. 1] default 0 stepped,automatable,requires_process
+    param 3869364241 Input to Link mix [-80.049995422363281 .. 20] default -80.049995422363281 automatable,requires_process
+    param 3177522691 Link to Input mix [-80.049995422363281 .. 20] default -80.049995422363281 automatable,requires_process
+    param 3225708262 Link to Sidechain mix [-80.049995422363281 .. 20] default -80.049995422363281 automatable,requires_process
+    param 490312032 Bypass [0 .. 1] default 0 stepped,automatable,requires_process
+    param 2683833795 Input gain [-80.049995422363281 .. 60] default 0 automatable,requires_process
+    param 3630838676 Output gain [-80.049995422363281 .. 60] default 0 automatable,requires_process
+    param 3810192430 Sidechain preamp [-80.049995422363281 .. 40] default 0 automatable,requires_process
+    param 2674668398 Automatic level regulation [0 .. 1] default 1 stepped,automatable,requires_process
+    param 1439502472 Automatic level regulation attack time [0 .. 1] default 0.51467877626419067 automatable,requires_process
+    param 1526105096 Automatic level regulation release time [0 .. 1] default 0.34948500990867615 automatable,requires_process
+    param 3670762539 Operating mode [0 .. 1] default 0 stepped,automatable,requires_process
+    param 1574856808 Threshold [-48 .. 0] default 0 automatable,requires_process
+    param 1610863755 Knee level [-11.99995231628418 .. 11.999996185302734] default 0 automatable,requires_process
+    param 2849352001 Gain boost [0 .. 1] default 1 stepped,automatable,requires_process
+    param 1541051435 Lookahead [0 .. 1] default 0.73835194110870361 automatable,requires_process
+    param 1494745332 Attack time [0 .. 1] default 0.68364083766937256 automatable,requires_process
+    param 1566812276 Release time [0 .. 1] default 0.68364083766937256 automatable,requires_process
+    param 1727760849 Oversampling [0 .. 1] default 0 stepped,automatable,requires_process
+    param 2157357250 Dithering [0 .. 1] default 0 stepped,automatable,requires_process
+    param 1914600837 Pause graph analysis [0 .. 1] default 0 stepped,automatable,requires_process
+    param 818577203 Clear graph analysis [0 .. 1] default 0 stepped,automatable,requires_process
+    param 413445948 Sidechain type [0 .. 1] default 0 stepped,automatable,requires_process
+    param 2697680499 Input graph visibility [0 .. 1] default 1 stepped,automatable,requires_process
+    param 1658443380 Output graph visibility [0 .. 1] default 1 stepped,automatable,requires_process
+    param 992759966 Sidechain graph visibility [0 .. 1] default 1 stepped,automatable,requires_process
+    param 1046482910 Gain graph visibility [0 .. 1] default 1 stepped,automatable,requires_process
+    param 956218380 Knee smooth [0 .. 1] default 0.89583331346511841 automatable,requires_process
+    in  main 1 channels unknown "mono_in" in_1
+    out main 1 channels unknown "mono_out" out_1
+    note ports 0 in, 0 out
