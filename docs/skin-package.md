@@ -99,16 +99,20 @@ it controlled a real parameter. A `modgui:monitoredOutputs` entry is checked the
 literal symbol it names) must be one of the plugin's own ports.
 
 Every image a template names (`MODGUI_TEMPLATE_PROPERTIES`: the icon template and the settings template; an HTML
-`src="..."` or a CSS `url(...)` inside it, a Mustache suffix like `{{{cns}}}` dropped before resolving) is checked.
-Under mod-ui's `/resources/` route (`MODGUI_RESOURCES_ROUTE`, the bundle's `resourcesDirectory`) it must exist; one
-that does not is `MODGUI_IMAGE_NOT_FOUND`, naming the template file and the path it names, and one that climbs out
-of the resources directory is `MODGUI_PATH_ESCAPE`. A web address, any other absolute path, or a relative path that
-climbs out of the bundle is `MODGUI_PATH_ESCAPE`, so a drawn template never reaches outside the package. The one
-absolute route kept is mod-ui's own font route, `/fonts/<name>/...` (`MODGUI_FONT_ROUTE`): a font the drawing
-supplies or replaces, kept as text, never an image and never fetched. A `data:` address and a value that is only a
-Mustache tag are left as they are. The stylesheet is not checked this way: MOD's shared pedal stylesheets are one
-theme file covering every knob count and colour a style offers, most of it unused by any one plugin, so most of its
-`url()`s name no file the bundle carries, on purpose.
+`src="..."` or `src='...'` or a CSS `url(...)` inside it) is checked. A Mustache suffix like `{{{ns}}}` (mod-ui's
+`?uri=...`), a query and a fragment are dropped, and the path is percent-decoded once and its dot segments resolved,
+as a browser and mod-ui's server do, before anything else is decided. Under mod-ui's `/resources/` route
+(`MODGUI_RESOURCES_ROUTE`, the bundle's `resourcesDirectory`) a path that climbs out of the resources directory is
+`MODGUI_PATH_ESCAPE`, whether its target exists or not; one that names no file there, the directory itself
+included, is `MODGUI_IMAGE_NOT_FOUND`, naming the template file and the path it names. A web address, any other
+absolute path, or a relative path that climbs out of the bundle is `MODGUI_PATH_ESCAPE`, so a drawn template never
+reaches outside the package. The absolute paths kept are mod-ui's own routes, the directories its static handler
+serves from its html directory, `/fonts/`, `/img/`, `/js/`, `/css/` and `/include/` (`MODGUI_SERVER_ROUTES`): a file
+the drawing supplies or replaces, kept as text and never fetched. A path holding a Mustache tag anywhere cannot be
+checked before mod-ui fills it in, so it is kept; a `data:` address and a value that is only a Mustache tag are left
+as they are too. The stylesheet is not checked this way: MOD's shared pedal stylesheets are one theme file covering
+every knob count and colour a style offers, most of it unused by any one plugin, so most of its `url()`s name no file
+the bundle carries, on purpose.
 
 ## What the validator checks
 
