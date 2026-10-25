@@ -1,3 +1,10 @@
+omx-panel (0.2.5) unstable; urgency=medium
+
+  * A man page for omx-panel; shipped declarations carry no shebang. 0.2.4
+    shipped no DEB.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 25 Oct 2026 09:13:19 +0000
+
 omx-panel (0.2.4) unstable; urgency=medium
 
   * The vendored modules' dotfiles leave the package; 0.2.3 shipped no DEB.
