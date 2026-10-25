@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
 # Installs the skin package schema and the directory skins are installed into. No node runs here: the
-# validator (`omx-skins validate`) is the npm package; a release build (RPM, deb) installs the schema as
+# validator (`omx-panel validate`) is the npm package; a release build (RPM, deb) installs the schema as
 # the repository holds it. `make test` is the node suite, `make check` the checks that need no node
 # beyond the tools themselves.
 
@@ -17,7 +17,7 @@ all:
 
 # The schema is valid JSON and the example skin is valid against it.
 check: all spdx public-sources
-	node bin/omx-skins.mjs validate examples/skins/org.example.plate
+	node bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
 	npm test
@@ -33,5 +33,5 @@ public-sources:
 	node tools/check-public-sources.mjs
 
 install: all
-	install -d $(DESTDIR)$(DATADIR)/omx-skins $(DESTDIR)$(DATADIR)/omx/skins
-	install -m 0644 schema/skin-package.schema.json $(DESTDIR)$(DATADIR)/omx-skins/
+	install -d $(DESTDIR)$(DATADIR)/omx-panel $(DESTDIR)$(DATADIR)/omx/skins
+	install -m 0644 schema/skin-package.schema.json $(DESTDIR)$(DATADIR)/omx-panel/
