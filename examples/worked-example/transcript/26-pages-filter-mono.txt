@@ -1,0 +1,2 @@
+omx-panel: examples/worked-example/lsp-limiter-mono/filter_mono.descriptor.json: 'Filter mode' is a control twice
+[exit 1]

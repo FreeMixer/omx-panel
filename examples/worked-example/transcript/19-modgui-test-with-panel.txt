@@ -1,0 +1,15 @@
+PASS modgui-gen --check ZamComp
+PASS template draws thr with its declared travel and default
+PASS template draws rat with its declared travel and default
+PASS template draws kn with its declared travel and default
+PASS template draws att with its declared travel and default
+PASS template draws rel with its declared travel and default
+PASS template draws slew with its declared travel and default
+PASS template draws sidech with its declared travel and default
+PASS template draws mak with its declared travel and default
+PASS template draws readout gr as a display with its declared range
+PASS template draws readout outlevel as a display with its declared range
+PASS template draws exactly the 10 declared parameters
+PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1938 restrictions); all 21 the label errors of omx-contract#144)
+PASS sord_validate refuses a modgui property outside modgui-terms.ttl
+PASS a moved default makes modgui-gen --check fail

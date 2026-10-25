@@ -1,0 +1,4 @@
+omx-clap-host-0.20.1-1.fc44.x86_64
+omx-clap-core-0.20.1-1.fc44.x86_64
+plugin-hostd-0.10.0-1.fc44.x86_64
+omx-contract-3.1.0-1.fc44.noarch
