@@ -1,3 +1,11 @@
+omx-panel (0.3.0) unstable; urgency=medium
+
+  * The MOD GUI importer reads mod-ui's whole modgui:gui property list,
+    refuses MODGUI_PORT_UNKNOWN and MODGUI_IMAGE_NOT_FOUND (ten refusal
+    codes), and reads a template reference as mod-ui reads it (#33).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 25 Oct 2026 18:00:00 +0000
+
 omx-panel (0.2.6) unstable; urgency=medium
 
   * A readout is drawn as a display, never looked up as a control input;
