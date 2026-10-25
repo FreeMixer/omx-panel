@@ -1,3 +1,10 @@
+omx-panel (0.2.1-1) unstable; urgency=medium
+
+  * The npm package is @openmixer/omx-panel; 0.2.0 named a scope that does not
+    exist on the registry and never reached npm.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 25 Oct 2026 08:21:07 +0000
+
 omx-panel (0.2.0-1) unstable; urgency=medium
 
   * The panel toolkit: the layout from a descriptor, the MOD GUI generator and

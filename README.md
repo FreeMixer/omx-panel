@@ -22,8 +22,8 @@ the plugin's own declaration, in the omx look, vintage or modern.
 ## Install
 
 The first release publishes `omx-panel` as an RPM (`dnf install omx-panel`) and a DEB (`apt install omx-panel`),
-each carrying the tools, the schema and the skins directory, and `@freemixer/omx-panel` on npm
-(`npm install @freemixer/omx-panel`). Until then, build from source: see [BUILDING.md](BUILDING.md).
+each carrying the tools, the schema and the skins directory, and `@openmixer/omx-panel` on npm
+(`npm install @openmixer/omx-panel`). Until then, build from source: see [BUILDING.md](BUILDING.md).
 
 ## For a plugin author
 
