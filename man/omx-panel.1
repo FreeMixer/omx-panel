@@ -1,0 +1,31 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.\" Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+.TH OMX-PANEL 1 "2026-10-25" "omx-panel" "User Commands"
+.SH NAME
+omx-panel \- check a skin package for an OpenMixer plugin panel
+.SH SYNOPSIS
+.B omx-panel
+.B validate
+.IR "skin.json | skin-package-directory" ...
+.SH DESCRIPTION
+.B omx-panel
+reads each skin given, a
+.I skin.json
+file or a directory holding one, and checks it against the skin package schema shipped with the package. Each skin prints one line: its path and whether it is valid, with the first problem found when it is not.
+.SH EXIT STATUS
+.TP
+.B 0
+every skin is valid
+.TP
+.B 1
+at least one skin is not
+.TP
+.B 2
+usage error, or a file could not be read
+.SH FILES
+.TP
+.I /usr/share/omx-panel/schema/skin-package.schema.json
+the schema a skin is checked against
+.SH SEE ALSO
+The skin package format, the panel description and the MOD GUI generator are documented in
+.IR /usr/share/doc/omx-panel/ .

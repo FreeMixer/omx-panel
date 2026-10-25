@@ -8,7 +8,7 @@
  * schemas, the look, the modgui terms, the test script), and the commands keep their execute bit. `npm run build`
  * runs it after tsc.
  */
-import { chmodSync, copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,4 +29,10 @@ for (const f of [...MODULES, ...DATA]) {
   copyFileSync(join(ROOT, f), join(DIST, f));
 }
 for (const f of COMMANDS) chmodSync(join(DIST, f), 0o755);
+// tsc copies a command's shebang into its declaration; a declaration never runs, so it carries none.
+for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
+  const d = join(DIST, f.replace(/\.mjs$/, '.d.mts'));
+  const text = readFileSync(d, 'utf8');
+  if (text.startsWith('#!')) writeFileSync(d, text.slice(text.indexOf('\n') + 1));
+}
 console.log(`copy-data: ${MODULES.length} modules and ${DATA.length} data files into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);
