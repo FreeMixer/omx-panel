@@ -1,0 +1,16 @@
+plugin  urn:zamaudio:ZamComp
+bundle  file:///tmp/stage/ZamComp.lv2/
+modgui:resourcesDirectory  file:///tmp/stage/ZamComp.lv2/modgui
+modgui:iconTemplate  file:///tmp/stage/ZamComp.lv2/modgui/icon-ZamComp.html
+modgui:stylesheet  file:///tmp/stage/ZamComp.lv2/modgui/stylesheet-ZamComp.css
+modgui:screenshot  file:///tmp/stage/ZamComp.lv2/modgui/screenshot-ZamComp.png
+modgui:thumbnail  file:///tmp/stage/ZamComp.lv2/modgui/thumbnail-ZamComp.png
+modgui:brand  Damien Zammit
+modgui:label  ZamComp
+modgui:port  0 thr
+modgui:port  1 rat
+modgui:port  2 kn
+modgui:port  3 att
+modgui:port  4 rel
+modgui:port  5 slew
+modgui:port  6 sidech

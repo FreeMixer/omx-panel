@@ -1,0 +1,64 @@
+ok in.lsp-plug.ab_tester_x2_mono
+ok in.lsp-plug.ab_tester_x4_mono
+ok in.lsp-plug.ab_tester_x8_mono
+ok in.lsp-plug.art_delay_mono
+ok in.lsp-plug.autogain_mono
+ok in.lsp-plug.beat_breather_mono
+ok in.lsp-plug.chorus_mono
+ok in.lsp-plug.clipper_mono
+ok in.lsp-plug.comp_delay_mono
+ok in.lsp-plug.compressor_mono
+ok in.lsp-plug.crossover_mono
+ok in.lsp-plug.dyna_processor_mono
+ok in.lsp-plug.expander_mono
+refused in.lsp-plug.filter_mono: omx-panel: <descriptor>: 'Filter mode' is a control twice
+ok in.lsp-plug.flanger_mono
+ok in.lsp-plug.gate_mono
+ok in.lsp-plug.gott_compressor_mono
+ok in.lsp-plug.graph_equalizer_x16_mono
+ok in.lsp-plug.graph_equalizer_x32_mono
+ok in.lsp-plug.impulse_responses_mono
+ok in.lsp-plug.impulse_reverb_mono
+ok in.lsp-plug.limiter_mono
+ok in.lsp-plug.loud_comp_mono
+ok in.lsp-plug.matcher_mono
+ok in.lsp-plug.mb_clipper_mono
+ok in.lsp-plug.mb_compressor_mono
+ok in.lsp-plug.mb_dyna_processor_mono
+ok in.lsp-plug.mb_expander_mono
+ok in.lsp-plug.mb_gate_mono
+ok in.lsp-plug.mb_limiter_mono
+ok in.lsp-plug.mb_ringmod_sc_mono
+ok in.lsp-plug.mixer_x16_mono
+ok in.lsp-plug.mixer_x4_mono
+ok in.lsp-plug.mixer_x8_mono
+ok in.lsp-plug.oscillator_mono
+ok in.lsp-plug.para_equalizer_x16_mono
+ok in.lsp-plug.para_equalizer_x32_mono
+ok in.lsp-plug.para_equalizer_x8_mono
+ok in.lsp-plug.phaser_mono
+ok in.lsp-plug.profiler_mono
+ok in.lsp-plug.referencer_mono
+ok in.lsp-plug.return_mono
+ok in.lsp-plug.ringmod_sc_mono
+ok in.lsp-plug.room_builder_mono
+refused in.lsp-plug.sampler_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+ok in.lsp-plug.sc_autogain_mono
+ok in.lsp-plug.sc_compressor_mono
+ok in.lsp-plug.sc_dyna_processor_mono
+ok in.lsp-plug.sc_expander_mono
+ok in.lsp-plug.sc_gate_mono
+ok in.lsp-plug.sc_gott_compressor_mono
+ok in.lsp-plug.sc_limiter_mono
+ok in.lsp-plug.sc_matcher_mono
+ok in.lsp-plug.sc_mb_compressor_mono
+ok in.lsp-plug.sc_mb_dyna_processor_mono
+ok in.lsp-plug.sc_mb_expander_mono
+ok in.lsp-plug.sc_mb_gate_mono
+ok in.lsp-plug.sc_mb_limiter_mono
+ok in.lsp-plug.send_mono
+ok in.lsp-plug.slap_delay_mono
+ok in.lsp-plug.surge_filter_mono
+refused in.lsp-plug.trigger_midi_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+refused in.lsp-plug.trigger_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+59 laid out, 4 refused

@@ -1,0 +1,7 @@
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui.ttl
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui/icon-ZamComp.html
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui/stylesheet-ZamComp.css
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui/screenshot-ZamComp.png
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui/thumbnail-ZamComp.png
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui/knobs/omx-knob.png
+modgui: wrote examples/worked-example/zamcomp/with-panel/ZamComp.lv2/modgui/knobs/omx-fader.png
