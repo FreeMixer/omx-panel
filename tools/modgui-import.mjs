@@ -168,6 +168,11 @@ export function importModgui({ bundle, out, plugin }, core) {
     return { index, symbol, name: val('name') ?? symbol };
   });
   ports.sort((a, b) => a.index - b.index);
+  // A monitored output names a port as a modgui:port does: by its lv2:symbol, or by the literal symbol.
+  for (const t of one(gui, `${NS}monitoredOutputs`)) {
+    const symbol = t.o.t === 'lit' ? t.o.v : one(t.o, `${LV2}symbol`)[0]?.o.v;
+    if (!pluginPortSymbols.has(symbol)) throw new Refusal('MODGUI_PORT_UNKNOWN', t.file, `modgui:monitoredOutputs names "${symbol}", no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
+  }
   const lit = (p) => one(gui, `${NS}${p}`)[0]?.o.v;
   const res = (p) => {
     const t = one(gui, `${NS}${p}`)[0];
