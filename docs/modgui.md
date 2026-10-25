@@ -26,7 +26,14 @@ omx-panel modgui --descriptor <file> | --installed <package>/<name>
 
 Every control's symbol, travel, default and label is the descriptor's. A toggle is a switch; a choice, or an
 integer travel of at most 16 steps, a selector over its values; every other travel a knob. The template lays out
-every section and every control; `modgui.ttl` lists the controls of the first section as `modgui:port`.
+every section and every control; `modgui.ttl` lists the input controls of the first section as `modgui:port`.
+
+A readout (a `readonly` control: a gain reduction, a level) has no travel to turn and no default. It is drawn as a
+display: a frame in its cell carrying its symbol and its range, never a knob, a fader, a switch or a selector, and
+never looked up as a control input. MOD's template binds input control ports by role (`input-control-port`) and
+has no role for an output control port, so the frame carries none; it is not a `modgui:port` either. Showing the
+reading live needs the bundle's own `modgui:javascript`, which this generator does not write. A declared panel
+that names a widget for a readout is refused.
 
 The images (the screenshot, the thumbnail, the knob film and the fader's when a control is one) are rasterised by
 `tools/raster.mjs` from the template's own layout, each control at its default, with no text: a fixed-code
@@ -42,7 +49,7 @@ wears. `tools/look.mjs` resolves it at the look it names into `tools/look.json`,
 
 `tools/modgui-test.sh <bundle.lv2> <descriptor> [<panel>]` holds a written MOD GUI to its descriptor on values:
 the files are the generation byte for byte; every control is drawn in the template with its symbol, travel and
-default, and nothing undeclared is; every choice is a selector with each of its values; `sord_validate` accepts
+default (a readout with its symbol and range, as a display with no port role), and nothing undeclared is; every choice is a selector with each of its values; `sord_validate` accepts
 the bundle against the LV2 specifications, `tools/modgui-terms.ttl` (the closed modgui vocabulary) and
 omx-contract's resource-hint terms, and refuses a property outside that vocabulary; and a descriptor with its
 first control's default moved makes `--check` fail on the template.
