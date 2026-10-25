@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#
+# The modgui vocabulary sord_validate reads a bundle's modgui.ttl against: EXACTLY the properties
+# found in use on the installed MOD bundles, each described from MOD Devices' modgui
+# (mod-ui, https://github.com/moddevices/mod-ui; the MOD SDK). No installed schema declares them,
+# so without this file every modgui term reads as undefined; with it, a property outside this list
+# is still an "undefined property" error — a closed vocabulary, red on anything new.
+@prefix modgui: <http://moddevices.com/ns/modgui#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+modgui:gui a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "gui" ;
+    rdfs:comment "The plugin's MOD GUI description." .
+
+modgui:resourcesDirectory a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "resources directory" ;
+    rdfs:comment "The directory MOD serves the GUI's files from." .
+
+modgui:iconTemplate a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "icon template" ;
+    rdfs:comment "The Mustache HTML template of the plugin's pedal." .
+
+modgui:stylesheet a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "stylesheet" ;
+    rdfs:comment "The CSS the icon template is drawn with." .
+
+modgui:screenshot a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "screenshot" ;
+    rdfs:comment "A full-size picture of the pedal." .
+
+modgui:thumbnail a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "thumbnail" ;
+    rdfs:comment "A small picture of the pedal." .
+
+modgui:brand a rdf:Property , owl:DatatypeProperty ;
+    rdfs:label "brand" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The maker's name as drawn on the pedal." .
+
+modgui:label a rdf:Property , owl:DatatypeProperty ;
+    rdfs:label "label" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The plugin's name as drawn on the pedal." .
+
+modgui:model a rdf:Property , owl:DatatypeProperty ;
+    rdfs:label "model" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A stock MOD pedal model." .
+
+modgui:panel a rdf:Property , owl:DatatypeProperty ;
+    rdfs:label "panel" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A stock MOD control panel layout." .
+
+modgui:color a rdf:Property , owl:DatatypeProperty ;
+    rdfs:label "color" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A stock MOD pedal colour." .
+
+modgui:knob a rdf:Property , owl:DatatypeProperty ;
+    rdfs:label "knob" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A stock MOD knob." .
+
+modgui:port a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "port" ;
+    rdfs:comment "A control the pedal draws: lv2:index (its order on the pedal), lv2:symbol, lv2:name." .
