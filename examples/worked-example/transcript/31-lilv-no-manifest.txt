@@ -1,0 +1,4 @@
+plugin  urn:zamaudio:ZamComp
+bundle  file:///tmp/stage/ZamComp.lv2/
+modgui:gui  none
+[exit 1]

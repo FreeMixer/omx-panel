@@ -1,0 +1,5 @@
+refused in.lsp-plug.filter_mono: omx-panel: <descriptor>: 'Filter mode' is a control twice
+refused in.lsp-plug.sampler_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+refused in.lsp-plug.trigger_midi_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+refused in.lsp-plug.trigger_mono: omx-panel: <descriptor>: 'Sample pitch' is a control twice
+59 laid out, 4 refused

@@ -1,0 +1,5 @@
+lilv_world_compare_versions(): warning: Ignoring duplicate version 6.0 of <urn:zamaudio:ZamComp> from <file:///usr/lib64/lv2/ZamComp.lv2/>
+lilv_world_compare_versions(): note: Previously loaded from <file:///tmp/stage/ZamComp.lv2/>
+plugin  urn:zamaudio:ZamComp
+bundle  file:///tmp/stage/ZamComp.lv2/
+modgui:resourcesDirectory  file:///tmp/stage/ZamComp.lv2/modgui
