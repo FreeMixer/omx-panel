@@ -1,6 +1,6 @@
 {
   "name": "@openmixer/omx-panel",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Panels for LV2 and CLAP plugins from what each plugin declares: the layout, the MOD GUI generator, the omx look, the skin package and the MOD GUI importer",
   "type": "module",
   "license": "GPL-3.0-or-later",
