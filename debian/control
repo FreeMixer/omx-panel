@@ -2,7 +2,12 @@ Source: omx-panel
 Section: misc
 Priority: optional
 Maintainer: Pau Aliagas <linuxnow@gmail.com>
-Build-Depends: debhelper-compat (= 13)
+Build-Depends: debhelper-compat (= 13),
+               nodejs (>= 18),
+               npm,
+               libomx-contract-dev (>= 3.0.0) <!nocheck>,
+               plugin-hostd-dev (>= 0.7.0) <!nocheck>,
+               omx-plugins-dev <!nocheck>
 Standards-Version: 4.6.2
 Homepage: https://github.com/FreeMixer/omx-panel
 Rules-Requires-Root: no
@@ -10,9 +15,13 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: ${misc:Depends}
-Description: panels for LV2 and CLAP plugins: the skin package schema
- This release of omx-panel, the panel toolkit for LV2 and CLAP plugins,
- carries the schema of a skin package's skin.json, the file that says how one
- plugin's panel is arranged and named and which art it brings, and the
- directory skin packages are installed into.
+Depends: nodejs (>= 18), libomx-contract-dev (>= 3.0.0), plugin-hostd-dev (>= 0.7.0), ${misc:Depends}
+Recommends: omx-plugins-dev
+Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
+ omx-panel makes panels for LV2 and CLAP plugins from what each plugin
+ declares. It lays a panel out from a plugin's descriptor (sections, controls,
+ roles, the pages of eight a controller shows), writes a MOD GUI for MOD and
+ Zynthian in the omx look, imports a plugin's own MOD GUI into a skin package,
+ and carries the skin package schema, its validator and the directory skin
+ packages are installed into. The omx-panel command runs each; the tools are
+ under /usr/share/omx-panel for a build that calls them.

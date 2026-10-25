@@ -5,5 +5,15 @@
 %:
 	dh $@
 
+# npm ci fetches typescript (the build) and ajv (the validator, installed with the package)
+override_dh_auto_build:
+	npm ci --no-audit --no-fund
+	dh_auto_build
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	make test
+endif
+
 override_dh_auto_install:
-	dh_auto_install -- PREFIX=/usr DATADIR=/usr/share
+	dh_auto_install -- PREFIX=/usr BINDIR=/usr/bin DATADIR=/usr/share
