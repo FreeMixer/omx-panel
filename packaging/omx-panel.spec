@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 Name: omx-panel
-Version: 0.2.5
+Version: 0.2.6
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -60,6 +60,10 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Sun Oct 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.2.6-1
+- A readout is drawn as a display, never looked up as a control input; 0.2.5
+  stopped on a readout. The worked example, with its documents and examples.
+
 * Sun Oct 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.2.5-1
 - A man page for omx-panel; shipped declarations carry no shebang. 0.2.4
   shipped no DEB.
