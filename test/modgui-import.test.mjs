@@ -228,6 +228,58 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     refused(edited('modgui/icon-echo.html', img('../../../../etc/pedal.png')), 'MODGUI_PATH_ESCAPE');
   });
 
+  // The shapes are mod-ui's own: its templates name `/img/icons/36/<f>.png?v={{version}}`, `js/<f>.js?v={{version}}`
+  // and `TONE3000%20...`, and a bundle's stylesheet `url(/resources/<dir>/<f>.png{{{ns}}})`, `{{{ns}}}` being `?uri=...`.
+  const img = (src, q = '"') => (t) => t.replace('<div class="mod-control-group">', `<img src=${q}${src}${q}>\n  <div class="mod-control-group">`);
+  const imports = (b) => assert.doesNotThrow(() => importModgui({ bundle: b, out: fresh('out') }, core));
+
+  it('a query or a fragment is not part of the file: the image before it is checked', () => {
+    imports(edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png?v={{version}}')));
+    imports(edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png?uri=urn%3Aopenmixer%3Afixture%3Aecho#sprite')));
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png?v={{version}}')), 'MODGUI_IMAGE_NOT_FOUND');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png#sprite')), 'MODGUI_IMAGE_NOT_FOUND');
+  });
+
+  it('a Mustache tag anywhere in the path cannot be checked, so it is kept, not refused', () => {
+    imports(edited('modgui/icon-echo.html', img('/resources/{{knob}}/knob-sprite.png')));
+    imports(edited('modgui/icon-echo.html', img('/resources/knobs/{{{sprite}}}.png{{{ns}}}')));
+    imports(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background-image: url(/resources/pedals/{{color}}/knob.png{{{ns}}})"')));
+  });
+
+  it("keeps every route mod-ui serves from its own html directory: /img/, /js/, /css/, /include/ and /fonts/", () => {
+    for (const src of ['/img/icons/36/settings.png?v={{version}}', '/js/lib/slick/ajax-loader.gif', '/css/fontello/font/fontello.svg', '/include/logo.png', '/fonts/nexa/NexaBold.otf']) {
+      imports(edited('modgui/icon-echo.html', img(src)));
+    }
+  });
+
+  it('the escape is decided before existence: a climb out of /resources/ is MODGUI_PATH_ESCAPE whether or not its target exists', () => {
+    refused(edited('modgui/icon-echo.html', img('/resources/../no-such.png')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/../../echo.ttl')), 'MODGUI_PATH_ESCAPE');
+    // A dot segment that stays inside is no escape.
+    imports(edited('modgui/icon-echo.html', img('/resources/knobs/../knobs/knob-sprite.png')));
+  });
+
+  it('an empty /resources/ reference names the directory, no image: MODGUI_IMAGE_NOT_FOUND, not MODGUI_PATH_ESCAPE', () => {
+    refused(edited('modgui/icon-echo.html', img('/resources/')), 'MODGUI_IMAGE_NOT_FOUND');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/')), 'MODGUI_IMAGE_NOT_FOUND');
+  });
+
+  it('a percent-encoded path is decoded once before the escape check', () => {
+    refused(edited('modgui/icon-echo.html', img('/resources/%2e%2e/echo.ttl')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/%2E%2E/no-such.png')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs%2f..%2f..%2fecho.ttl')), 'MODGUI_PATH_ESCAPE');
+    imports(edited('modgui/icon-echo.html', img('/resources/knobs%2Fknob%2Dsprite.png')));
+    // Once: `%252e%252e` is the literal name `%2e%2e`, a file the bundle does not hold, not a climb.
+    refused(edited('modgui/icon-echo.html', img('/resources/%252e%252e/echo.ttl')), 'MODGUI_IMAGE_NOT_FOUND');
+  });
+
+  it("a single-quoted src='...' is scanned as a double-quoted one is", () => {
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png', "'")), 'MODGUI_IMAGE_NOT_FOUND');
+    refused(edited('modgui/icon-echo.html', img('https://example.org/pedal.png', "'")), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/../echo.ttl', "'")), 'MODGUI_PATH_ESCAPE');
+    imports(edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png{{{ns}}}', "'")));
+  });
+
   it("keeps mod-ui's /fonts/ route, a data: address, a Mustache-only value and a relative path inside the bundle", () => {
     const b = edited('modgui/icon-echo.html', (t) =>
       t.replace(
@@ -294,5 +346,18 @@ describe('modgui-import: the proof on the installed caps CEO', { skip: !existsSy
     assert.deepEqual(r.skin.labels, { ppm: { label: 'Profit' }, volume: { label: 'Level' }, damping: { label: 'Damping' } });
     assert.equal(r.skin.licence, 'GPL-2.0-or-later');
     assert.equal(r.skin.source.licenceEvidence, 'CEO.ttl doap:license <http://usefulinc.com/doap/licenses/gpl>');
+  });
+
+  it("every installed caps bundle's templates pass the reference check: no real bundle is refused for what its templates name", () => {
+    const lv2 = dirname(CEO);
+    const bundles = readdirSync(lv2).filter((d) => d.startsWith('mod-caps-') && existsSync(join(lv2, d, 'modgui.ttl')));
+    assert.ok(bundles.length > 1, `caps bundles under ${lv2}`);
+    for (const d of bundles) {
+      try {
+        importModgui({ bundle: join(lv2, d), out: fresh('out') }, core);
+      } catch (e) {
+        assert.ok(!['MODGUI_IMAGE_NOT_FOUND', 'MODGUI_PATH_ESCAPE'].includes(e.code), `${d}: ${e.message}`);
+      }
+    }
   });
 });

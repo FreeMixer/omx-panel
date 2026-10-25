@@ -16,11 +16,11 @@ import {
   decodeSkinId,
   encodeSkinId,
   MODGUI_FILE_PROPERTIES,
-  MODGUI_FONT_ROUTE,
   MODGUI_GUI_PROPERTIES,
   MODGUI_IMPORT_REFUSALS,
   MODGUI_PORT_PROPERTIES,
   MODGUI_RESOURCES_ROUTE,
+  MODGUI_SERVER_ROUTES,
   MODGUI_TEMPLATE_PROPERTIES,
   SKIN_LICENCE_ALLOW_LIST,
   SKIN_REFUSAL_CODES,
@@ -244,9 +244,10 @@ describe('§6.6 the licence map and the allow-list (§12 Q6)', () => {
     for (const p of MODGUI_FILE_PROPERTIES) assert.ok(MODGUI_GUI_PROPERTIES.includes(p), p);
     assert.deepEqual([...MODGUI_TEMPLATE_PROPERTIES], ['iconTemplate', 'settingsTemplate']);
     for (const p of MODGUI_TEMPLATE_PROPERTIES) assert.ok(MODGUI_FILE_PROPERTIES.includes(p), p);
-    assert.ok(s.includes("mod-ui's `/resources/` route (`MODGUI_RESOURCES_ROUTE`"));
+    assert.ok(s.replace(/\s+/g, ' ').includes("mod-ui's `/resources/` route (`MODGUI_RESOURCES_ROUTE`"));
     assert.equal(MODGUI_RESOURCES_ROUTE, '/resources/');
-    assert.ok(s.includes("mod-ui's own font route, `/fonts/<name>/...` (`MODGUI_FONT_ROUTE`)"));
-    assert.equal(MODGUI_FONT_ROUTE, '/fonts/');
+    const served = /mod-ui's own routes, the directories its static handler serves from its html directory, ([^(]*)\(`MODGUI_SERVER_ROUTES`\)/.exec(s.replace(/\s+/g, ' '))[1];
+    assert.deepEqual([...MODGUI_SERVER_ROUTES].sort(), [...served.matchAll(/`(\/[^`]+)`/g)].map((m) => m[1]).sort());
+    assert.ok(MODGUI_SERVER_ROUTES.includes('/fonts/') && !MODGUI_SERVER_ROUTES.includes(MODGUI_RESOURCES_ROUTE));
   });
 });

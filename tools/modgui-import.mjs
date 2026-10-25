@@ -26,7 +26,7 @@
  * prints one `MODGUI-IMPORT-JSON {…}` line; exit 0 on a package written, 3 on a refusal, 2 on usage.
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as skinPackage from '../src/skin-package.js';
 import { parseTurtle } from './turtle-read.mjs';
@@ -80,16 +80,17 @@ function checkTree(bundle, dir, file) {
   }
 }
 
+const MUSTACHE = /\{\{\{?[^}]*\}?\}\}/g;
+
 /**
- * Every reference a template's `src="..."` or `url(...)` names, a trailing Mustache suffix
- * (`{{{cns}}}` and the like) dropped; a `data:` address and a value that is only a Mustache tag are
- * left out, as they name no file.
+ * Every reference a template's `src="..."`, `src='...'` or `url(...)` names; a `data:` address and a
+ * value that starts with a Mustache tag are left out, as no file can be read from them.
  */
 function templateRefs(html) {
   const refs = new Set();
-  for (const re of [/\bsrc\s*=\s*"([^"]*)"/g, /\burl\(\s*['"]?([^'")]*)['"]?\s*\)/g]) {
+  for (const re of [/\bsrc\s*=\s*"([^"]*)"/g, /\bsrc\s*=\s*'([^']*)'/g, /\burl\(\s*['"]?([^'")]*)['"]?\s*\)/g]) {
     for (const m of html.matchAll(re)) {
-      const p = m[1].trim().replace(/\{\{\{?[^}]*\}?\}\}\s*$/, '');
+      const p = m[1].trim();
       if (p !== '' && !p.startsWith('{{') && !/^data:/i.test(p)) refs.add(p);
     }
   }
@@ -97,25 +98,53 @@ function templateRefs(html) {
 }
 
 /**
- * Every reference `template` names: under mod-ui's resources route an image the resources directory
- * does not hold is MODGUI_IMAGE_NOT_FOUND, one resolving out of it MODGUI_PATH_ESCAPE; mod-ui's font
- * route is kept as text; a web address, any other absolute path, or a relative path out of the bundle
- * is MODGUI_PATH_ESCAPE.
+ * The path a reference names, as mod-ui reads it: a trailing Mustache suffix (`{{{ns}}}`, mod-ui's
+ * `?uri=...`), a query and a fragment dropped, percent-decoded once. `tagged` when a Mustache tag is
+ * left in it, a path no one can check before mod-ui fills it in.
+ */
+function refPath(ref) {
+  const bare = ref.replace(/(\{\{\{?[^}]*\}?\}\}\s*)+$/, '');
+  // A `?` or `#` inside a tag (`{{#section}}`) starts no query.
+  const end = bare.replace(MUSTACHE, (t) => ' '.repeat(t.length)).search(/[?#]/);
+  const path = end < 0 ? bare : bare.slice(0, end);
+  let decoded = path;
+  try {
+    decoded = decodeURIComponent(path);
+  } catch {
+    // A stray `%` decodes to nothing else: the name is literal.
+  }
+  return { path: decoded, tagged: path.includes('{{') };
+}
+
+/**
+ * Every reference `template` names, the escape decided before existence: under mod-ui's resources
+ * route a path climbing out of the resources directory is MODGUI_PATH_ESCAPE, one naming no file there
+ * MODGUI_IMAGE_NOT_FOUND; mod-ui's own routes and a path holding a Mustache tag are kept as text; a web
+ * address, any other absolute path, or a relative path out of the bundle is MODGUI_PATH_ESCAPE.
  */
 function checkTemplateImages(bundle, resourcesDir, template, routes) {
   for (const ref of templateRefs(readFileSync(template, 'utf8'))) {
-    if (ref.startsWith(routes.resources)) {
-      const rel = ref.slice(routes.resources.length);
-      const p = join(resourcesDir, rel);
-      if (!existsSync(p)) throw new Refusal('MODGUI_IMAGE_NOT_FOUND', template, `names ${ref}, which does not exist under ${resourcesDir}`);
-      const real = realpathSync(p);
-      if (!real.startsWith(resourcesDir + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which resolves outside ${resourcesDir}, to ${real}`);
-    } else if (ref.startsWith(routes.fonts)) {
-      continue;
-    } else if (/^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('/')) {
-      throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, a web address or an absolute path outside the bundle`);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('//')) {
+      throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, a web address`);
+    }
+    const { path, tagged } = refPath(ref);
+    if (tagged) continue;
+    if (path.startsWith('/')) {
+      // Dot segments resolved as the browser does before it asks; a trailing `/` kept, so a directory stays one.
+      const url = posix.normalize(path);
+      if (url.startsWith(routes.resources)) {
+        const rel = url.slice(routes.resources.length);
+        const p = join(resourcesDir, rel);
+        if (rel === '' || rel.endsWith('/') || !existsSync(p) || statSync(p).isDirectory()) {
+          throw new Refusal('MODGUI_IMAGE_NOT_FOUND', template, `names ${ref}, which is no file under ${resourcesDir}`);
+        }
+        const real = realpathSync(p);
+        if (!real.startsWith(resourcesDir + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which resolves outside ${resourcesDir}, to ${real}`);
+      } else if (!routes.served.some((r) => url.startsWith(r))) {
+        throw new Refusal('MODGUI_PATH_ESCAPE', template, path.startsWith(routes.resources) ? `names ${ref}, which climbs out of ${resourcesDir}, to ${url}` : `names ${ref}, an absolute path outside the bundle`);
+      }
     } else {
-      const p = resolve(dirname(template), ref);
+      const p = join(dirname(template), path);
       if (p !== bundle && !p.startsWith(bundle + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which climbs out of the bundle, to ${p}`);
     }
   }
@@ -202,7 +231,7 @@ export function importModgui({ bundle, out, plugin }, core) {
   const named = core.MODGUI_FILE_PROPERTIES.filter(isFile).map((p) => [p, res(p)]).filter(([, f]) => f !== undefined);
   const screenshot = named.find(([p]) => p === 'screenshot')?.[1];
   // The templates' images, not the stylesheet's: a shared pedal theme names files no one bundle carries.
-  const routes = { resources: core.MODGUI_RESOURCES_ROUTE, fonts: core.MODGUI_FONT_ROUTE };
+  const routes = { resources: core.MODGUI_RESOURCES_ROUTE, served: core.MODGUI_SERVER_ROUTES };
   for (const [p, f] of named) if (core.MODGUI_TEMPLATE_PROPERTIES.includes(p)) checkTemplateImages(dir, resourcesDir, f, routes);
 
   const id = pluginTerm.v;

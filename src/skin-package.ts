@@ -625,11 +625,12 @@ export const MODGUI_TEMPLATE_PROPERTIES = ['iconTemplate', 'settingsTemplate'] a
 export const MODGUI_RESOURCES_ROUTE = '/resources/';
 
 /**
- * mod-ui's own font route, `/fonts/<name>/...`: the one other absolute path a template may name, a font
- * the drawing supplies or replaces, kept as text and never fetched. Any other absolute path is outside
+ * mod-ui's own routes, the directories of its html directory its static handler serves (`/fonts/<name>/...`,
+ * `/img/icons/...`, `/js/...`, `/css/...`, `/include/...`): the other absolute paths a template may name, a
+ * file the drawing supplies or replaces, kept as text and never fetched. Any other absolute path is outside
  * the bundle.
  */
-export const MODGUI_FONT_ROUTE = '/fonts/';
+export const MODGUI_SERVER_ROUTES = ['/fonts/', '/img/', '/js/', '/css/', '/include/'] as const;
 
 /** The `lv2:` properties the importer knows on a `modgui:port` node; any other is refused. */
 export const MODGUI_PORT_PROPERTIES = ['index', 'symbol', 'name'] as const;
