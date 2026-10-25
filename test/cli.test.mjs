@@ -10,7 +10,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const run = (...args) => spawnSync(process.execPath, [join(ROOT, 'bin/omx-skins.mjs'), ...args], { encoding: 'utf8' });
+const run = (...args) => spawnSync(process.execPath, [join(ROOT, 'bin/omx-panel.mjs'), ...args], { encoding: 'utf8' });
 
 test('a valid package directory: exit 0', () => {
   const r = run('validate', join(ROOT, 'examples/skins/org.example.plate'));
@@ -19,9 +19,9 @@ test('a valid package directory: exit 0', () => {
 });
 
 test('an invalid file: exit 1, the fault named by file and path', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'omx-skins-'));
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-'));
   const file = join(dir, 'skin.json');
-  writeFileSync(file, JSON.stringify({ requires: { 'omx-skins-schema': '>= 1.0.0' }, plugin: 'x' }));
+  writeFileSync(file, JSON.stringify({ requires: { 'omx-panel-schema': '>= 1.0.0' }, plugin: 'x' }));
   const r = run('validate', file);
   assert.equal(r.status, 1);
   assert.match(r.stdout, /FAIL .*skin\.json required \/ /);

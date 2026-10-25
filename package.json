@@ -1,17 +1,17 @@
 {
-  "name": "@openmixer/omx-skins",
+  "name": "@freemixer/omx-panel",
   "version": "0.1.0",
-  "description": "The skin format for openmixer panels: the skin package schema and its validator",
+  "description": "Panels for LV2 and CLAP plugins: the skin package schema and its validator",
   "type": "module",
   "license": "GPL-3.0-or-later",
   "author": "Pau Aliagas <linuxnow@gmail.com>",
-  "homepage": "https://github.com/FreeMixer/omx-skins",
+  "homepage": "https://github.com/FreeMixer/omx-panel",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FreeMixer/omx-skins.git"
+    "url": "git+https://github.com/FreeMixer/omx-panel.git"
   },
   "bin": {
-    "omx-skins": "bin/omx-skins.mjs"
+    "omx-panel": "bin/omx-panel.mjs"
   },
   "exports": {
     ".": "./lib/validate.mjs",
