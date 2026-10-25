@@ -10,6 +10,5 @@
   ],
   "labels": { "decay": { "label": "Decay" } },
   "visibleWhen": { "damping": { "param": "mode", "values": [1, 2] } },
-  "backdrop": "art/plate.png",
-  "view": { "entry": "view/index.js", "api": "1.1" }
+  "backdrop": "art/plate.png"
 }
