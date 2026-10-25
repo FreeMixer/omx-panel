@@ -1,3 +1,11 @@
+omx-panel (0.2.6) unstable; urgency=medium
+
+  * A readout is drawn as a display, never looked up as a control input;
+    0.2.5 stopped on a readout. The worked example, with its documents and
+    examples.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 25 Oct 2026 12:00:00 +0000
+
 omx-panel (0.2.5) unstable; urgency=medium
 
   * A man page for omx-panel; shipped declarations carry no shebang. 0.2.4
