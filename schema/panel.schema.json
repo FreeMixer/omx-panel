@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FreeMixer/omx-panel/schema/panel.schema.json",
+  "title": "The panel's declared lists",
+  "description": "What a declared panel names from this package: the widgets a control is drawn with and the roles that repeat by index. A plugin's own declaration schema references these $defs; tools/modgui-gen.mjs and tools/panel-description.mjs read them.",
+  "$defs": {
+    "widget": {
+      "enum": [
+        "knob",
+        "fader",
+        "switch",
+        "selector"
+      ],
+      "title": "Widget",
+      "description": "The shared widgets a control is drawn with, by the names the console reads (its `auto` is a control left out of `widgets`): a knob or a fader for a travel, a switch for a toggle, a selector for an integer travel or labelled values. The schema, tools/modgui-gen.mjs and the console read this one list; a new one is added here once, and in each renderer, for every plugin."
+    },
+    "indexedRole": {
+      "enum": [
+        "band_type",
+        "band_freq",
+        "band_gain",
+        "band_q",
+        "band_on"
+      ],
+      "title": "Indexed role",
+      "description": "The roles that repeat by index, one parameter per band: the only roles that may name a list of symbols."
+    }
+  }
+}
