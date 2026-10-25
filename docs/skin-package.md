@@ -63,7 +63,7 @@ accepts a threshold in dBu or LUFS.
 
 Each refusal is a code with named arguments (`SKIN_REFUSAL_CODES`): `SKIN_OVERRIDE_INVALID` (the file does not parse
 or fails the schema, `args.field` the first field that broke it), `SKIN_OVERRIDE_ENTRY_DROPPED`, `SKIN_API_MISMATCH`,
-`SKIN_VIEW_ERROR`, `SKIN_VIEW_LINT`, `SKIN_MODGUI_LICENCE`, and the importer's own eight, `MODGUI_*` (below).
+`SKIN_VIEW_ERROR`, `SKIN_VIEW_LINT`, `SKIN_MODGUI_LICENCE`, and the importer's own ten, `MODGUI_*` (below).
 
 ## The licence
 
@@ -79,7 +79,19 @@ LGPL-2.1-or-later, LGPL-3.0-or-later, MIT, BSD-2-Clause, BSD-3-Clause, ISC, Zlib
 under `modgui/`, and `source` `{ kind: "modgui", bundle, licenceEvidence }`. It writes no view, no family and no
 roles. It refuses, with a code that names the file it read and nothing written: `MODGUI_NOT_FOUND`,
 `MODGUI_TTL_INVALID`, `MODGUI_NO_LICENCE`, `MODGUI_LICENCE_UNMAPPED`, `MODGUI_LICENCE_REFUSED` (outside the
-allow-list), `MODGUI_UNKNOWN_PROPERTY`, `MODGUI_PATH_ESCAPE` and `MODGUI_TARGET_EXISTS`.
+allow-list), `MODGUI_UNKNOWN_PROPERTY`, `MODGUI_PORT_UNKNOWN` (a `modgui:port` symbol the plugin does not carry),
+`MODGUI_IMAGE_NOT_FOUND` (an icon template image the bundle does not hold), `MODGUI_PATH_ESCAPE` and
+`MODGUI_TARGET_EXISTS`.
+
+Every `modgui:port` is checked against the plugin's own `lv2:port` declarations in the bundle, the same TTL the
+importer reads for the licence: a `modgui:port` whose `lv2:symbol` names no `lv2:symbol` of the plugin's own ports
+is `MODGUI_PORT_UNKNOWN`, naming the file and the symbol, so a renamed or stale modgui entry is never imported as if
+it controlled a real parameter. Every image the icon template names (an HTML `src="..."` or a CSS `url(...)` inside
+it, under mod-ui's `/resources/` route, a Mustache suffix like `{{{cns}}}` dropped before resolving) must exist in
+the bundle's `resourcesDirectory`; one that does not is `MODGUI_IMAGE_NOT_FOUND`, naming the template file and the
+path it names. The stylesheet is not checked this way: MOD's shared pedal stylesheets are one theme file covering
+every knob count and colour a style offers, most of it unused by any one plugin, so most of its `url()`s name no
+file the bundle carries, on purpose.
 
 The known `modgui:gui` properties are mod-ui's whole list, not only the ones a reviewed bundle used:
 `resourcesDirectory`, `iconTemplate`, `settingsTemplate`, `javascript`, `stylesheet`, `screenshot`, `thumbnail`,
