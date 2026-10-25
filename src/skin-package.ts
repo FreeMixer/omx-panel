@@ -187,6 +187,12 @@ export const SKIN_REFUSAL_CODES = [
   'MODGUI_LICENCE_REFUSED',
   /** The importer: the bundle carries a `modgui:` property (or a `modgui:port` an `lv2:` property) outside its list. */
   'MODGUI_UNKNOWN_PROPERTY',
+  /** The importer: a `modgui:port`'s `lv2:symbol` names no `lv2:symbol` of the plugin's own `lv2:port`, a renamed or
+   * stale entry. `args.file` names the TTL, `args.detail` the symbol. */
+  'MODGUI_PORT_UNKNOWN',
+  /** The importer: an image the icon template names under mod-ui's `/resources/` route is not in the resources
+   * directory. `args.file` names the template, `args.detail` the path it names. */
+  'MODGUI_IMAGE_NOT_FOUND',
   /** The importer: a resource the modgui names resolves outside the bundle (a symlink or a non-`file:` IRI). */
   'MODGUI_PATH_ESCAPE',
   /** The importer: the package directory is already in the skins directory; nothing is overwritten. */
@@ -578,13 +584,20 @@ export const MODGUI_NS = 'http://moddevices.com/ns/modgui#';
 export const LV2_NS = 'http://lv2plug.in/ns/lv2core#';
 export const DOAP_NS = 'http://usefulinc.com/ns/doap#';
 
-/** The `modgui:` properties the importer knows on a `modgui:gui` node; any other is refused. */
+/**
+ * The `modgui:` properties the importer knows on a `modgui:gui` node: mod-ui's whole list, not only
+ * the ones a reviewed bundle used (docs/skin-package.md); any other is refused.
+ */
 export const MODGUI_GUI_PROPERTIES = [
   'resourcesDirectory',
   'iconTemplate',
+  'settingsTemplate',
+  'javascript',
   'stylesheet',
   'screenshot',
   'thumbnail',
+  'documentation',
+  'discussionURL',
   'brand',
   'label',
   'model',
@@ -592,7 +605,32 @@ export const MODGUI_GUI_PROPERTIES = [
   'color',
   'knob',
   'port',
+  'monitoredOutputs',
 ] as const;
+
+/**
+ * The `modgui:gui` properties whose value is a file of the bundle: each must resolve inside it and is
+ * copied with the package. `documentation` is one only when it names a `file:` IRI; a web address
+ * there, and `discussionURL` always, are kept as text and never fetched.
+ */
+export const MODGUI_FILE_PROPERTIES = ['iconTemplate', 'settingsTemplate', 'javascript', 'stylesheet', 'screenshot', 'thumbnail', 'documentation'] as const;
+
+/**
+ * The modgui files whose image references (`src="..."`, `url(...)`) must resolve inside the bundle. Not
+ * the stylesheet: MOD's shared pedal themes name files no one bundle carries, on purpose.
+ */
+export const MODGUI_TEMPLATE_PROPERTIES = ['iconTemplate', 'settingsTemplate'] as const;
+
+/** mod-ui's server route a template names the bundle's resources directory by: `/resources/<f>`. */
+export const MODGUI_RESOURCES_ROUTE = '/resources/';
+
+/**
+ * mod-ui's own routes, the directories of its html directory its static handler serves (`/fonts/<name>/...`,
+ * `/img/icons/...`, `/js/...`, `/css/...`, `/include/...`): the other absolute paths a template may name, a
+ * file the drawing supplies or replaces, kept as text and never fetched. Any other absolute path is outside
+ * the bundle.
+ */
+export const MODGUI_SERVER_ROUTES = ['/fonts/', '/img/', '/js/', '/css/', '/include/'] as const;
 
 /** The `lv2:` properties the importer knows on a `modgui:port` node; any other is refused. */
 export const MODGUI_PORT_PROPERTIES = ['index', 'symbol', 'name'] as const;
@@ -605,6 +643,8 @@ export const MODGUI_IMPORT_REFUSALS = [
   'MODGUI_LICENCE_UNMAPPED',
   'MODGUI_LICENCE_REFUSED',
   'MODGUI_UNKNOWN_PROPERTY',
+  'MODGUI_PORT_UNKNOWN',
+  'MODGUI_IMAGE_NOT_FOUND',
   'MODGUI_PATH_ESCAPE',
   'MODGUI_TARGET_EXISTS',
 ] as const satisfies readonly SkinRefusalCode[];

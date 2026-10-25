@@ -6,6 +6,7 @@
  * core with its assertions unchanged; each `expect` there is an `assert` here.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import {
   SKIN_API_VERSION,
@@ -14,9 +15,13 @@ import {
   checkSkinRoles,
   decodeSkinId,
   encodeSkinId,
+  MODGUI_FILE_PROPERTIES,
   MODGUI_GUI_PROPERTIES,
   MODGUI_IMPORT_REFUSALS,
   MODGUI_PORT_PROPERTIES,
+  MODGUI_RESOURCES_ROUTE,
+  MODGUI_SERVER_ROUTES,
+  MODGUI_TEMPLATE_PROPERTIES,
   SKIN_LICENCE_ALLOW_LIST,
   SKIN_REFUSAL_CODES,
   isSkinLicenceAllowed,
@@ -220,9 +225,29 @@ describe('§6.6 the licence map and the allow-list (§12 Q6)', () => {
     for (const id of SKIN_LICENCE_ALLOW_LIST) assert.equal(isSkinLicenceAllowed(id), true);
   });
   it('the importer vocabulary is the spec list', () => {
-    assert.equal(MODGUI_IMPORT_REFUSALS.length, 8);
+    assert.equal(MODGUI_IMPORT_REFUSALS.length, 10);
+    for (const code of ['MODGUI_PORT_UNKNOWN', 'MODGUI_IMAGE_NOT_FOUND'])assert.ok(MODGUI_IMPORT_REFUSALS.includes(code), code);
     assert.ok(MODGUI_GUI_PROPERTIES.includes('resourcesDirectory'));
     assert.deepEqual(MODGUI_PORT_PROPERTIES, ['index', 'symbol', 'name']);
     for (const code of MODGUI_IMPORT_REFUSALS) assert.ok(SKIN_REFUSAL_CODES.includes(code), code);
+  });
+  it('the importer vocabulary is the one docs/skin-package.md states, so the two cannot drift apart', () => {
+    const doc = readFileSync(new URL('../docs/skin-package.md', import.meta.url), 'utf8');
+    const s = doc.slice(doc.indexOf('## Importing a MOD GUI'), doc.indexOf('## What the validator checks'));
+    const ticked = (text) => [...text.matchAll(/`(\w+)`/g)].map((m) => m[1]);
+    const known = /The known `modgui:gui` properties are mod-ui's whole list[^:]*:([^(]*)\(`MODGUI_GUI_PROPERTIES`\)/.exec(s)[1];
+    assert.deepEqual([...MODGUI_GUI_PROPERTIES].sort(), ticked(known).sort());
+    const refuses = /It refuses[^:]*:([\s\S]*?`MODGUI_TARGET_EXISTS`)/.exec(s)[1];
+    assert.deepEqual([...MODGUI_IMPORT_REFUSALS].sort(), ticked(refuses).filter((w) => w.startsWith('MODGUI_')).sort());
+    const fileValued = /The file-valued ones \(([^;]*);/.exec(s)[1];
+    assert.deepEqual([...MODGUI_FILE_PROPERTIES].sort(), ticked(fileValued).sort());
+    for (const p of MODGUI_FILE_PROPERTIES) assert.ok(MODGUI_GUI_PROPERTIES.includes(p), p);
+    assert.deepEqual([...MODGUI_TEMPLATE_PROPERTIES], ['iconTemplate', 'settingsTemplate']);
+    for (const p of MODGUI_TEMPLATE_PROPERTIES) assert.ok(MODGUI_FILE_PROPERTIES.includes(p), p);
+    assert.ok(s.replace(/\s+/g, ' ').includes("mod-ui's `/resources/` route (`MODGUI_RESOURCES_ROUTE`"));
+    assert.equal(MODGUI_RESOURCES_ROUTE, '/resources/');
+    const served = /mod-ui's own routes, the directories its static handler serves from its html directory, ([^(]*)\(`MODGUI_SERVER_ROUTES`\)/.exec(s.replace(/\s+/g, ' '))[1];
+    assert.deepEqual([...MODGUI_SERVER_ROUTES].sort(), [...served.matchAll(/`(\/[^`]+)`/g)].map((m) => m[1]).sort());
+    assert.ok(MODGUI_SERVER_ROUTES.includes('/fonts/') && !MODGUI_SERVER_ROUTES.includes(MODGUI_RESOURCES_ROUTE));
   });
 });

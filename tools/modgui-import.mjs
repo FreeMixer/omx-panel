@@ -26,7 +26,7 @@
  * prints one `MODGUI-IMPORT-JSON {…}` line; exit 0 on a package written, 3 on a refusal, 2 on usage.
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as skinPackage from '../src/skin-package.js';
 import { parseTurtle } from './turtle-read.mjs';
@@ -80,6 +80,76 @@ function checkTree(bundle, dir, file) {
   }
 }
 
+const MUSTACHE = /\{\{\{?[^}]*\}?\}\}/g;
+
+/**
+ * Every reference a template's `src="..."`, `src='...'` or `url(...)` names; a `data:` address and a
+ * value that starts with a Mustache tag are left out, as no file can be read from them.
+ */
+function templateRefs(html) {
+  const refs = new Set();
+  for (const re of [/\bsrc\s*=\s*"([^"]*)"/g, /\bsrc\s*=\s*'([^']*)'/g, /\burl\(\s*['"]?([^'")]*)['"]?\s*\)/g]) {
+    for (const m of html.matchAll(re)) {
+      const p = m[1].trim();
+      if (p !== '' && !p.startsWith('{{') && !/^data:/i.test(p)) refs.add(p);
+    }
+  }
+  return [...refs];
+}
+
+/**
+ * The path a reference names, as mod-ui reads it: a trailing Mustache suffix (`{{{ns}}}`, mod-ui's
+ * `?uri=...`), a query and a fragment dropped, percent-decoded once. `tagged` when a Mustache tag is
+ * left in it, a path no one can check before mod-ui fills it in.
+ */
+function refPath(ref) {
+  const bare = ref.replace(/(\{\{\{?[^}]*\}?\}\}\s*)+$/, '');
+  // A `?` or `#` inside a tag (`{{#section}}`) starts no query.
+  const end = bare.replace(MUSTACHE, (t) => ' '.repeat(t.length)).search(/[?#]/);
+  const path = end < 0 ? bare : bare.slice(0, end);
+  let decoded = path;
+  try {
+    decoded = decodeURIComponent(path);
+  } catch {
+    // A stray `%` decodes to nothing else: the name is literal.
+  }
+  return { path: decoded, tagged: path.includes('{{') };
+}
+
+/**
+ * Every reference `template` names, the escape decided before existence: under mod-ui's resources
+ * route a path climbing out of the resources directory is MODGUI_PATH_ESCAPE, one naming no file there
+ * MODGUI_IMAGE_NOT_FOUND; mod-ui's own routes and a path holding a Mustache tag are kept as text; a web
+ * address, any other absolute path, or a relative path out of the bundle is MODGUI_PATH_ESCAPE.
+ */
+function checkTemplateImages(bundle, resourcesDir, template, routes) {
+  for (const ref of templateRefs(readFileSync(template, 'utf8'))) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('//')) {
+      throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, a web address`);
+    }
+    const { path, tagged } = refPath(ref);
+    if (tagged) continue;
+    if (path.startsWith('/')) {
+      // Dot segments resolved as the browser does before it asks; a trailing `/` kept, so a directory stays one.
+      const url = posix.normalize(path);
+      if (url.startsWith(routes.resources)) {
+        const rel = url.slice(routes.resources.length);
+        const p = join(resourcesDir, rel);
+        if (rel === '' || rel.endsWith('/') || !existsSync(p) || statSync(p).isDirectory()) {
+          throw new Refusal('MODGUI_IMAGE_NOT_FOUND', template, `names ${ref}, which is no file under ${resourcesDir}`);
+        }
+        const real = realpathSync(p);
+        if (!real.startsWith(resourcesDir + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which resolves outside ${resourcesDir}, to ${real}`);
+      } else if (!routes.served.some((r) => url.startsWith(r))) {
+        throw new Refusal('MODGUI_PATH_ESCAPE', template, path.startsWith(routes.resources) ? `names ${ref}, which climbs out of ${resourcesDir}, to ${url}` : `names ${ref}, an absolute path outside the bundle`);
+      }
+    } else {
+      const p = join(dirname(template), path);
+      if (p !== bundle && !p.startsWith(bundle + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which climbs out of the bundle, to ${p}`);
+    }
+  }
+}
+
 /**
  * Import one bundle into `<out>/<skinPackageDirName(plugin)>/`. Returns the written package or
  * throws a {@link Refusal}; on a refusal nothing exists under `out` that was not there before.
@@ -111,15 +181,27 @@ export function importModgui({ bundle, out, plugin }, core) {
     if (t.p.v.startsWith(NS) && t.p.v !== `${NS}gui` && !knownGui.has(t.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `${show(t.p)} is not a modgui property this importer knows`);
     if (t.p.v === RDF_TYPE && t.o.t === 'iri' && t.o.v.startsWith(NS)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `a node is typed ${show(t.o)}`);
   }
+  // The plugin's own lv2:port symbols: a modgui:port naming none of them is stale or renamed.
+  const pluginPortSymbols = new Set(
+    one(pluginTerm, `${LV2}port`)
+      .map((t) => one(t.o, `${LV2}symbol`)[0]?.o.v)
+      .filter((s) => typeof s === 'string'),
+  );
   const ports = one(gui, `${NS}port`).map((t) => {
     for (const q of about(t.o)) if (!knownPort.has(q.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', q.file, `a modgui:port carries ${show(q.p)}`);
     const val = (p) => one(t.o, `${LV2}${p}`)[0]?.o.v;
     const index = Number(val('index'));
     const symbol = val('symbol');
     if (!Number.isInteger(index) || typeof symbol !== 'string' || symbol === '') throw new Refusal('MODGUI_TTL_INVALID', t.file, 'a modgui:port has no integer lv2:index or no lv2:symbol');
+    if (!pluginPortSymbols.has(symbol)) throw new Refusal('MODGUI_PORT_UNKNOWN', t.file, `modgui:port lv2:symbol "${symbol}" names no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
     return { index, symbol, name: val('name') ?? symbol };
   });
   ports.sort((a, b) => a.index - b.index);
+  // A monitored output names a port as a modgui:port does: by its lv2:symbol, or by the literal symbol.
+  for (const t of one(gui, `${NS}monitoredOutputs`)) {
+    const symbol = t.o.t === 'lit' ? t.o.v : one(t.o, `${LV2}symbol`)[0]?.o.v;
+    if (!pluginPortSymbols.has(symbol)) throw new Refusal('MODGUI_PORT_UNKNOWN', t.file, `modgui:monitoredOutputs names "${symbol}", no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
+  }
   const lit = (p) => one(gui, `${NS}${p}`)[0]?.o.v;
   const res = (p) => {
     const t = one(gui, `${NS}${p}`)[0];
@@ -144,8 +226,13 @@ export function importModgui({ bundle, out, plugin }, core) {
   const resourcesDir = res('resourcesDirectory');
   if (resourcesDir === undefined || !statSync(resourcesDir).isDirectory()) throw new Refusal('MODGUI_NOT_FOUND', guiFile, 'modgui:resourcesDirectory names no directory');
   checkTree(dir, resourcesDir, guiFile);
-  const named = ['iconTemplate', 'stylesheet', 'screenshot', 'thumbnail'].map((p) => [p, res(p)]).filter(([, f]) => f !== undefined);
+  // Every file-valued property; a documentation that names no file: IRI is a web address, kept as text.
+  const isFile = (p) => p !== 'documentation' || one(gui, `${NS}${p}`).every((t) => t.o.t === 'iri' && t.o.v.startsWith('file:'));
+  const named = core.MODGUI_FILE_PROPERTIES.filter(isFile).map((p) => [p, res(p)]).filter(([, f]) => f !== undefined);
   const screenshot = named.find(([p]) => p === 'screenshot')?.[1];
+  // The templates' images, not the stylesheet's: a shared pedal theme names files no one bundle carries.
+  const routes = { resources: core.MODGUI_RESOURCES_ROUTE, served: core.MODGUI_SERVER_ROUTES };
+  for (const [p, f] of named) if (core.MODGUI_TEMPLATE_PROPERTIES.includes(p)) checkTemplateImages(dir, resourcesDir, f, routes);
 
   const id = pluginTerm.v;
   const name = core.encodeSkinId(id);
