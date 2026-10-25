@@ -1,0 +1,9 @@
+{
+  "family": "none",
+  "sections": [
+    { "key": "detector", "label": "Detector", "controls": ["thr", "rat", "kn", "att", "rel", "slew", "sidech"] },
+    { "key": "output", "label": "Output", "controls": ["mak"] },
+    { "key": "meters", "label": "Meters", "controls": ["gr", "outlevel"] }
+  ],
+  "widgets": { "mak": "fader" }
+}

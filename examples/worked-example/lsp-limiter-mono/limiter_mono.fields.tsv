@@ -1,0 +1,239 @@
+# omx-clap-scan --fields 1
+plugin	clap_entry	lsp-plugins.clap
+plugin	clap_plugin_descriptor.id	in.lsp-plug.limiter_mono
+plugin	clap_plugin_descriptor.name	Limiter Mono
+plugin	clap_plugin_descriptor.vendor	LSP CLAP
+plugin	clap_plugin_descriptor.version	1.0.33
+plugin	clap_plugin_descriptor.description	This plugin implements a limiter with flexible configuration. In most cases it acts as a brick-wall limiter but there are several settings for which is acts as an compressor with extreme settings, so the output signal may exceed the limiter's threshold. It prevents input signal from raising over the specified Threshold.
+plugin	clap_plugin_descriptor.url	https://lsp-plug.in/
+plugin	clap_plugin_descriptor.manual_url	https://lsp-plug.in//?page=manuals&section=limiter_mono
+plugin	clap_plugin_descriptor.features	CLAP_PLUGIN_FEATURE_AUDIO_EFFECT
+plugin	clap_plugin_descriptor.features	CLAP_PLUGIN_FEATURE_LIMITER
+plugin	clap_plugin_descriptor.features	CLAP_PLUGIN_FEATURE_MONO
+plugin	clap_plugin.get_extension	CLAP_EXT_AUDIO_PORTS
+plugin	clap_plugin.get_extension	CLAP_EXT_GUI
+plugin	clap_plugin.get_extension	CLAP_EXT_LATENCY
+plugin	clap_plugin.get_extension	CLAP_EXT_PARAMS
+plugin	clap_plugin.get_extension	CLAP_EXT_STATE
+plugin	clap_plugin.get_extension	CLAP_EXT_TAIL
+param:0	clap_param_info.id	1244225361
+param:0	clap_param_info.name	Show pre-mix overlay
+param:0	clap_param_info.min_value	0
+param:0	clap_param_info.max_value	1
+param:0	clap_param_info.default_value	0
+param:0	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:0	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:0	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:1	clap_param_info.id	3869364241
+param:1	clap_param_info.name	Input to Link mix
+param:1	clap_param_info.min_value	-80.049995422363281
+param:1	clap_param_info.max_value	20
+param:1	clap_param_info.default_value	-80.049995422363281
+param:1	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:1	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:2	clap_param_info.id	3177522691
+param:2	clap_param_info.name	Link to Input mix
+param:2	clap_param_info.min_value	-80.049995422363281
+param:2	clap_param_info.max_value	20
+param:2	clap_param_info.default_value	-80.049995422363281
+param:2	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:2	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:3	clap_param_info.id	3225708262
+param:3	clap_param_info.name	Link to Sidechain mix
+param:3	clap_param_info.min_value	-80.049995422363281
+param:3	clap_param_info.max_value	20
+param:3	clap_param_info.default_value	-80.049995422363281
+param:3	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:3	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:4	clap_param_info.id	490312032
+param:4	clap_param_info.name	Bypass
+param:4	clap_param_info.min_value	0
+param:4	clap_param_info.max_value	1
+param:4	clap_param_info.default_value	0
+param:4	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:4	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:4	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:5	clap_param_info.id	2683833795
+param:5	clap_param_info.name	Input gain
+param:5	clap_param_info.min_value	-80.049995422363281
+param:5	clap_param_info.max_value	60
+param:5	clap_param_info.default_value	0
+param:5	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:5	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:6	clap_param_info.id	3630838676
+param:6	clap_param_info.name	Output gain
+param:6	clap_param_info.min_value	-80.049995422363281
+param:6	clap_param_info.max_value	60
+param:6	clap_param_info.default_value	0
+param:6	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:6	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:7	clap_param_info.id	3810192430
+param:7	clap_param_info.name	Sidechain preamp
+param:7	clap_param_info.min_value	-80.049995422363281
+param:7	clap_param_info.max_value	40
+param:7	clap_param_info.default_value	0
+param:7	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:7	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:8	clap_param_info.id	2674668398
+param:8	clap_param_info.name	Automatic level regulation
+param:8	clap_param_info.min_value	0
+param:8	clap_param_info.max_value	1
+param:8	clap_param_info.default_value	1
+param:8	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:8	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:8	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:9	clap_param_info.id	1439502472
+param:9	clap_param_info.name	Automatic level regulation attack time
+param:9	clap_param_info.min_value	0
+param:9	clap_param_info.max_value	1
+param:9	clap_param_info.default_value	0.51467877626419067
+param:9	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:9	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:10	clap_param_info.id	1526105096
+param:10	clap_param_info.name	Automatic level regulation release time
+param:10	clap_param_info.min_value	0
+param:10	clap_param_info.max_value	1
+param:10	clap_param_info.default_value	0.34948500990867615
+param:10	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:10	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:11	clap_param_info.id	3670762539
+param:11	clap_param_info.name	Operating mode
+param:11	clap_param_info.min_value	0
+param:11	clap_param_info.max_value	1
+param:11	clap_param_info.default_value	0
+param:11	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:11	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:11	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:12	clap_param_info.id	1574856808
+param:12	clap_param_info.name	Threshold
+param:12	clap_param_info.min_value	-48
+param:12	clap_param_info.max_value	0
+param:12	clap_param_info.default_value	0
+param:12	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:12	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:13	clap_param_info.id	1610863755
+param:13	clap_param_info.name	Knee level
+param:13	clap_param_info.min_value	-11.99995231628418
+param:13	clap_param_info.max_value	11.999996185302734
+param:13	clap_param_info.default_value	0
+param:13	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:13	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:14	clap_param_info.id	2849352001
+param:14	clap_param_info.name	Gain boost
+param:14	clap_param_info.min_value	0
+param:14	clap_param_info.max_value	1
+param:14	clap_param_info.default_value	1
+param:14	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:14	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:14	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:15	clap_param_info.id	1541051435
+param:15	clap_param_info.name	Lookahead
+param:15	clap_param_info.min_value	0
+param:15	clap_param_info.max_value	1
+param:15	clap_param_info.default_value	0.73835194110870361
+param:15	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:15	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:16	clap_param_info.id	1494745332
+param:16	clap_param_info.name	Attack time
+param:16	clap_param_info.min_value	0
+param:16	clap_param_info.max_value	1
+param:16	clap_param_info.default_value	0.68364083766937256
+param:16	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:16	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:17	clap_param_info.id	1566812276
+param:17	clap_param_info.name	Release time
+param:17	clap_param_info.min_value	0
+param:17	clap_param_info.max_value	1
+param:17	clap_param_info.default_value	0.68364083766937256
+param:17	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:17	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:18	clap_param_info.id	1727760849
+param:18	clap_param_info.name	Oversampling
+param:18	clap_param_info.min_value	0
+param:18	clap_param_info.max_value	1
+param:18	clap_param_info.default_value	0
+param:18	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:18	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:18	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:19	clap_param_info.id	2157357250
+param:19	clap_param_info.name	Dithering
+param:19	clap_param_info.min_value	0
+param:19	clap_param_info.max_value	1
+param:19	clap_param_info.default_value	0
+param:19	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:19	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:19	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:20	clap_param_info.id	1914600837
+param:20	clap_param_info.name	Pause graph analysis
+param:20	clap_param_info.min_value	0
+param:20	clap_param_info.max_value	1
+param:20	clap_param_info.default_value	0
+param:20	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:20	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:20	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:21	clap_param_info.id	818577203
+param:21	clap_param_info.name	Clear graph analysis
+param:21	clap_param_info.min_value	0
+param:21	clap_param_info.max_value	1
+param:21	clap_param_info.default_value	0
+param:21	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:21	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:21	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:22	clap_param_info.id	413445948
+param:22	clap_param_info.name	Sidechain type
+param:22	clap_param_info.min_value	0
+param:22	clap_param_info.max_value	1
+param:22	clap_param_info.default_value	0
+param:22	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:22	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:22	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:23	clap_param_info.id	2697680499
+param:23	clap_param_info.name	Input graph visibility
+param:23	clap_param_info.min_value	0
+param:23	clap_param_info.max_value	1
+param:23	clap_param_info.default_value	1
+param:23	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:23	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:23	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:24	clap_param_info.id	1658443380
+param:24	clap_param_info.name	Output graph visibility
+param:24	clap_param_info.min_value	0
+param:24	clap_param_info.max_value	1
+param:24	clap_param_info.default_value	1
+param:24	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:24	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:24	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:25	clap_param_info.id	992759966
+param:25	clap_param_info.name	Sidechain graph visibility
+param:25	clap_param_info.min_value	0
+param:25	clap_param_info.max_value	1
+param:25	clap_param_info.default_value	1
+param:25	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:25	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:25	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:26	clap_param_info.id	1046482910
+param:26	clap_param_info.name	Gain graph visibility
+param:26	clap_param_info.min_value	0
+param:26	clap_param_info.max_value	1
+param:26	clap_param_info.default_value	1
+param:26	clap_param_info.flags	CLAP_PARAM_IS_STEPPED
+param:26	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:26	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+param:27	clap_param_info.id	956218380
+param:27	clap_param_info.name	Knee smooth
+param:27	clap_param_info.min_value	0
+param:27	clap_param_info.max_value	1
+param:27	clap_param_info.default_value	0.89583331346511841
+param:27	clap_param_info.flags	CLAP_PARAM_IS_AUTOMATABLE
+param:27	clap_param_info.flags	CLAP_PARAM_REQUIRES_PROCESS
+audio_in:0	clap_audio_port_info.id	890174422
+audio_in:0	clap_audio_port_info.name	mono_in
+audio_in:0	clap_audio_port_info.channel_count	1
+audio_in:0	clap_audio_port_info.flags	CLAP_AUDIO_PORT_IS_MAIN
+audio_in:0	clap_audio_port_info.flags	CLAP_AUDIO_PORT_REQUIRES_COMMON_SAMPLE_SIZE
+audio_out:0	clap_audio_port_info.id	919904664
+audio_out:0	clap_audio_port_info.name	mono_out
+audio_out:0	clap_audio_port_info.channel_count	1
+audio_out:0	clap_audio_port_info.flags	CLAP_AUDIO_PORT_IS_MAIN
+audio_out:0	clap_audio_port_info.flags	CLAP_AUDIO_PORT_REQUIRES_COMMON_SAMPLE_SIZE
+plugin	clap_plugin_latency.get	0

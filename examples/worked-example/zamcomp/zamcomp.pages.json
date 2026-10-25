@@ -1,0 +1,32 @@
+[
+  {
+    "section": 0,
+    "sectionName": "Controls",
+    "pageName": "Controls 1",
+    "ids": [
+      "att",
+      "rel",
+      "kn",
+      "rat",
+      "thr",
+      "mak",
+      "slew",
+      "sidech"
+    ]
+  },
+  {
+    "section": 0,
+    "sectionName": "Controls",
+    "pageName": "Controls 2",
+    "ids": [
+      "gr",
+      "outlevel",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  }
+]
