@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# lilv-modgui.py <plugin uri> — what lilv, the library mod-ui loads LV2 data with, reads for one plugin from the
+# lilv-modgui.py <plugin uri>: what lilv, the library mod-ui loads LV2 data with, reads for one plugin from the
 # bundles on LV2_PATH: the bundle it took the plugin from, and the plugin's modgui:gui with each property it carries.
 # Exit 0 when the plugin has a modgui:gui, 1 when it has none, 2 when lilv does not find the plugin.
 import sys
