@@ -220,7 +220,8 @@ describe('§6.6 the licence map and the allow-list (§12 Q6)', () => {
     for (const id of SKIN_LICENCE_ALLOW_LIST) assert.equal(isSkinLicenceAllowed(id), true);
   });
   it('the importer vocabulary is the spec list', () => {
-    assert.equal(MODGUI_IMPORT_REFUSALS.length, 8);
+    assert.equal(MODGUI_IMPORT_REFUSALS.length, 9);
+    for (const code of ['MODGUI_PORT_UNKNOWN']) assert.ok(MODGUI_IMPORT_REFUSALS.includes(code), code);
     assert.ok(MODGUI_GUI_PROPERTIES.includes('resourcesDirectory'));
     assert.deepEqual(MODGUI_PORT_PROPERTIES, ['index', 'symbol', 'name']);
     for (const code of MODGUI_IMPORT_REFUSALS) assert.ok(SKIN_REFUSAL_CODES.includes(code), code);

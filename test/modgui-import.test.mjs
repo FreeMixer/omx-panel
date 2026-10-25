@@ -162,6 +162,13 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     assert.equal(existsSync(join(out, core.encodeSkinId(PLUGIN), 'skin.json')), true);
   });
 
+  it("MODGUI_PORT_UNKNOWN: a modgui:port symbol none of the plugin's own lv2:port carries, named with its file", () => {
+    const b = edited('modgui.ttl', (t) => t.replace('lv2:symbol "tone" ;', 'lv2:symbol "colour" ;'));
+    assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
+      e.code === 'MODGUI_PORT_UNKNOWN' && e.file === join(b, 'modgui.ttl') && e.detail.includes('"colour"'));
+    refused(b, 'MODGUI_PORT_UNKNOWN');
+  });
+
   it('MODGUI_PATH_ESCAPE: a resource that resolves outside the bundle', () => {
     refused(edited('modgui.ttl', (t) => t.replace('<modgui/thumbnail-echo.png>', '<file:///etc/hostname>')), 'MODGUI_PATH_ESCAPE');
     const b = edited('modgui.ttl');

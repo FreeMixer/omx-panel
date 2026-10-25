@@ -187,6 +187,9 @@ export const SKIN_REFUSAL_CODES = [
   'MODGUI_LICENCE_REFUSED',
   /** The importer: the bundle carries a `modgui:` property (or a `modgui:port` an `lv2:` property) outside its list. */
   'MODGUI_UNKNOWN_PROPERTY',
+  /** The importer: a `modgui:port`'s `lv2:symbol` names no `lv2:symbol` of the plugin's own `lv2:port`, a renamed or
+   * stale entry. `args.file` names the TTL, `args.detail` the symbol. */
+  'MODGUI_PORT_UNKNOWN',
   /** The importer: a resource the modgui names resolves outside the bundle (a symlink or a non-`file:` IRI). */
   'MODGUI_PATH_ESCAPE',
   /** The importer: the package directory is already in the skins directory; nothing is overwritten. */
@@ -613,6 +616,7 @@ export const MODGUI_IMPORT_REFUSALS = [
   'MODGUI_LICENCE_UNMAPPED',
   'MODGUI_LICENCE_REFUSED',
   'MODGUI_UNKNOWN_PROPERTY',
+  'MODGUI_PORT_UNKNOWN',
   'MODGUI_PATH_ESCAPE',
   'MODGUI_TARGET_EXISTS',
 ] as const satisfies readonly SkinRefusalCode[];
