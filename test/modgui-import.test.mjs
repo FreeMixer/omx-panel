@@ -210,6 +210,30 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     refused(b, 'MODGUI_IMAGE_NOT_FOUND');
   });
 
+  it('MODGUI_PATH_ESCAPE: a template naming a web address, an absolute path outside the routes, or a relative path out of the bundle', () => {
+    const img = (src) => (t) => t.replace('<div class="mod-control-group">', `<img src="${src}">\n  <div class="mod-control-group">`);
+    refused(edited('modgui/icon-echo.html', img('https://example.org/pedal.png')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('//example.org/pedal.png')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background: url(/usr/share/pixmaps/x.png)"')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('../../../../etc/pedal.png')), 'MODGUI_PATH_ESCAPE');
+  });
+
+  it("keeps mod-ui's /fonts/ route, a data: address, a Mustache-only value and a relative path inside the bundle", () => {
+    const b = edited('modgui/icon-echo.html', (t) =>
+      t.replace(
+        '<div class="mod-control-group">',
+        [
+          '<style>@font-face { font-family: Nexa; src: url(/fonts/nexa/NexaBold.otf); }</style>',
+          '<img src="data:image/png;base64,iVBORw0KGgo=">',
+          '<img src="{{{thumbnail}}}">',
+          '<img src="knobs/knob-sprite.png">',
+          '<div class="mod-control-group">',
+        ].join('\n  '),
+      ),
+    );
+    assert.doesNotThrow(() => importModgui({ bundle: b, out: fresh('out') }, core));
+  });
+
   it('MODGUI_PATH_ESCAPE: a resource that resolves outside the bundle', () => {
     refused(edited('modgui.ttl', (t) => t.replace('<modgui/thumbnail-echo.png>', '<file:///etc/hostname>')), 'MODGUI_PATH_ESCAPE');
     const b = edited('modgui.ttl');
