@@ -1,0 +1,73 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 2.15.0"
+  },
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.delay",
+    "format": "clap",
+    "uri": "urn:openmixer:delay",
+    "name": "omx delay",
+    "vendor": "openmixer",
+    "version": "0.5.0",
+    "features": ["audio-effect"]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "name": "fxDelayTime",
+      "label": "Time",
+      "kind": "travel",
+      "travel": { "min": 0, "max": 2000, "step": 1, "unit": "ms", "default": 300, "defaultFrom": "desk", "scale": "linear" },
+      "group": ["Delay"],
+      "meaning": "delay",
+      "automatable": true
+    },
+    {
+      "id": 1,
+      "name": "fxDelayFeedback",
+      "label": "Feedback",
+      "kind": "travel",
+      "travel": { "min": 0, "max": 0.99, "step": 0, "unit": "", "default": 0.3, "defaultFrom": "desk", "scale": "linear" },
+      "group": ["Delay"],
+      "meaning": "feedback",
+      "automatable": true
+    },
+    {
+      "id": 2,
+      "name": "tone",
+      "label": "Tone",
+      "kind": "travel",
+      "travel": { "min": 0, "max": 1, "step": 0, "unit": "", "default": 0.3, "defaultFrom": "desk", "scale": "linear" },
+      "group": ["Delay"],
+      "meaning": "tone",
+      "automatable": true
+    },
+    {
+      "id": 3,
+      "name": "mix",
+      "label": "Mix",
+      "kind": "travel",
+      "travel": { "min": 0, "max": 1, "step": 0, "unit": "", "default": 0.3, "defaultFrom": "desk", "scale": "linear" },
+      "group": ["Output"],
+      "meaning": "wetDryRatio",
+      "automatable": true
+    },
+    {
+      "id": 4,
+      "name": "pingpong",
+      "label": "Pingpong",
+      "kind": "toggle",
+      "default": false,
+      "group": ["Delay"],
+      "automatable": true
+    }
+  ],
+  "ports": [
+    { "id": 0, "name": "Input", "kind": "audio", "direction": "in", "role": "main", "channels": 2, "layout": "stereo" },
+    { "id": 0, "name": "Output", "kind": "audio", "direction": "out", "role": "main", "channels": 2, "layout": "stereo" }
+  ],
+  "latency": { "reports": true, "frames": 0 },
+  "source": { "impl": "plugins/omx-delay/omx_delay_clap.c#OMX_DELAY_PARAMS" }
+}
