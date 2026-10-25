@@ -1,18 +1,18 @@
-Source: omx-skins
+Source: omx-panel
 Section: misc
 Priority: optional
 Maintainer: Pau Aliagas <linuxnow@gmail.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
-Homepage: https://github.com/FreeMixer/omx-skins
+Homepage: https://github.com/FreeMixer/omx-panel
 Rules-Requires-Root: no
 
-Package: omx-skins
+Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
-Description: the skin format for openmixer panels
- A skin tells a panel how to draw its standard widgets: knobs, faders,
- switches, selectors, meters and curves. This package carries the schema of a
- skin package's skin.json and the directory skins are installed into, so
- anyone can add a skin by putting a skin package there.
+Description: panels for LV2 and CLAP plugins: the skin package schema
+ This release of omx-panel, the panel toolkit for LV2 and CLAP plugins,
+ carries the schema of a skin package's skin.json, the file that says how one
+ plugin's panel is arranged and named and which art it brings, and the
+ directory skin packages are installed into.

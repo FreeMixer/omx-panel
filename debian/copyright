@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: omx-skins
+Upstream-Name: omx-panel
 Upstream-Contact: Pau Aliagas <linuxnow@gmail.com>
-Source: https://github.com/FreeMixer/omx-skins
+Source: https://github.com/FreeMixer/omx-panel
 
 Files: *
 Copyright: 2026 Pau Aliagas <linuxnow@gmail.com>
