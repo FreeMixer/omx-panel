@@ -139,8 +139,27 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
   });
 
   it('MODGUI_UNKNOWN_PROPERTY: a modgui property the declaration does not list, on the gui or on a port', () => {
-    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand', 'modgui:javascript <modgui/icon-echo.html> ;\n        modgui:brand')), 'MODGUI_UNKNOWN_PROPERTY');
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand', 'modgui:notAProperty <modgui/icon-echo.html> ;\n        modgui:brand')), 'MODGUI_UNKNOWN_PROPERTY');
     refused(edited('modgui.ttl', (t) => t.replace('lv2:name "Blend" ;', 'lv2:name "Blend" ;\n            lv2:default 0.5 ;')), 'MODGUI_UNKNOWN_PROPERTY');
+  });
+
+  it("accepts mod-ui's full gui property list: javascript, documentation, discussionURL, settingsTemplate, monitoredOutputs do not refuse a real bundle", () => {
+    const b = edited('modgui.ttl', (t) =>
+      t.replace(
+        'modgui:brand "openmixer" ;',
+        [
+          'modgui:javascript <modgui/icon-echo.html> ;',
+          'modgui:documentation <modgui/icon-echo.html> ;',
+          'modgui:discussionURL "https://forum.moddevices.com/" ;',
+          'modgui:settingsTemplate <modgui/icon-echo.html> ;',
+          'modgui:monitoredOutputs "mix" ;',
+          'modgui:brand "openmixer" ;',
+        ].join('\n        '),
+      ),
+    );
+    const out = fresh('out');
+    assert.doesNotThrow(() => importModgui({ bundle: b, out }, core));
+    assert.equal(existsSync(join(out, core.encodeSkinId(PLUGIN), 'skin.json')), true);
   });
 
   it('MODGUI_PATH_ESCAPE: a resource that resolves outside the bundle', () => {

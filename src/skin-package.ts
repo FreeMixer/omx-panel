@@ -578,13 +578,20 @@ export const MODGUI_NS = 'http://moddevices.com/ns/modgui#';
 export const LV2_NS = 'http://lv2plug.in/ns/lv2core#';
 export const DOAP_NS = 'http://usefulinc.com/ns/doap#';
 
-/** The `modgui:` properties the importer knows on a `modgui:gui` node; any other is refused. */
+/**
+ * The `modgui:` properties the importer knows on a `modgui:gui` node: mod-ui's whole list, not only
+ * the ones a reviewed bundle used (docs/skin-package.md); any other is refused.
+ */
 export const MODGUI_GUI_PROPERTIES = [
   'resourcesDirectory',
   'iconTemplate',
+  'settingsTemplate',
+  'javascript',
   'stylesheet',
   'screenshot',
   'thumbnail',
+  'documentation',
+  'discussionURL',
   'brand',
   'label',
   'model',
@@ -592,6 +599,7 @@ export const MODGUI_GUI_PROPERTIES = [
   'color',
   'knob',
   'port',
+  'monitoredOutputs',
 ] as const;
 
 /** The `lv2:` properties the importer knows on a `modgui:port` node; any other is refused. */
