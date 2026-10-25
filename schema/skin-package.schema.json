@@ -2,130 +2,150 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/FreeMixer/omx-panel/schema/skin-package.schema.json",
   "title": "A skin package's skin.json",
-  "description": "The file inside a skin package that says how one plugin's panel is drawn. The package is a directory named after the plugin id; this file overrides what the panel description gives (its sections, labels, roles, displays) and names the art and the view the skin brings. It restates no range, unit or scale: the plugin's own description holds those and the skin refers to controls by id.",
+  "description": "The override file inside a skin package, schema 1: how one plugin's panel is drawn. The package is a directory named after the plugin id; this file overrides what the panel description gives (its family, sections, labels, roles, displays) and names the art, the view and the MOD GUI the package brings. It restates no range, unit or scale: the plugin's own description holds those and the skin refers to controls by symbol. src/skin-package.ts's parseSkinOverride is the reader's check of the same schema; test/skin-schema-parity.test.mjs holds the two to one verdict.",
   "$defs": {
-    "floor": {
-      "description": "A floor: \">=\" and a three-part version. No ceiling and no exact pin is accepted.",
+    "key": {
+      "description": "A key of the panel description: lower case, digits and underscores, dotted.",
       "type": "string",
-      "pattern": "^>= ?[0-9]+\\.[0-9]+\\.[0-9]+$"
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$"
+    },
+    "family": {
+      "description": "A panel family, tools/panel-description.mjs FAMILIES.",
+      "enum": ["none", "gate", "dynamics", "limiter", "deesser", "eq", "filter", "drive", "modulation", "delay", "reverb", "pitch"]
+    },
+    "label": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "labelKey": { "$ref": "#/$defs/key" },
+        "label": { "type": "string" }
+      }
     }
   },
   "type": "object",
-  "required": ["requires", "plugin", "licence"],
+  "required": ["schema", "plugin", "licence"],
   "additionalProperties": false,
+  "dependentSchemas": {
+    "modgui": { "properties": { "view": false } }
+  },
   "properties": {
-    "requires": {
-      "description": "What a reader must provide to read this file, each as a floor (\">= MAJOR.MINOR.PATCH\"), never a ceiling. \"omx-skins-schema\" is the version of this schema the file was written for. A file with no requires, or none for the schema, is refused.",
-      "type": "object",
-      "required": ["omx-skins-schema"],
-      "additionalProperties": { "$ref": "#/$defs/floor" },
-      "properties": {
-        "omx-skins-schema": { "$ref": "#/$defs/floor" }
-      }
+    "schema": {
+      "description": "The file's schema version; any other value refuses the file.",
+      "const": 1
     },
     "plugin": {
-      "description": "The id of the plugin this skin draws: a CLAP id or an LV2 URI.",
+      "description": "The id of the plugin this skin draws: a CLAP id or an LV2 URI. A reader refuses a file whose id is not the package directory's decoded name.",
       "type": "string",
       "minLength": 1
     },
     "licence": {
-      "description": "The SPDX identifier of the licence the skin is under. Which identifiers are allowed is the loader's rule, not this schema's.",
+      "description": "The SPDX expression of the licence of everything in the package.",
       "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9.+-]*$"
+      "pattern": "\\S"
     },
     "source": {
-      "description": "Where the package came from.",
+      "description": "Where the package came from; an imported MOD GUI records the bundle and the doap:license it read, and may name its own icon template and stylesheet under modgui/.",
       "type": "object",
       "required": ["kind"],
       "additionalProperties": false,
       "properties": {
         "kind": { "enum": ["own", "generated", "modgui"] },
-        "bundle": { "type": "string", "minLength": 1 },
-        "licenceEvidence": { "type": "string", "minLength": 1 }
+        "bundle": { "type": "string" },
+        "licenceEvidence": { "type": "string" },
+        "modgui": {
+          "type": "object",
+          "required": ["html", "css"],
+          "additionalProperties": false,
+          "properties": {
+            "html": { "type": "string", "pattern": "^modgui(/(?!\\.\\.?(/|$))[^/\\\\]+)+$" },
+            "css": { "type": "string", "pattern": "^modgui(/(?!\\.\\.?(/|$))[^/\\\\]+)+$" }
+          }
+        }
       }
     },
     "fingerprint": {
-      "description": "The fingerprint of the plugin description the skin was made against.",
-      "type": "string",
-      "minLength": 1
+      "description": "The fingerprint of the panel description the skin was made against; a mismatch is a warning, never a refusal.",
+      "type": "string"
     },
-    "family": {
-      "description": "The panel family the skin draws the plugin as.",
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9-]*$"
-    },
+    "family": { "$ref": "#/$defs/family" },
     "roles": {
-      "description": "Control id to the role a skin binds it by.",
+      "description": "Role (time, band_freq[2]) to the control symbol that plays it.",
       "type": "object",
-      "additionalProperties": { "type": "string", "minLength": 1 }
+      "additionalProperties": { "type": "string" }
     },
     "sections": {
+      "description": "The sections in order, each with its controls by symbol. A reader also refuses two sections with one key.",
       "type": "array",
       "items": {
         "type": "object",
         "required": ["key", "controls"],
         "additionalProperties": false,
         "properties": {
-          "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$" },
-          "labelKey": { "type": "string", "minLength": 1 },
-          "label": { "type": "string", "minLength": 1 },
-          "controls": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+          "key": { "$ref": "#/$defs/key" },
+          "labelKey": { "$ref": "#/$defs/key" },
+          "label": { "type": "string" },
+          "controls": { "type": "array", "items": { "type": "string" } }
         }
       }
     },
     "labels": {
-      "description": "Control id to the label the skin shows.",
+      "description": "Control symbol to the label the skin shows.",
       "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "labelKey": { "type": "string", "minLength": 1 },
-          "label": { "type": "string", "minLength": 1 }
-        }
-      }
+      "additionalProperties": { "$ref": "#/$defs/label" }
     },
     "visibleWhen": {
-      "description": "Control id to the control and values that make it visible.",
+      "description": "Control symbol to the control and the values (integers 0 to 63) that make it visible.",
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "required": ["param", "values"],
         "additionalProperties": false,
         "properties": {
-          "param": { "type": "string", "minLength": 1 },
-          "values": { "type": "array", "items": { "type": "number" } }
+          "param": { "type": "string" },
+          "values": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 63 } }
         }
       }
     },
     "displays": {
-      "description": "The displays the panel draws: each names its kind and what feeds it.",
+      "description": "The displays the panel draws: each names its kind, the section it sits in and what feeds it.",
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["kind"],
-        "properties": { "kind": { "type": "string", "minLength": 1 } }
+        "required": ["kind", "section", "source"],
+        "properties": {
+          "kind": { "enum": ["gain_reduction_bar", "transfer_curve", "eq_response", "meter"] },
+          "section": { "type": "string" },
+          "source": { "enum": ["family", "meters", "gain_adjustment", "curve"] }
+        }
       }
     },
     "houseView": {
-      "description": "The family of the house view to use in place of a view of the skin's own.",
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9-]*$"
+      "description": "The family of the house view to use; none forces the generic panel.",
+      "$ref": "#/$defs/family"
     },
-    "look": { "type": "string", "minLength": 1 },
+    "look": { "type": "string" },
     "backdrop": {
-      "description": "A file under the package's art/ directory.",
+      "description": "An image under the package's art/ directory.",
       "type": "string",
-      "pattern": "^art/(?!(?:.*/)?\\.\\.?(?:/|$))[^\\\\]+$"
+      "pattern": "^art(/(?!\\.\\.?(/|$))[^/\\\\]+)+$"
     },
     "view": {
-      "description": "A view of the skin's own: its entry file under view/, and the skin API version it was written for (MAJOR.MINOR).",
+      "description": "A view of the skin's own: its entry under view/ (view/index.mjs) and the skin API version it was written for, MAJOR.MINOR.",
       "type": "object",
       "required": ["entry", "api"],
       "additionalProperties": false,
       "properties": {
-        "entry": { "type": "string", "pattern": "^view/(?!(?:.*/)?\\.\\.?(?:/|$))[^\\\\]+$" },
+        "entry": { "type": "string", "pattern": "^view(/(?!\\.\\.?(/|$))[^/\\\\]+)+$" },
         "api": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" }
+      }
+    },
+    "modgui": {
+      "description": "The opt-in for a MOD GUI's own script: its entry under modgui/. Never beside a view.",
+      "type": "object",
+      "required": ["entry"],
+      "additionalProperties": false,
+      "properties": {
+        "entry": { "type": "string", "pattern": "^modgui(/(?!\\.\\.?(/|$))[^/\\\\]+)+$" }
       }
     }
   }

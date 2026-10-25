@@ -1,0 +1,185 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.0.0"
+  },
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.delay",
+    "format": "clap",
+    "uri": "urn:openmixer:delay",
+    "name": "omx delay",
+    "vendor": "openmixer",
+    "version": "0.13.0",
+    "doc": "The OpenMixer console's stereo delay: one time, feedback through a tone filter, ping-pong and a wet/dry mix.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "fxDelayTime",
+      "name": "Time",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 300,
+        "scale": "stepped"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "delay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#FX_DELAY_TIME_RANGE",
+          "at": "omx-dsp@0.24.0"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "fxDelayFeedback",
+      "name": "Feedback",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 0.99,
+        "step": 0,
+        "unit": "",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "feedback",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#FX_DELAY_FEEDBACK_RANGE",
+          "at": "omx-dsp@0.24.0"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "tone",
+      "name": "Tone",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "tone",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TONE_RANGE",
+          "at": "omx-dsp@0.24.0"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "mix",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_MIX_RANGE",
+          "at": "omx-dsp@0.24.0"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "pingpong",
+      "name": "Pingpong",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Delay"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_PINGPONGS",
+          "at": "omx-dsp@0.24.0"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_DELAY",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:DelayPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-delay/omx_delay_clap.c#clap_entry"
+  }
+}

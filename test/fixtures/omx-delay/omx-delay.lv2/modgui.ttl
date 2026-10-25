@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# GENERATED — DO NOT EDIT BY HAND. Produced by tools/modgui-gen.mjs from
+# plugins/omx-delay/omx-delay.decl.json (its panel block) and tools/look.json
+# Regenerate: `node tools/modgui-gen.mjs`, then commit the result.
+@prefix lv2:    <http://lv2plug.in/ns/lv2core#> .
+@prefix modgui: <http://moddevices.com/ns/modgui#> .
+
+<urn:openmixer:delay>
+    modgui:gui [
+        modgui:resourcesDirectory <modgui> ;
+        modgui:iconTemplate <modgui/icon-omx-delay.html> ;
+        modgui:stylesheet <modgui/stylesheet-omx-delay.css> ;
+        modgui:screenshot <modgui/screenshot-omx-delay.png> ;
+        modgui:thumbnail <modgui/thumbnail-omx-delay.png> ;
+        modgui:brand "openmixer" ;
+        modgui:label "omx delay" ;
+        modgui:port [
+            lv2:index 0 ;
+            lv2:symbol "pingpong" ;
+            lv2:name "Pingpong" ;
+        ] , [
+            lv2:index 1 ;
+            lv2:symbol "fxDelayTime" ;
+            lv2:name "Time" ;
+        ] , [
+            lv2:index 2 ;
+            lv2:symbol "fxDelayFeedback" ;
+            lv2:name "Feedback" ;
+        ] , [
+            lv2:index 3 ;
+            lv2:symbol "mix" ;
+            lv2:name "Mix" ;
+        ] , [
+            lv2:index 4 ;
+            lv2:symbol "tone" ;
+            lv2:name "Tone" ;
+        ] ;
+    ] .

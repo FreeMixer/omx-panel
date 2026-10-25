@@ -36,11 +36,14 @@ jobs:
           npm install -g npm@'^11'
           npm --version
       - run: npm ci
-      - name: The package is proven before it is published
+      # the suite needs the installed vocabulary, which ci.yml and release.yml prove on Fedora; here the tree is built
+      # and its own checks run, and npm pack carries dist/ (prepack builds it)
+      - name: The package is built and checked before it is published
         run: |
           set -o pipefail
-          npm test
-          make check
+          npm run build
+          make spdx public-sources look
+          node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
       - name: The tag is the package version
         if: github.ref_type == 'tag'

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+
+<urn:openmixer:fixture:echo>
+    a lv2:Plugin , lv2:DelayPlugin ;
+    doap:name "openmixer fixture echo" ;
+    doap:license <http://spdx.org/licenses/GPL-3.0-or-later> ;
+    lv2:port [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 0 ; lv2:symbol "time" ; lv2:name "Delay Time" ;
+        lv2:default 300.0 ; lv2:minimum 1.0 ; lv2:maximum 2000.0
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 1 ; lv2:symbol "feedback" ; lv2:name "Repeats" ;
+        lv2:default 0.3 ; lv2:minimum 0.0 ; lv2:maximum 0.95
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 2 ; lv2:symbol "tone" ; lv2:name "Colour" ;
+        lv2:default 0.5 ; lv2:minimum 0.0 ; lv2:maximum 1.0
+    ] , [
+        a lv2:InputPort , lv2:ControlPort ;
+        lv2:index 3 ; lv2:symbol "mix" ; lv2:name "Blend" ;
+        lv2:default 0.3 ; lv2:minimum 0.0 ; lv2:maximum 1.0
+    ] .

@@ -1,23 +1,29 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# Installs the skin package schema and the directory skins are installed into. No node runs here: the
-# validator (`omx-panel validate`) is the npm package; a release build (RPM, deb) installs the schema as
-# the repository holds it. `make test` is the node suite, `make check` the checks that need no node
-# beyond the tools themselves.
+# The build is npm's (`npm ci` first): `make` runs tsc and the copy step into dist/, the tree a release installs.
+# `make test` is the node suite over it, `make check` the checks that read the tree itself. `make install` puts dist/,
+# package.json and the runtime node modules under $(DATADIR)/omx-panel (OMX_PANEL for a caller), the omx-panel command
+# in $(BINDIR), and the empty skins directory.
 
 PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
+PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all check test spdx public-sources install
+.PHONY: all build check test spdx public-sources look install
 
-all:
+all: build
+
+build:
 	@test -n "$(VERSION)" || { echo "no version in package.json" >&2; exit 1; }
+	@test -d node_modules || { echo "run npm ci first: the build needs typescript, the validator ajv" >&2; exit 1; }
+	npm run -s build
 
-# The schema is valid JSON and the example skin is valid against it.
-check: all spdx public-sources
-	node bin/omx-panel.mjs validate examples/skins/org.example.plate
+# The example skin is valid against the schema and look.json is what the token cascade resolves to.
+check: build spdx public-sources look
+	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
 	npm test
@@ -32,6 +38,15 @@ public-sources:
 	node tools/check-public-sources.mjs --self-test
 	node tools/check-public-sources.mjs
 
-install: all
-	install -d $(DESTDIR)$(DATADIR)/omx-panel $(DESTDIR)$(DATADIR)/omx/skins
-	install -m 0644 schema/skin-package.schema.json $(DESTDIR)$(DATADIR)/omx-panel/
+look:
+	node tools/look.mjs --check
+
+install: build
+	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
+	cp -R dist/. $(DESTDIR)$(PKGDIR)/
+	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/
+	# the runtime modules only (ajv and what it needs), never the build's
+	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \
+	  rel=$${m#$(CURDIR)/}; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
+	done
+	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel

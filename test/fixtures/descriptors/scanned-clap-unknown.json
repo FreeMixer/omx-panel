@@ -1,0 +1,43 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 2.15.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "id": "org.freemixer.plugin-qualify.fixture.controls",
+    "format": "clap",
+    "name": "controls",
+    "vendor": "plugin-qualify",
+    "version": "1",
+    "features": ["audio-effect"]
+  },
+  "controls": [
+    {
+      "id": 3,
+      "name": "shape",
+      "kind": "choice",
+      "ids": ["sine", "square", "saw"],
+      "labels": ["Sine", "Square", "Saw"],
+      "values": [0, 1, 2],
+      "default": "sine",
+      "group": ["Oscillator"],
+      "meaning": "unknown",
+      "automatable": true
+    },
+    {
+      "id": 5,
+      "name": "cutoff",
+      "kind": "travel",
+      "travel": { "min": 20, "max": 20000, "unit": "unknown", "default": 1000, "scale": "unknown" },
+      "group": ["Filter", "Envelope"],
+      "meaning": "unknown",
+      "automatable": true
+    }
+  ],
+  "ports": [
+    { "id": 0, "name": "in", "kind": "audio", "direction": "in", "role": "main", "channels": 2 },
+    { "id": 0, "name": "out", "kind": "audio", "direction": "out", "role": "main", "channels": 2 }
+  ],
+  "source": { "from": "controls.clap#clap_entry" }
+}

@@ -1,0 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> */
+.omx-fixture-echo { width: 320px; height: 200px; background: #222; }
+.omx-fixture-echo .mod-knob-image { width: 32px; height: 32px; background-image: url(/resources/knobs/knob-sprite.png{{{cns}}}); background-size: auto 32px; }

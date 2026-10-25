@@ -1,0 +1,46 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+   Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+
+   The omx look's design tokens that the plugins' own renderers wear (the MOD GUI today), declared
+   here: this file is the source of truth in this repository for their colours and font. It keeps
+   the OpenMixer console's token cascade and its axes, all set on the root element:
+
+     · data-theme   — dark (default) · light · hc
+     · data-accent  — orange (default) · cyan (the modern board's) · ...
+     · data-finish  — aluminium (default) · graphite · black: the metal of knob and fader caps
+     · data-style   — vintage (default) · modern
+
+   and only the tokens a renderer reads. Cascade order is load-bearing, as in the console: at equal
+   specificity the later rule wins, so themes, then accents, then theme × accent blocks.
+   tools/look.mjs resolves it at the look tools/look.mjs names into tools/look.json. */
+
+:root {
+  --font-ui: "Inter", "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ========================= THEMES ========================= */
+:root, :root[data-theme="dark"] {
+  --surface: #15191e; --surface-2: #1c2127; --surface-3: #242b33;
+  --ink: #eaf0f4; --ink-dim: #8a97a3;
+  --border-strong: #3a444f;
+}
+:root[data-theme="light"] {
+  --surface: #c6c8cc; --surface-2: #b8babe; --surface-3: #abadb1;
+  --ink: #11171d; --ink-dim: #3a3b3c;
+  --border-strong: #606163;
+}
+:root[data-theme="hc"] {
+  --surface: #0a0a0a; --surface-2: #141414; --surface-3: #1f1f1f;
+  --ink: #fff; --ink-dim: #c8c8c8;
+  --border-strong: #fff;
+}
+
+/* ========================= ACCENTS ======================== */
+:root, :root[data-accent="orange"] { --accent: #e8732c; }
+:root[data-accent="cyan"] { --accent: #28c8e6; }
+
+/* ===================== THEME × ACCENT ===================== */
+:root[data-theme="light"][data-accent="orange"] { --accent: #90471b; }
+:root[data-theme="hc"][data-accent="orange"] { --accent: #ed935d; }
+:root[data-theme="light"][data-accent="cyan"] { --accent: #076176; }
+:root[data-theme="hc"][data-accent="cyan"] { --accent: #4fdcff; }

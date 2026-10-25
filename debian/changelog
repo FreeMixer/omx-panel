@@ -1,3 +1,11 @@
+omx-panel (0.2.0-1) unstable; urgency=medium
+
+  * The panel toolkit: the layout from a descriptor, the MOD GUI generator and
+    its images, the omx look, the skin package at schema 1 with its facts, and
+    the MOD GUI importer.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 25 Oct 2026 12:00:00 +0100
+
 omx-panel (0.1.0-1) unstable; urgency=medium
 
   * First package: the skin package schema and the skins directory.
