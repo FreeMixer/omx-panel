@@ -1,0 +1,13 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
+<div class="omx-fixture-echo mod-pedal">
+  <div mod-role="drag-handle" class="mod-drag-handle"></div>
+  <div class="mod-control-group">
+    {{#controls}}
+    <div class="mod-knob">
+      <div class="mod-knob-image" mod-role="input-control-port" mod-port-symbol="{{symbol}}"></div>
+      <span class="mod-knob-title">{{name}}</span>
+    </div>
+    {{/controls}}
+  </div>
+</div>

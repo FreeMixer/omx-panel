@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# A fixture bundle for tools/modgui-import.mjs: its own plugin, its own modgui, no MOD art.
+@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<urn:openmixer:fixture:echo>
+    a lv2:Plugin ;
+    rdfs:seeAlso <echo.ttl> ,
+                 <modgui.ttl> .

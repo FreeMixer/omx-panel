@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# The ports are written out of lv2:index order on purpose: the package's order is the index's.
+@prefix modgui: <http://moddevices.com/ns/modgui#> .
+@prefix lv2:    <http://lv2plug.in/ns/lv2core#> .
+
+<urn:openmixer:fixture:echo>
+    modgui:gui [
+        modgui:resourcesDirectory <modgui> ;
+        modgui:iconTemplate <modgui/icon-echo.html> ;
+        modgui:stylesheet <modgui/stylesheet-echo.css> ;
+        modgui:screenshot <modgui/screenshot-echo.png> ;
+        modgui:thumbnail <modgui/thumbnail-echo.png> ;
+        modgui:brand "openmixer" ;
+        modgui:label "Echo" ;
+        modgui:model "boxy" ;
+        modgui:panel "4-knobs" ;
+        modgui:color "black" ;
+        modgui:knob "aluminium" ;
+        modgui:port [
+            lv2:index 2 ;
+            lv2:symbol "tone" ;
+            lv2:name "Colour" ;
+        ] , [
+            lv2:index 0 ;
+            lv2:symbol "time" ;
+            lv2:name "Delay Time" ;
+        ] , [
+            lv2:index 3 ;
+            lv2:symbol "mix" ;
+            lv2:name "Blend" ;
+        ] , [
+            lv2:index 1 ;
+            lv2:symbol "feedback" ;
+            lv2:name "Repeats" ;
+        ] ;
+    ] .
