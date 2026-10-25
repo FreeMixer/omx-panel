@@ -126,3 +126,14 @@ export function contractUnits() {
     return [u, value ? [token, value] : ['none', 0]];
   }));
 }
+
+/** The descriptor file a package installed into omx-contract's contract directory, `<package>/<name>`:
+ * `<contractdir>/3/<package>/plugins/<name>.json`. */
+export function installedDescriptorFile(ref) {
+  const m = /^([a-z0-9][a-z0-9.+-]*)\/([A-Za-z0-9._-]+)$/.exec(ref);
+  if (!m) throw new Error(`vocabulary: '${ref}' is not <package>/<name>`);
+  const dir = pkgVariable('omx-contract', 'contractdir');
+  const file = dir && join(dir, '3', m[1], 'plugins', `${m[2]}.json`);
+  if (!file || !existsSync(file)) throw new Error(`vocabulary: no descriptor ${ref} is installed (${file ?? 'pkg-config finds no omx-contract contract directory'})`);
+  return file;
+}
