@@ -54,6 +54,7 @@ make test
 %license LICENSE
 %doc README.md docs/
 %{_bindir}/omx-panel
+%{_mandir}/man1/omx-panel.1*
 %{_datadir}/omx-panel/
 %dir %{_datadir}/omx/
 %dir %{_datadir}/omx/skins/

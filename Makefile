@@ -9,6 +9,7 @@
 PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
+MANDIR ?= $(DATADIR)/man
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
@@ -50,3 +51,5 @@ install: build
 	  rel=$${m#$(CURDIR)/}; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
 	done
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
+	install -d $(DESTDIR)$(MANDIR)/man1
+	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
