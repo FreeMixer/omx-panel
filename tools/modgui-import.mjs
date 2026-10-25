@@ -81,6 +81,31 @@ function checkTree(bundle, dir, file) {
 }
 
 /**
+ * Every `/resources/...` image a template's `src="..."` or `url(...)` names, relative to the resources
+ * directory: a trailing Mustache suffix (`{{{cns}}}` and the like) is dropped before resolving.
+ */
+function templateImagePaths(html) {
+  const paths = new Set();
+  for (const re of [/\bsrc\s*=\s*"([^"]*)"/g, /\burl\(\s*['"]?([^'")]*)['"]?\s*\)/g]) {
+    for (const m of html.matchAll(re)) {
+      const p = m[1].replace(/\{\{\{?[^}]*\}?\}\}\s*$/, '');
+      if (p.startsWith('/resources/')) paths.add(p.slice('/resources/'.length));
+    }
+  }
+  return [...paths];
+}
+
+/** Every image `template` names: one the resources directory does not hold is MODGUI_IMAGE_NOT_FOUND, one resolving out of it MODGUI_PATH_ESCAPE. */
+function checkTemplateImages(resourcesDir, template) {
+  for (const rel of templateImagePaths(readFileSync(template, 'utf8'))) {
+    const p = join(resourcesDir, rel);
+    if (!existsSync(p)) throw new Refusal('MODGUI_IMAGE_NOT_FOUND', template, `names /resources/${rel}, which does not exist under ${resourcesDir}`);
+    const real = realpathSync(p);
+    if (!real.startsWith(resourcesDir + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names /resources/${rel}, which resolves outside ${resourcesDir}, to ${real}`);
+  }
+}
+
+/**
  * Import one bundle into `<out>/<skinPackageDirName(plugin)>/`. Returns the written package or
  * throws a {@link Refusal}; on a refusal nothing exists under `out` that was not there before.
  */
@@ -153,6 +178,9 @@ export function importModgui({ bundle, out, plugin }, core) {
   checkTree(dir, resourcesDir, guiFile);
   const named = ['iconTemplate', 'stylesheet', 'screenshot', 'thumbnail'].map((p) => [p, res(p)]).filter(([, f]) => f !== undefined);
   const screenshot = named.find(([p]) => p === 'screenshot')?.[1];
+  // The icon template's images, not the stylesheet's: a shared pedal theme names files no one bundle carries.
+  const iconTemplate = named.find(([p]) => p === 'iconTemplate')?.[1];
+  if (iconTemplate !== undefined) checkTemplateImages(resourcesDir, iconTemplate);
 
   const id = pluginTerm.v;
   const name = core.encodeSkinId(id);

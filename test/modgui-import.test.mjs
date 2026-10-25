@@ -169,6 +169,24 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     refused(b, 'MODGUI_PORT_UNKNOWN');
   });
 
+  it('MODGUI_IMAGE_NOT_FOUND: an icon template image the resources directory does not hold, named with the template', () => {
+    const img = (src) => (t) => t.replace('<div class="mod-control-group">', `<img src="${src}">\n  <div class="mod-control-group">`);
+    const b = edited('modgui/icon-echo.html', img('/resources/knobs/missing.png{{{cns}}}'));
+    assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
+      e.code === 'MODGUI_IMAGE_NOT_FOUND' && e.file === join(b, 'modgui/icon-echo.html') && e.detail.includes('knobs/missing.png'));
+    refused(b, 'MODGUI_IMAGE_NOT_FOUND');
+    refused(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background-image: url(/resources/gone.png)"')), 'MODGUI_IMAGE_NOT_FOUND');
+    // An image the template names that the bundle holds, its Mustache suffix dropped, imports.
+    assert.doesNotThrow(() => importModgui({ bundle: edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png{{{ns}}}')), out: fresh('out') }, core));
+    // One that climbs out of the resources directory escapes what the package carries.
+    refused(edited('modgui/icon-echo.html', img('/resources/../echo.ttl')), 'MODGUI_PATH_ESCAPE');
+  });
+
+  it("the stylesheet's images are not checked: a shared pedal theme names files the bundle does not carry, on purpose", () => {
+    const b = edited('modgui/stylesheet-echo.css', (t) => `${t}.omx-fixture-echo.six-knobs { background-image: url(/resources/pedals/boxy/six-knobs-red.png{{{cns}}}); }\n`);
+    assert.doesNotThrow(() => importModgui({ bundle: b, out: fresh('out') }, core));
+  });
+
   it('MODGUI_PATH_ESCAPE: a resource that resolves outside the bundle', () => {
     refused(edited('modgui.ttl', (t) => t.replace('<modgui/thumbnail-echo.png>', '<file:///etc/hostname>')), 'MODGUI_PATH_ESCAPE');
     const b = edited('modgui.ttl');
