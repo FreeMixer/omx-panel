@@ -10,7 +10,8 @@
 #   (c) sord_validate passes the bundle against the LV2 specs, tools/modgui-terms.ttl and the installed
 #       omx-contract's omx-resource-hints.ttl, the terms of the omxres: hints (skipped when sord_validate is
 #       not installed);
-#   (d) a perturbed descriptor (the first drawn control's default moved) makes `--check` fail.
+#   (d) a perturbed descriptor (the first drawn input control's default moved) makes `--check` fail.
+# A readout (a read-only control) is held as a display: its symbol and range, no default, no port role.
 # One `PASS <what>` / `FAIL <what>` line per check; exits nonzero on any FAIL.
 set -u
 [ $# -eq 2 ] || [ $# -eq 3 ] || { echo "usage: $0 <bundle.lv2> <descriptor> [<panel>]" >&2; exit 2; }
@@ -57,6 +58,12 @@ const panel = process.argv[2] ? JSON.parse(readFileSync(process.argv[2], "utf8")
 const drawn = panel ? panel.sections.flatMap((s) => s.controls) : d.controls.filter((c) => !c.hidden).map((c) => c.symbol ?? c.id);
 for (const sym of drawn) {
   const c = d.controls.find((x) => (x.symbol ?? x.id) === sym);
+  // a readout: its symbol and range, no default
+  if (c.readonly) {
+    const [min, max] = c.kind === "toggle" ? [0, 1] : c.kind === "choice" ? [Math.min(...c.values), Math.max(...c.values)] : c.travel ? [c.travel.min, c.travel.max] : [];
+    console.log(min === undefined ? `data-symbol="${sym}"` : `data-symbol="${sym}" data-min="${min}" data-max="${max}"`);
+    continue;
+  }
   const [min, max, def] = c.kind === "toggle" ? [0, 1, c.default ? 1 : 0]
     : c.kind === "choice" ? [Math.min(...c.values), Math.max(...c.values), c.values[c.ids.indexOf(c.default)] ?? c.default]
     : [c.travel.min, c.travel.max, c.travel.default];
@@ -67,11 +74,22 @@ n=0
 while IFS= read -r row; do
   n=$((n + 1))
   sym=$(printf '%s\n' "$row" | sed 's/^data-symbol="\([^"]*\)".*/\1/')
-  if [ -f "$TEMPLATE" ] && grep -qF "$row" "$TEMPLATE" && grep -qF "mod-port-symbol=\"$sym\"" "$TEMPLATE"; then
-    pass "template draws $sym with its declared travel and default"
-  else
-    fail "template draws $sym with its declared travel and default ($row)"
-  fi
+  case "$row" in
+    *data-default=*)
+      if [ -f "$TEMPLATE" ] && grep -qF "$row" "$TEMPLATE" && grep -qF "mod-port-symbol=\"$sym\"" "$TEMPLATE"; then
+        pass "template draws $sym with its declared travel and default"
+      else
+        fail "template draws $sym with its declared travel and default ($row)"
+      fi ;;
+    *)
+      # a readout: a display whose data ends at its range (no default), and no port role on its symbol
+      if [ -f "$TEMPLATE" ] && grep -qF "<div class=\"omx-control omx-display\"" "$TEMPLATE" && grep -qF "$row>" "$TEMPLATE" \
+        && ! grep -qF "mod-port-symbol=\"$sym\"" "$TEMPLATE"; then
+        pass "template draws readout $sym as a display with its declared range"
+      else
+        fail "template draws readout $sym as a display with its declared range ($row)"
+      fi ;;
+  esac
 done <"$TMP/declared"
 drawn=$(grep -c 'data-symbol="' "$TEMPLATE" 2>/dev/null); drawn=${drawn:-0}
 # Positive control: the scan read the template it claims to, and it draws nothing undeclared.
@@ -153,7 +171,7 @@ fi
 
 # (d) perturbation: a copy of the descriptor with the first drawn control's default moved inside its travel; the
 # generation over it must be refused against the written files, on the template.
-first=$(sed -n '1s/^data-symbol="\([^"]*\)".*/\1/p' "$TMP/declared")
+first=$(sed -n '/data-default=/{s/^data-symbol="\([^"]*\)".*/\1/p;q;}' "$TMP/declared")
 if node --input-type=module -e '
 const { readFileSync, writeFileSync } = await import("node:fs");
 const d = JSON.parse(readFileSync(process.argv[1], "utf8"));
