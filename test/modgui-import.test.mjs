@@ -187,6 +187,29 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     assert.doesNotThrow(() => importModgui({ bundle: b, out: fresh('out') }, core));
   });
 
+  it('copies each file-valued property with the package, inside the resources directory or not; a web documentation is kept as text', () => {
+    const b = edited('modgui.ttl', (t) =>
+      t.replace('modgui:brand "openmixer" ;', 'modgui:javascript <echo-gui.js> ;\n        modgui:documentation <https://example.org/echo> ;\n        modgui:brand "openmixer" ;'));
+    writeFileSync(join(b, 'echo-gui.js'), 'function (event) {}\n');
+    const out = fresh('out');
+    const r = importModgui({ bundle: b, out }, core);
+    assert.equal(readFileSync(join(r.dir, 'modgui', 'echo-gui.js'), 'utf8'), 'function (event) {}\n');
+    assert.deepEqual(files(r.dir).filter((f) => f.includes('example.org')), []);
+  });
+
+  it('MODGUI_PATH_ESCAPE: a file-valued property outside the bundle, javascript and settingsTemplate as much as the screenshot', () => {
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:javascript <file:///etc/hostname> ;\n        modgui:brand "openmixer" ;')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:settingsTemplate <https://example.org/settings.html> ;\n        modgui:brand "openmixer" ;')), 'MODGUI_PATH_ESCAPE');
+  });
+
+  it('MODGUI_IMAGE_NOT_FOUND: the settings template is checked as the icon template is', () => {
+    const b = edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:settingsTemplate <modgui/settings-echo.html> ;\n        modgui:brand "openmixer" ;'));
+    writeFileSync(join(b, 'modgui', 'settings-echo.html'), '<div class="mod-settings"><img src="/resources/settings-missing.png{{{ns}}}"></div>\n');
+    assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
+      e.code === 'MODGUI_IMAGE_NOT_FOUND' && e.file === join(b, 'modgui', 'settings-echo.html'));
+    refused(b, 'MODGUI_IMAGE_NOT_FOUND');
+  });
+
   it('MODGUI_PATH_ESCAPE: a resource that resolves outside the bundle', () => {
     refused(edited('modgui.ttl', (t) => t.replace('<modgui/thumbnail-echo.png>', '<file:///etc/hostname>')), 'MODGUI_PATH_ESCAPE');
     const b = edited('modgui.ttl');

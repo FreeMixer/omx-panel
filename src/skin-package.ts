@@ -608,6 +608,22 @@ export const MODGUI_GUI_PROPERTIES = [
   'monitoredOutputs',
 ] as const;
 
+/**
+ * The `modgui:gui` properties whose value is a file of the bundle: each must resolve inside it and is
+ * copied with the package. `documentation` is one only when it names a `file:` IRI; a web address
+ * there, and `discussionURL` always, are kept as text and never fetched.
+ */
+export const MODGUI_FILE_PROPERTIES = ['iconTemplate', 'settingsTemplate', 'javascript', 'stylesheet', 'screenshot', 'thumbnail', 'documentation'] as const;
+
+/**
+ * The modgui files whose image references (`src="..."`, `url(...)`) must resolve inside the bundle. Not
+ * the stylesheet: MOD's shared pedal themes name files no one bundle carries, on purpose.
+ */
+export const MODGUI_TEMPLATE_PROPERTIES = ['iconTemplate', 'settingsTemplate'] as const;
+
+/** mod-ui's server route a template names the bundle's resources directory by: `/resources/<f>`. */
+export const MODGUI_RESOURCES_ROUTE = '/resources/';
+
 /** The `lv2:` properties the importer knows on a `modgui:port` node; any other is refused. */
 export const MODGUI_PORT_PROPERTIES = ['index', 'symbol', 'name'] as const;
 
