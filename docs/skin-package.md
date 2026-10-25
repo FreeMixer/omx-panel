@@ -81,6 +81,12 @@ roles. It refuses, with a code that names the file it read and nothing written: 
 `MODGUI_TTL_INVALID`, `MODGUI_NO_LICENCE`, `MODGUI_LICENCE_UNMAPPED`, `MODGUI_LICENCE_REFUSED` (outside the
 allow-list), `MODGUI_UNKNOWN_PROPERTY`, `MODGUI_PATH_ESCAPE` and `MODGUI_TARGET_EXISTS`.
 
+The known `modgui:gui` properties are mod-ui's whole list, not only the ones a reviewed bundle used:
+`resourcesDirectory`, `iconTemplate`, `settingsTemplate`, `javascript`, `stylesheet`, `screenshot`, `thumbnail`,
+`documentation`, `discussionURL`, `brand`, `label`, `model`, `panel`, `color`, `knob`, `port` and `monitoredOutputs`
+(`MODGUI_GUI_PROPERTIES`). Any other `modgui:` property is `MODGUI_UNKNOWN_PROPERTY`, as is an `lv2:` property on a
+`modgui:port` other than `index`, `symbol` and `name`.
+
 ## What the validator checks
 
 The shape. That every control id exists in the plugin's description and that a role fits its control is
