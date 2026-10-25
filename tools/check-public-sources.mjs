@@ -5,7 +5,7 @@
  * check-public-sources.mjs — `make public-sources`: the tracked files state public facts only and
  * never point into a private repository, branch, issue or path (operator ruling 2026-10-13). A
  * prose or comment that needs the origin of a value says what the value is and why, and cites only
- * public repositories (omx-dsp, omx-contract, omx-plugins, plugin-qualify, omx-skins).
+ * public repositories (omx-dsp, omx-contract, omx-plugins, plugin-qualify, omx-panel).
  *
  *   node tools/check-public-sources.mjs [--root <tree>] [--self-test]
  *
