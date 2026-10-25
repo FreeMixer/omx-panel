@@ -4,7 +4,7 @@ Name: omx-panel
 Version: 0.1.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
-Summary: Panels for LV2 and CLAP plugins: the skin package schema
+Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
 URL: https://github.com/FreeMixer/omx-panel
 BuildArch: noarch
 
@@ -12,25 +12,48 @@ Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires: make
 BuildRequires: sed
+BuildRequires: nodejs >= 18
+# npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry
+BuildRequires: npm
+# %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, the param-contract header
+BuildRequires: omx-contract-devel >= 3.0.0
+BuildRequires: plugin-hostd-devel >= 0.7.0
+BuildRequires: omx-plugins-devel
+
+Requires: nodejs >= 18
+# the layout reads omx-contract's meanings and plugin-hostd's unit table where they are installed
+Requires: omx-contract-devel >= 3.0.0
+Requires: plugin-hostd-devel >= 0.7.0
+# the param-contract header the unit tokens are judged by; $OMX_PARAM_CONTRACT_H names another
+Recommends: omx-plugins-devel
+Provides: bundled(nodejs-ajv)
 
 %description
-This release of omx-panel, the panel toolkit for LV2 and CLAP plugins,
-carries the schema of a skin package's skin.json, the file that says how one
-plugin's panel is arranged and named and which art it brings, and the
-directory skin packages are installed into.
+omx-panel makes panels for LV2 and CLAP plugins from what each plugin
+declares. It lays a panel out from a plugin's descriptor (sections, controls,
+roles, the pages of eight a controller shows), writes a MOD GUI for MOD and
+Zynthian in the omx look, imports a plugin's own MOD GUI into a skin package,
+and carries the skin package schema, its validator and the directory skin
+packages are installed into. The omx-panel command runs each; the tools are
+under /usr/share/omx-panel for a build that calls them.
 
 %prep
 %autosetup
 
 %build
+npm ci --no-audit --no-fund
 %make_build
 
 %install
-%make_install PREFIX=%{_prefix} DATADIR=%{_datadir}
+%make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir}
+
+%check
+make test
 
 %files
 %license LICENSE
-%doc README.md
+%doc README.md docs/
+%{_bindir}/omx-panel
 %{_datadir}/omx-panel/
 %dir %{_datadir}/omx/
 %dir %{_datadir}/omx/skins/
