@@ -43,6 +43,8 @@ command runs as an unprivileged user.
 ## 1. The plugins as installed
 
 ```
+$ mkdir -p examples/worked-example/zamcomp examples/worked-example/lsp-limiter-mono
+
 $ rpm -q lv2-zam-plugins lsp-plugins-clap
 lv2-zam-plugins-4.4-7.fc44.x86_64
 lsp-plugins-clap-1.2.29-1.fc44.x86_64
@@ -112,9 +114,6 @@ scan cannot know, it writes as `unknown`:
 ### ZamComp, with no panel file
 
 ```
-$ git rev-parse --short HEAD
-0e28468
-
 $ omx-panel layout --descriptor examples/worked-example/zamcomp/zamcomp.descriptor.json > examples/worked-example/zamcomp/zamcomp.layout.json
 
 $ omx-panel layout --descriptor examples/worked-example/zamcomp/zamcomp.descriptor.json --pages | tee examples/worked-example/zamcomp/zamcomp.pages.json
