@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/FreeMixer/omx-skins/schema/skin-package.schema.json",
+  "$id": "https://github.com/FreeMixer/omx-panel/schema/skin-package.schema.json",
   "title": "A skin package's skin.json",
   "description": "The file inside a skin package that says how one plugin's panel is drawn. The package is a directory named after the plugin id; this file overrides what the panel description gives (its sections, labels, roles, displays) and names the art and the view the skin brings. It restates no range, unit or scale: the plugin's own description holds those and the skin refers to controls by id.",
   "$defs": {
