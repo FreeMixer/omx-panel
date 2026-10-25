@@ -1,0 +1,24 @@
+{
+  "family": "delay",
+  "roles": {
+    "time": "fxDelayTime",
+    "feedback": "fxDelayFeedback",
+    "tone": "tone",
+    "pingpong": "pingpong",
+    "mix": "mix"
+  },
+  "sections": [
+    {
+      "key": "delay",
+      "label": "Delay",
+      "controls": [
+        "pingpong",
+        "fxDelayTime",
+        "fxDelayFeedback",
+        "mix",
+        "tone"
+      ],
+      "graph": "delay-taps"
+    }
+  ]
+}

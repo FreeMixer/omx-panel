@@ -30,14 +30,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    container:
+      image: fedora:44
     steps:
+      - name: Install node and the vocabulary the suite reads
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins
+          dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.0.0' 'plugin-hostd-devel >= 0.7.0' omx-plugins-devel
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: The checkout is a git directory this job may read
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - name: The tag names the package version
         if: github.ref_type == 'tag'
@@ -61,7 +67,8 @@ jobs:
       binary-names: omx-panel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       needs-mod-host: false
-      channel-deps: false
+      # omx-contract-devel, plugin-hostd-devel and omx-plugins-devel, which %check reads, come from the channel
+      channel-deps: true
     secrets: inherit
 
   # after the RPMs: both publish into one tree, and a push that loses a race is refused
@@ -75,7 +82,8 @@ jobs:
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       dependencies: ''
       requires: ''
-      channel-deps: false
+      # libomx-contract-dev, plugin-hostd-dev and omx-plugins-dev, which the tests read, come from the channel
+      channel-deps: true
     secrets: inherit
 
   pack:
