@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 Name: omx-panel
-Version: 0.2.6
+Version: 0.3.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -60,6 +60,11 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Sun Oct 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.3.0-1
+- The MOD GUI importer reads mod-ui's whole modgui:gui property list, refuses
+  MODGUI_PORT_UNKNOWN and MODGUI_IMAGE_NOT_FOUND (ten refusal codes), and reads
+  a template reference as mod-ui reads it (#33).
+
 * Sun Oct 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.2.6-1
 - A readout is drawn as a display, never looked up as a control input; 0.2.5
   stopped on a readout. The worked example, with its documents and examples.
