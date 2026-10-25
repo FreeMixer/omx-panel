@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /**
- * The skin package and the skin API's declared facts (docs/skin-package.md): the panel spec's skin package
- * (§6) and its version rule (§7.2).
+ * The skin package and the skin API's declared facts (docs/skin-package.md).
  *
  * Pure, so a console's resolver, a web interface and the generator call the SAME functions:
  * the id → directory-name encoding (§6.1), the override file's schema and its application to a
