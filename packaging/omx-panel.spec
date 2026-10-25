@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 Name: omx-panel
-Version: 0.2.0
+Version: 0.2.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -59,6 +59,10 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Sun Oct 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.2.1-1
+- The npm package is @openmixer/omx-panel; 0.2.0 named a scope that does not
+  exist on the registry and never reached npm.
+
 * Sun Oct 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.2.0-1
 - The panel toolkit: the layout from a descriptor, the MOD GUI generator and
   its images, the omx look, the skin package at schema 1 with its facts, and

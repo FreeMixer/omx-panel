@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 name: Publish to npm
 
-# Publishes @freemixer/omx-panel to npmjs.org by npm trusted publishing (OIDC, no token anywhere). npmjs.com
+# Publishes @openmixer/omx-panel to npmjs.org by npm trusted publishing (OIDC, no token anywhere). npmjs.com
 # trusts the CALLER of the publish by repository + workflow filename (+ environment when one is set there; none is), so:
 #   Repository: FreeMixer/omx-panel    Workflow filename: publish.yml    Environment: (none)
 # A version tag publishes; any other ref (a manual dispatch) is a dry run. Only the public repository
@@ -50,7 +50,7 @@ jobs:
         run: |
           v=$(node -p "require('./package.json').version")
           [ "${GITHUB_REF_NAME}" = "v$v" ] || { echo "tag ${GITHUB_REF_NAME} is not v$v"; exit 1; }
-      - name: Publish @freemixer/omx-panel
+      - name: Publish @openmixer/omx-panel
         env:
           DRY: ${{ github.ref_type != 'tag' && '--dry-run' || '' }}
         run: npm publish --provenance --access public $DRY
