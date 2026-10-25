@@ -54,7 +54,10 @@ control by its symbol and its meaning.
 names an unknown symbol, a role the family has no place for or whose unit it does not take, or a display in no
 section is dropped and listed with its reason (`unknown-symbol`, `unknown-section`, `role-not-in-family`,
 `role-unit`, `role-repeats`); the rest of the file stands. The role check reads `ROLES` of
-`tools/panel-description.mjs`; a caller may pass its own.
+`tools/panel-description.mjs`; a caller may pass its own. That table is wider than the console's own at five
+roles: `threshold` of gate, dynamics, limiter and deesser and `ceiling` of limiter take `db, dbfs, dbu, lufs` here and
+`db, dbfs` in the console. A console that keeps its own table passes it as the check; one that adopts this table
+accepts a threshold in dBu or LUFS.
 
 ## Refusals
 
