@@ -169,6 +169,16 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     refused(b, 'MODGUI_PORT_UNKNOWN');
   });
 
+  it("MODGUI_PORT_UNKNOWN: a modgui:monitoredOutputs symbol none of the plugin's own lv2:port carries", () => {
+    const monitored = (o) => (t) => t.replace('modgui:brand "openmixer" ;', `modgui:monitoredOutputs ${o} ;\n        modgui:brand "openmixer" ;`);
+    const b = edited('modgui.ttl', monitored('[ lv2:symbol "level" ]'));
+    assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
+      e.code === 'MODGUI_PORT_UNKNOWN' && e.file === join(b, 'modgui.ttl') && e.detail.includes('"level"'));
+    refused(b, 'MODGUI_PORT_UNKNOWN');
+    refused(edited('modgui.ttl', monitored('"level"')), 'MODGUI_PORT_UNKNOWN');
+    assert.doesNotThrow(() => importModgui({ bundle: edited('modgui.ttl', monitored('[ lv2:symbol "mix" ]')), out: fresh('out') }, core));
+  });
+
   it('MODGUI_IMAGE_NOT_FOUND: an icon template image the resources directory does not hold, named with the template', () => {
     const img = (src) => (t) => t.replace('<div class="mod-control-group">', `<img src="${src}">\n  <div class="mod-control-group">`);
     const b = edited('modgui/icon-echo.html', img('/resources/knobs/missing.png{{{cns}}}'));
