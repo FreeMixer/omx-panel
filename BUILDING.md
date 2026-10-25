@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
-# Building omx-skins
+# Building omx-panel
 
 Needs Node.js 20 or newer and npm for the validator and the test suite. The installed package needs no node:
 it carries the schema and the directory skins are installed into.
@@ -18,7 +18,7 @@ carries an AI-attribution line is refused; CI runs the same check over a pull re
 ## The validator
 
 ```
-node bin/omx-skins.mjs validate <skin.json | skin package directory>...
+node bin/omx-panel.mjs validate <skin.json | skin package directory>...
 ```
 
 Exit 0 every file is valid, 1 a file is not (each fault is named by file and path), 2 a usage or read error.
@@ -28,9 +28,9 @@ Exit 0 every file is valid, 1 a file is not (each fault is named by file and pat
 ```
 schema/skin-package.schema.json   JSON Schema 2020-12 of a package's skin.json
 lib/validate.mjs                  the validator
-bin/omx-skins.mjs                 the CLI
+bin/omx-panel.mjs                 the CLI
 examples/skins/                   a skin package that validates
 test/                             the suite
 tools/                            the checks `make check` runs, and the commit message check
-packaging/ debian/                omx-skins (RPM), omx-skins (deb)
+packaging/ debian/                omx-panel (RPM), omx-panel (deb)
 ```
