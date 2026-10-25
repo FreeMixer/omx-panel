@@ -13,28 +13,38 @@ permissions:
 jobs:
   test:
     # the private development copy runs on FreeMixer's own runners (hosted runners are refused there); the public
-    # repository runs on GitHub's
+    # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema, plugin-hostd's LV2
+    # table, the param-contract header), so it runs on Fedora with the FreeMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || 'ubuntu-latest' }}
+    container:
+      image: fedora:44
     steps:
+      - name: Install node and the vocabulary the suite reads
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins
+          dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.0.0' 'plugin-hostd-devel >= 0.7.0' omx-plugins-devel
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: The checkout is a git directory this job may read
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - id: handback-install
-        name: Install the one runtime dependency
+        name: Install the build and the validator's dependency
         run: npm ci
       - id: handback-test
-        name: Tests (the example validates, each broken copy is refused with its sabotage, the CLI)
-        run: npm test
+        name: Tests over the built tree (the layout, the MOD GUI, the look, the skin facts and schema, the importer, the command)
+        run: make test
       - id: handback-spdx
         name: Every tracked file carries the licence and copyright lines
         run: make spdx
       - id: handback-public-sources
         name: No tracked file points into a private repository, branch, issue or path
         run: make public-sources
+      - id: handback-look
+        name: look.json is what the token cascade resolves to
+        run: make look
       - id: handback-example
         name: The example skin package validates
-        run: node bin/omx-panel.mjs validate examples/skins/org.example.plate
+        run: node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
   # A commit message is published like a file. A pull request's own commits must carry no
   # AI-attribution line (tools/ai-trace-commit-check.sh); what is already on the base is not read.
