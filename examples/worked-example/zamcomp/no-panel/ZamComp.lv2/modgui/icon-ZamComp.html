@@ -1,0 +1,93 @@
+<div class="omx-pedal{{{cns}}} omx-family-none" style="width:624px;height:242px">
+    <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+    <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
+    <!-- GENERATED — DO NOT EDIT BY HAND. Produced by tools/modgui-gen.mjs from -->
+    <!-- examples/worked-example/zamcomp/zamcomp.descriptor.json and tools/look.json -->
+    <!-- Regenerate: `node tools/modgui-gen.mjs`, then commit the result. -->
+    <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
+         MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
+         and {{{ns}}} scoping, MOD's own drag-handle, bypass and jack roles. Credited, not copied. -->
+    <div mod-role="drag-handle" class="mod-drag-handle"></div>
+    <div class="omx-head" style="height:40px">
+        <span class="omx-brand">{{brand}}</span>
+        <span class="omx-label">{{label}}</span>
+        <div class="omx-bypass" mod-role="bypass"><div class="omx-bypass-light" mod-role="bypass-light"></div></div>
+    </div>
+        <div class="omx-section" data-section="controls" style="left:16px;top:52px;width:592px;height:174px">
+            <h2 class="omx-section-title">Controls</h2>
+            <div class="omx-control omx-knob" style="left:8px;top:18px" title="Attack" data-symbol="att" data-min="0.10000000149" data-max="100" data-default="10">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="att"></div>
+                <span class="omx-control-title">Attack</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:80px;top:18px" title="Release" data-symbol="rel" data-min="1" data-max="500" data-default="80">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="rel"></div>
+                <span class="omx-control-title">Release</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:152px;top:18px" title="Knee" data-symbol="kn" data-min="0" data-max="8" data-default="0">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="kn"></div>
+                <span class="omx-control-title">Knee</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:224px;top:18px" title="Ratio" data-symbol="rat" data-min="1" data-max="20" data-default="4">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="rat"></div>
+                <span class="omx-control-title">Ratio</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:296px;top:18px" title="Threshold" data-symbol="thr" data-min="-80" data-max="0" data-default="0">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="thr"></div>
+                <span class="omx-control-title">Threshold</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:368px;top:18px" title="Makeup" data-symbol="mak" data-min="0" data-max="30" data-default="0">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="mak"></div>
+                <span class="omx-control-title">Makeup</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:440px;top:18px" title="Slew" data-symbol="slew" data-min="1" data-max="150" data-default="1">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="slew"></div>
+                <span class="omx-control-title">Slew</span>
+            </div>
+            <div class="omx-control omx-knob" style="left:512px;top:18px" title="Sidechain" data-symbol="sidech" data-min="0" data-max="1" data-default="0">
+                <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="sidech"></div>
+                <span class="omx-control-title">Sidechain</span>
+            </div>
+            <div class="omx-control omx-display" style="left:8px;top:94px" title="Gain Reduction" data-symbol="gr" data-min="0" data-max="20">
+                <div class="omx-display-image"></div>
+                <span class="omx-control-title">Gain Reduction</span>
+            </div>
+            <div class="omx-control omx-display" style="left:80px;top:94px" title="Output Level" data-symbol="outlevel" data-min="-45" data-max="20">
+                <div class="omx-display-image"></div>
+                <span class="omx-control-title">Output Level</span>
+            </div>
+        </div>
+    <div class="mod-pedal-input">
+        {{#effect.ports.audio.input}}
+        <div class="mod-input mod-input-disconnected" title="{{name}}" mod-role="input-audio-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-input-image"></div>
+        </div>
+        {{/effect.ports.audio.input}}
+        {{#effect.ports.midi.input}}
+        <div class="mod-input mod-input-disconnected" title="{{name}}" mod-role="input-midi-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-input-image"></div>
+        </div>
+        {{/effect.ports.midi.input}}
+        {{#effect.ports.cv.input}}
+        <div class="mod-input mod-input-disconnected" title="{{name}}" mod-role="input-cv-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-input-image"></div>
+        </div>
+        {{/effect.ports.cv.input}}
+    </div>
+    <div class="mod-pedal-output">
+        {{#effect.ports.audio.output}}
+        <div class="mod-output mod-output-disconnected" title="{{name}}" mod-role="output-audio-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-output-image"></div>
+        </div>
+        {{/effect.ports.audio.output}}
+        {{#effect.ports.midi.output}}
+        <div class="mod-output mod-output-disconnected" title="{{name}}" mod-role="output-midi-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-output-image"></div>
+        </div>
+        {{/effect.ports.midi.output}}
+        {{#effect.ports.cv.output}}
+        <div class="mod-output mod-output-disconnected" title="{{name}}" mod-role="output-cv-port" mod-port-symbol="{{symbol}}">
+            <div class="mod-pedal-output-image"></div>
+        </div>
+        {{/effect.ports.cv.output}}
+    </div>
+</div>

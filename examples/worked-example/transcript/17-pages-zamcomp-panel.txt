@@ -1,0 +1,47 @@
+[
+  {
+    "section": 0,
+    "sectionName": "Detector",
+    "pageName": "Detector",
+    "ids": [
+      "thr",
+      "rat",
+      "kn",
+      "att",
+      "rel",
+      "slew",
+      "sidech",
+      null
+    ]
+  },
+  {
+    "section": 1,
+    "sectionName": "Output",
+    "pageName": "Output",
+    "ids": [
+      "mak",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  {
+    "section": 2,
+    "sectionName": "Meters",
+    "pageName": "Meters",
+    "ids": [
+      "gr",
+      "outlevel",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  }
+]
