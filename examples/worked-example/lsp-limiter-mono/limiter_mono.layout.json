@@ -1,0 +1,485 @@
+{
+  "origin": "scanned",
+  "family": "none",
+  "sections": [
+    {
+      "key": "controls",
+      "labelKey": null,
+      "label": "Controls"
+    }
+  ],
+  "controls": [
+    {
+      "symbol": "Show pre-mix overlay",
+      "param": 1244225361,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Show pre-mix overlay",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Input to Link mix",
+      "param": 3869364241,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Input to Link mix",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Link to Input mix",
+      "param": 3177522691,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Link to Input mix",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Link to Sidechain mix",
+      "param": 3225708262,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Link to Sidechain mix",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Bypass",
+      "param": 490312032,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Bypass",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Input gain",
+      "param": 2683833795,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Input gain",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Output gain",
+      "param": 3630838676,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Output gain",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Sidechain preamp",
+      "param": 3810192430,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Sidechain preamp",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Automatic level regulation",
+      "param": 2674668398,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Automatic level regulation",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Automatic level regulation attack time",
+      "param": 1439502472,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Automatic level regulation attack time",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Automatic level regulation release time",
+      "param": 1526105096,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Automatic level regulation release time",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Operating mode",
+      "param": 3670762539,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Operating mode",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Threshold",
+      "param": 1574856808,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Threshold",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Knee level",
+      "param": 1610863755,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Knee level",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Gain boost",
+      "param": 2849352001,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Gain boost",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Lookahead",
+      "param": 1541051435,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Lookahead",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Attack time",
+      "param": 1494745332,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Attack time",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Release time",
+      "param": 1566812276,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Release time",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Oversampling",
+      "param": 1727760849,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Oversampling",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Dithering",
+      "param": 2157357250,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Dithering",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Pause graph analysis",
+      "param": 1914600837,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Pause graph analysis",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Clear graph analysis",
+      "param": 818577203,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Clear graph analysis",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Sidechain type",
+      "param": 413445948,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Sidechain type",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Input graph visibility",
+      "param": 2697680499,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Input graph visibility",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Output graph visibility",
+      "param": 1658443380,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Output graph visibility",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Sidechain graph visibility",
+      "param": 992759966,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Sidechain graph visibility",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Gain graph visibility",
+      "param": 1046482910,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Gain graph visibility",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    },
+    {
+      "symbol": "Knee smooth",
+      "param": 956218380,
+      "section": 0,
+      "sectionKey": "controls",
+      "widget": "knob",
+      "standard": {
+        "widget": "knob"
+      },
+      "labelKey": null,
+      "label": "Knee smooth",
+      "visible": null,
+      "mask": "0",
+      "unit": "unknown",
+      "meaning": "unknown"
+    }
+  ],
+  "roles": [],
+  "unpublished": [],
+  "displays": [],
+  "defaults": [],
+  "ports": {
+    "inputs": [
+      {
+        "id": 890174422,
+        "name": "mono_in",
+        "role": "main",
+        "channels": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": 919904664,
+        "name": "mono_out",
+        "role": "main",
+        "channels": 1
+      }
+    ],
+    "sidechain": false,
+    "notes": false
+  }
+}
