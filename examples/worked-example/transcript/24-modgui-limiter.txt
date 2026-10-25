@@ -1,0 +1,1 @@
+Error: modgui-gen: 'in.lsp-plug.limiter_mono' states no LV2 URI; a MOD GUI belongs to an LV2 bundle

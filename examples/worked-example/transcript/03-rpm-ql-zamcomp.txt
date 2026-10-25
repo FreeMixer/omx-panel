@@ -1,0 +1,6 @@
+/usr/lib64/lv2/ZamComp.lv2/ZamComp_dsp.so
+/usr/lib64/lv2/ZamComp.lv2/ZamComp_dsp.ttl
+/usr/lib64/lv2/ZamComp.lv2/ZamComp_ui.so
+/usr/lib64/lv2/ZamComp.lv2/ZamComp_ui.ttl
+/usr/lib64/lv2/ZamComp.lv2/manifest.ttl
+/usr/lib64/lv2/ZamComp.lv2/presets.ttl
