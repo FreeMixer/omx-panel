@@ -26,6 +26,7 @@ export const EXEMPT = [
   [/^\.gitignore$/, 'a list of patterns'],
   [/^debian\/(changelog|control|source\/format|copyright)$/, 'Debian metadata, a format of its own'],
   [/^examples\/.*\.png$/, 'example art'],
+  [/^test\/fixtures\/.*\.png$/, 'fixture art: a MOD GUI\'s images, ours, byte for byte as the generator or the fixture bundle holds them'],
 ];
 
 /** The tracked files that do not carry both lines in their first 20 lines. */
