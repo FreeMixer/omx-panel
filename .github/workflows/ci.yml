@@ -34,7 +34,7 @@ jobs:
         run: make public-sources
       - id: handback-example
         name: The example skin package validates
-        run: node bin/omx-skins.mjs validate examples/skins/org.example.plate
+        run: node bin/omx-panel.mjs validate examples/skins/org.example.plate
 
   # A commit message is published like a file. A pull request's own commits must carry no
   # AI-attribution line (tools/ai-trace-commit-check.sh); what is already on the base is not read.
