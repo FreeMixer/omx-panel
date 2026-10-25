@@ -79,25 +79,36 @@ LGPL-2.1-or-later, LGPL-3.0-or-later, MIT, BSD-2-Clause, BSD-3-Clause, ISC, Zlib
 under `modgui/`, and `source` `{ kind: "modgui", bundle, licenceEvidence }`. It writes no view, no family and no
 roles. It refuses, with a code that names the file it read and nothing written: `MODGUI_NOT_FOUND`,
 `MODGUI_TTL_INVALID`, `MODGUI_NO_LICENCE`, `MODGUI_LICENCE_UNMAPPED`, `MODGUI_LICENCE_REFUSED` (outside the
-allow-list), `MODGUI_UNKNOWN_PROPERTY`, `MODGUI_PORT_UNKNOWN` (a `modgui:port` symbol the plugin does not carry),
-`MODGUI_IMAGE_NOT_FOUND` (an icon template image the bundle does not hold), `MODGUI_PATH_ESCAPE` and
-`MODGUI_TARGET_EXISTS`.
-
-Every `modgui:port` is checked against the plugin's own `lv2:port` declarations in the bundle, the same TTL the
-importer reads for the licence: a `modgui:port` whose `lv2:symbol` names no `lv2:symbol` of the plugin's own ports
-is `MODGUI_PORT_UNKNOWN`, naming the file and the symbol, so a renamed or stale modgui entry is never imported as if
-it controlled a real parameter. Every image the icon template names (an HTML `src="..."` or a CSS `url(...)` inside
-it, under mod-ui's `/resources/` route, a Mustache suffix like `{{{cns}}}` dropped before resolving) must exist in
-the bundle's `resourcesDirectory`; one that does not is `MODGUI_IMAGE_NOT_FOUND`, naming the template file and the
-path it names. The stylesheet is not checked this way: MOD's shared pedal stylesheets are one theme file covering
-every knob count and colour a style offers, most of it unused by any one plugin, so most of its `url()`s name no
-file the bundle carries, on purpose.
+allow-list), `MODGUI_UNKNOWN_PROPERTY`, `MODGUI_PORT_UNKNOWN` (a `modgui:port` or `modgui:monitoredOutputs`
+symbol the plugin does not carry), `MODGUI_IMAGE_NOT_FOUND` (a template image the bundle does not hold),
+`MODGUI_PATH_ESCAPE` (a resource, or a template reference, outside the bundle) and `MODGUI_TARGET_EXISTS`.
 
 The known `modgui:gui` properties are mod-ui's whole list, not only the ones a reviewed bundle used:
 `resourcesDirectory`, `iconTemplate`, `settingsTemplate`, `javascript`, `stylesheet`, `screenshot`, `thumbnail`,
 `documentation`, `discussionURL`, `brand`, `label`, `model`, `panel`, `color`, `knob`, `port` and `monitoredOutputs`
 (`MODGUI_GUI_PROPERTIES`). Any other `modgui:` property is `MODGUI_UNKNOWN_PROPERTY`, as is an `lv2:` property on a
-`modgui:port` other than `index`, `symbol` and `name`.
+`modgui:port` other than `index`, `symbol` and `name`. The file-valued ones (`iconTemplate`, `settingsTemplate`,
+`javascript`, `stylesheet`, `screenshot`, `thumbnail`, and `documentation` when it names a `file:` IRI;
+`MODGUI_FILE_PROPERTIES`) must resolve inside the bundle and are copied with the package; `discussionURL`, and a
+`documentation` that names a web address, are kept as text and never fetched.
+
+Every `modgui:port` is checked against the plugin's own `lv2:port` declarations in the bundle, the same TTL the
+importer reads for the licence: a `modgui:port` whose `lv2:symbol` names no `lv2:symbol` of the plugin's own ports
+is `MODGUI_PORT_UNKNOWN`, naming the file and the symbol, so a renamed or stale modgui entry is never imported as if
+it controlled a real parameter. A `modgui:monitoredOutputs` entry is checked the same way: its `lv2:symbol` (or the
+literal symbol it names) must be one of the plugin's own ports.
+
+Every image a template names (`MODGUI_TEMPLATE_PROPERTIES`: the icon template and the settings template; an HTML
+`src="..."` or a CSS `url(...)` inside it, a Mustache suffix like `{{{cns}}}` dropped before resolving) is checked.
+Under mod-ui's `/resources/` route (`MODGUI_RESOURCES_ROUTE`, the bundle's `resourcesDirectory`) it must exist; one
+that does not is `MODGUI_IMAGE_NOT_FOUND`, naming the template file and the path it names, and one that climbs out
+of the resources directory is `MODGUI_PATH_ESCAPE`. A web address, any other absolute path, or a relative path that
+climbs out of the bundle is `MODGUI_PATH_ESCAPE`, so a drawn template never reaches outside the package. The one
+absolute route kept is mod-ui's own font route, `/fonts/<name>/...` (`MODGUI_FONT_ROUTE`): a font the drawing
+supplies or replaces, kept as text, never an image and never fetched. A `data:` address and a value that is only a
+Mustache tag are left as they are. The stylesheet is not checked this way: MOD's shared pedal stylesheets are one
+theme file covering every knob count and colour a style offers, most of it unused by any one plugin, so most of its
+`url()`s name no file the bundle carries, on purpose.
 
 ## What the validator checks
 
