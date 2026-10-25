@@ -111,12 +111,19 @@ export function importModgui({ bundle, out, plugin }, core) {
     if (t.p.v.startsWith(NS) && t.p.v !== `${NS}gui` && !knownGui.has(t.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `${show(t.p)} is not a modgui property this importer knows`);
     if (t.p.v === RDF_TYPE && t.o.t === 'iri' && t.o.v.startsWith(NS)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `a node is typed ${show(t.o)}`);
   }
+  // The plugin's own lv2:port symbols: a modgui:port naming none of them is stale or renamed.
+  const pluginPortSymbols = new Set(
+    one(pluginTerm, `${LV2}port`)
+      .map((t) => one(t.o, `${LV2}symbol`)[0]?.o.v)
+      .filter((s) => typeof s === 'string'),
+  );
   const ports = one(gui, `${NS}port`).map((t) => {
     for (const q of about(t.o)) if (!knownPort.has(q.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', q.file, `a modgui:port carries ${show(q.p)}`);
     const val = (p) => one(t.o, `${LV2}${p}`)[0]?.o.v;
     const index = Number(val('index'));
     const symbol = val('symbol');
     if (!Number.isInteger(index) || typeof symbol !== 'string' || symbol === '') throw new Refusal('MODGUI_TTL_INVALID', t.file, 'a modgui:port has no integer lv2:index or no lv2:symbol');
+    if (!pluginPortSymbols.has(symbol)) throw new Refusal('MODGUI_PORT_UNKNOWN', t.file, `modgui:port lv2:symbol "${symbol}" names no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
     return { index, symbol, name: val('name') ?? symbol };
   });
   ports.sort((a, b) => a.index - b.index);
