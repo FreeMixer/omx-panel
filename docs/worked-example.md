@@ -35,8 +35,8 @@ dnf -y -q --disablerepo=copr-ycollet-audinux install omx-panel
 
 and, as the user, `npm ci --silent` in this checkout.
 
-On a stock Fedora 44, the FreeMixer channel comes first, as this repository's CI adds it
-(`dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo`; not run here, the
+On a stock Fedora 44, the OpenMixer channel comes first, as this repository's CI adds it
+(`dnf install https://www.openmixer.org/rpm/openmixer-release.noarch.rpm`; not run here, the
 image carries the channel), and `python3-lilv` and `sord` are installed with the rest (the image carries them:
 `python3-lilv-0.26.4`, `sord-0.16.22`, `lv2-1.18.10`).
 
