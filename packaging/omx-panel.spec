@@ -15,17 +15,20 @@ BuildRequires: sed
 BuildRequires: nodejs >= 18
 # npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry
 BuildRequires: npm
-# %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, the param-contract header
-BuildRequires: omx-contract-devel >= 3.0.0
-BuildRequires: plugin-hostd-devel >= 0.7.0
+# %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
+# header, which only omx-plugins-devel ships
+BuildRequires: omx-contract-data >= 3.3.0
+BuildRequires: plugin-hostd-contract >= 0.12.0
 BuildRequires: omx-plugins-devel
 
 Requires: nodejs >= 18
-# the layout reads omx-contract's meanings and plugin-hostd's unit table where they are installed
-Requires: omx-contract-devel >= 3.0.0
-Requires: plugin-hostd-devel >= 0.7.0
+# the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
+Requires: omx-contract-data >= 3.3.0
+Requires: plugin-hostd-contract >= 0.12.0
+# the descriptors of omx-plugins' plugins, for modgui --installed
+Recommends: omx-plugins-contract
 # the param-contract header the unit tokens are judged by; $OMX_PARAM_CONTRACT_H names another
-Recommends: omx-plugins-devel
+Suggests: omx-plugins-devel
 Provides: bundled(nodejs-ajv)
 
 %description
