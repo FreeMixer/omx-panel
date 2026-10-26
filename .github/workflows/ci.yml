@@ -14,15 +14,18 @@ jobs:
   test:
     # the private development copy runs on FreeMixer's own runners (hosted runners are refused there); the public
     # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema, plugin-hostd's LV2
-    # table, the param-contract header), so it runs on Fedora with the FreeMixer channel, as the RPM's %check does.
+    # table, the param-contract header), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || 'ubuntu-latest' }}
     container:
       image: fedora:44
     steps:
-      - name: Install node and the vocabulary the suite reads
+      - name: Install node
         run: |
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins
-          dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo
+      - name: Add the OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - name: Install the vocabulary the suite reads
+        run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' omx-plugins-devel
           # plugin-hostd's LV2 table: plugin-hostd-contract from 0.12.0; plugin-hostd-devel installs the same file before it
           dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.12.0' \
@@ -108,20 +111,8 @@ jobs:
         with:
           name: omx-panel-packages
           path: out
-      - name: The FreeMixer channel
-        run: |
-          if command -v dnf >/dev/null; then
-            dnf install -y -q --setopt=install_weak_deps=False dnf5-plugins
-            dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo
-            dnf -y -q makecache
-          else
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
-            install -d /etc/apt/keyrings
-            curl -fsSL --retry 5 --retry-all-errors -o /etc/apt/keyrings/freemixer.asc https://freemixer.github.io/deb/freemixer.asc
-            echo "deb [signed-by=/etc/apt/keyrings/freemixer.asc] https://freemixer.github.io/deb/debian/bookworm ./" > /etc/apt/sources.list.d/freemixer.list
-            apt-get update -qq
-          fi
+      - name: The OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Installed with weak dependencies off, no development package arrives and omx-panel reads the contract data
         run: |
           if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-*.noarch.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi

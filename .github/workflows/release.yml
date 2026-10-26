@@ -33,10 +33,13 @@ jobs:
     container:
       image: fedora:44
     steps:
-      - name: Install node and the vocabulary the suite reads
+      - name: Install node
         run: |
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins
-          dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo
+      - name: Add the OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - name: Install the vocabulary the suite reads
+        run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' 'plugin-hostd-contract >= 0.12.0' omx-plugins-devel
       - uses: actions/checkout@v4
         with:
