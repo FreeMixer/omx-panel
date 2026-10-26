@@ -23,7 +23,7 @@
  * A reader whose source is not installed throws, naming what to install; nothing is guessed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
@@ -174,4 +174,30 @@ export function installedDescriptorFile(ref) {
   const file = contractDirs().map((d) => join(d, '3', m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
   if (!file) throw new Error(`vocabulary: no descriptor ${ref} is installed (in ${contractDirs().join(':')})`);
   return file;
+}
+
+/** Every descriptor file installed under the contract directories, sorted: `<contractdir>/<major>/<package>/plugins/*.json`,
+ * whatever majors are installed. A `<package>/<name>` installed under several majors or directories is listed once,
+ * from the highest major of the first contract directory that holds it. */
+export function installedDescriptorFiles() {
+  const names = (dir, keep) => {
+    try {
+      return readdirSync(dir, { withFileTypes: true }).filter(keep).map((e) => e.name);
+    } catch {
+      return [];
+    }
+  };
+  const seen = new Map();
+  for (const d of contractDirs()) {
+    const majors = names(d, (e) => e.isDirectory() && /^[0-9]+$/.test(e.name)).sort((a, b) => Number(b) - Number(a));
+    for (const major of majors) {
+      for (const pkg of names(join(d, major), (e) => e.isDirectory())) {
+        for (const f of names(join(d, major, pkg, 'plugins'), (e) => !e.isDirectory() && e.name.endsWith('.json'))) {
+          const ref = `${pkg}/${f}`;
+          if (!seen.has(ref)) seen.set(ref, join(d, major, pkg, 'plugins', f));
+        }
+      }
+    }
+  }
+  return [...seen.values()].sort();
 }

@@ -36,6 +36,7 @@ in [docs/skin-package.md](docs/skin-package.md); `omx-panel validate` checks a p
 
 A plugin with no MOD GUI gets one from its descriptor: `omx-panel modgui --descriptor <file> --out <bundle.lv2>`
 writes `modgui.ttl` and `modgui/` into the bundle, every control drawn with its own travel and default.
+`omx-panel descriptors --installed` lists the installed descriptor files, one path per line.
 
 A plugin that already ships a MOD GUI does not start from nothing: the importer reads the bundle's `modgui.ttl` and the plugin's licence and writes a skin package from them, one
 section in port order, the labels from the port names and the screenshot as the backdrop. A bundle whose licence

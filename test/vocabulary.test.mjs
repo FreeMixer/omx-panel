@@ -100,3 +100,21 @@ test('an install with omx-contract-data and no omx-contract.pc reads its schema 
   assert.match(r.stdout, /^ok   contractdir \/usr\/share\/omx-contract\/contract\.d$/m);
   assert.match(r.stdout, /^ok   meanings \d+ from \/usr\/share\/omx-contract\/omx-contract\.schema\.json$/m);
 });
+
+test('omx-panel descriptors --installed lists each installed descriptor, whatever the contract major', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  const put = (rel) => {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
+    return join(dir, rel);
+  };
+  const a = put('7/omx-plugins/plugins/omx-delay.json');
+  const b = put('7/omx-dsp/plugins/omx-eq.json');
+  put('7/omx-dsp/formats/lv2.json');
+  const old = put('3/omx-plugins/plugins/omx-delay.json');
+  const r = spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'descriptors', '--installed'], { encoding: 'utf8', env: envOf({ OMX_CONTRACT_PATH: dir }) });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(r.stdout.split('\n').filter(Boolean), [b, a].sort());
+  assert.ok(!r.stdout.includes(old));
+  assert.equal(spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'descriptors'], { encoding: 'utf8' }).status, 2);
+});
