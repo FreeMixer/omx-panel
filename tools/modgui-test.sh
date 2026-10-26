@@ -128,11 +128,13 @@ if command -v sord_validate >/dev/null 2>&1; then
            data-access event uri-map schemas; do
     for f in "$LV2DIR/$s.lv2"/*.ttl; do [ -f "$f" ] && set -- "$@" "$f"; done
   done
-  HINTS_TTL="$(${PKG_CONFIG:-pkg-config} --variable=datadir omx-contract 2>/dev/null)/omx-resource-hints.ttl"
+  # omx-contract's datadir: its pkg-config variable (omx-contract-devel), else where omx-contract-data installs it
+  CONTRACT_DATADIR="$(${PKG_CONFIG:-pkg-config} --variable=datadir omx-contract 2>/dev/null)"
+  HINTS_TTL="${CONTRACT_DATADIR:-/usr/share/omx-contract}/omx-resource-hints.ttl"
   if [ $# -le 20 ]; then
     fail "sord_validate: LV2 spec bundles not found under $LV2DIR"
   elif [ ! -f "$HINTS_TTL" ]; then
-    fail "sord_validate: omx-contract's omx-resource-hints.ttl not found ($HINTS_TTL; omx-contract >= 3.1.0 installs it)"
+    fail "sord_validate: omx-contract's omx-resource-hints.ttl not found ($HINTS_TTL; omx-contract-data installs it)"
   else
     set -- "$@" "$HINTS_TTL"
     out=$(sord_validate "$BUNDLE"/*.ttl "$@" "$HERE/modgui-terms.ttl" 2>&1)
