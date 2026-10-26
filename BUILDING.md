@@ -2,11 +2,14 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # Building omx-panel
 
-Needs Node.js 18 or newer and npm. The tools that read the plugin vocabulary need it installed: omx-contract
-(`omx-contract-devel`, its schema and contract directory), plugin-hostd's format tables (`plugin-hostd-devel`) and
-the param-contract header (`omx-plugins-devel`, or `$OMX_PARAM_CONTRACT_H` naming an `omx_param_contract.h`).
+Needs Node.js 18 or newer and npm. The tools that read the plugin vocabulary need it installed: omx-contract's
+schema and contract directory (`omx-contract-data`), plugin-hostd's format tables (`plugin-hostd-contract`), the
+descriptors of omx-plugins' plugins (`omx-plugins-contract`) and the param-contract header (`omx-plugins-devel`, or
+`$OMX_PARAM_CONTRACT_H` naming an `omx_param_contract.h`). The contract directory is `$OMX_CONTRACT_PATH` (a `:`
+list, the first that holds a package wins), else omx-contract's pkg-config variable `contractdir` where
+`omx-contract-devel` installs `omx-contract.pc`, else `/usr/share/omx-contract/contract.d`; no pkg-config is needed.
 `$PLUGIN_HOSTD_TABLES` (a directory holding `lv2.json`) and `$OMX_CONTRACT_SCHEMA` (an `omx-contract.schema.json`)
-stand in for the installed ones. `tools/modgui-test.sh` also needs `sord_validate` (sord) and the LV2
+stand in for the installed ones. `omx-panel vocabulary [<package>/<name>]...` prints where each is read from. `tools/modgui-test.sh` also needs `sord_validate` (sord) and the LV2
 specification bundles (lv2).
 
 ```
@@ -28,10 +31,12 @@ omx-panel layout   --descriptor <file> [--panel <file>] [--ns <label-key namespa
 omx-panel modgui   --descriptor <file> | --installed <package>/<name> [--panel <file>] --out <bundle.lv2> [--check]
 omx-panel import   <bundle.lv2> --out <skins dir> [--plugin <uri>]
 omx-panel look     [--check]
+omx-panel vocabulary [<package>/<name>]...
 ```
 
 `validate`: exit 0 every file is valid, 1 a file is not (each fault named by file and path), 2 a usage or read
-error. `import`: one `MODGUI-IMPORT-JSON` line, exit 0 written, 3 refused, 2 usage.
+error. `import`: one `MODGUI-IMPORT-JSON` line, exit 0 written, 3 refused, 2 usage. `vocabulary`: one `ok` or
+`FAIL` line for each source read, exit 0 every source is read, 1 one is not installed.
 
 ## Layout
 
