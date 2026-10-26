@@ -5,13 +5,20 @@
  * owner installs, never a copy of it:
  *
  *   - the meanings: omx-contract's closed list of control meanings, `$defs.meaning` of its installed schema
- *     (`<pkg-config --variable=datadir omx-contract>/omx-contract.schema.json`; `$OMX_CONTRACT_SCHEMA` stands in),
+ *     (`<datadir>/omx-contract.schema.json`, installed by omx-contract-data; `$OMX_CONTRACT_SCHEMA` stands in),
  *     `unknown` aside; and the panel roles that play them, `meaningOfRole`;
  *   - the unit tokens: the token of a descriptor unit is the LV2 unit a face writes for it, plugin-hostd's
- *     installed LV2 table read backwards (`<contractdir>/3/plugin-hostd/formats/lv2.json`; `$PLUGIN_HOSTD_TABLES`, a
- *     directory holding lv2.json, stands in), or the name of a unit in the param-contract extension's vendor
- *     block; a token is served when that extension's header gives it a value (`omx_param_contract.h`, installed by
- *     omx-plugins-devel; `$OMX_PARAM_CONTRACT_H` stands in).
+ *     installed LV2 table read backwards (`<contractdir>/3/plugin-hostd/formats/lv2.json`, installed by
+ *     plugin-hostd-contract; `$PLUGIN_HOSTD_TABLES`, a directory holding lv2.json, stands in), or the name of a unit
+ *     in the param-contract extension's vendor block; a token is served when that extension's header gives it a
+ *     value (`omx_param_contract.h`, installed by omx-plugins-devel; `$OMX_PARAM_CONTRACT_H` stands in);
+ *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
+ *     installs omx-plugins').
+ *
+ * The contract directories are `$OMX_CONTRACT_PATH` (a `:` list, the first that holds a package wins), else
+ * omx-contract's pkg-config variable `contractdir` where omx-contract.pc is installed (omx-contract-devel), else
+ * /usr/share/omx-contract/contract.d, where omx-contract-data installs it. omx-contract's datadir is the pkg-config
+ * variable `datadir`, else /usr/share/omx-contract. A runtime install reads its files with no pkg-config.
  *
  * A reader whose source is not installed throws, naming what to install; nothing is guessed.
  */
@@ -30,6 +37,30 @@ function pkgVariable(pkg, name) {
   }
 }
 
+/** Where omx-contract-data installs its files and the contract directory, for an install with no omx-contract.pc. */
+export const DEFAULT_DATADIR = '/usr/share/omx-contract';
+export const DEFAULT_CONTRACTDIR = '/usr/share/omx-contract/contract.d';
+/** Where omx-plugins-devel installs the param-contract header. */
+const DEFAULT_PARAM_CONTRACT_H = '/usr/include/omx-plugins/omx_param_contract.h';
+
+/** The contract directories, in the order they are read: `$OMX_CONTRACT_PATH`, else omx-contract's `contractdir`,
+ * else the default. */
+export function contractDirs() {
+  const path = process.env.OMX_CONTRACT_PATH;
+  if (path) return path.split(':').filter(Boolean);
+  return [pkgVariable('omx-contract', 'contractdir') ?? DEFAULT_CONTRACTDIR];
+}
+
+/** The directory `<contractdir>/3/<package>` of the first contract directory that holds it, or undefined. */
+export function packageDir(pkg) {
+  return contractDirs().map((d) => join(d, '3', pkg)).find((d) => existsSync(d));
+}
+
+/** omx-contract's own data directory: its pkg-config `datadir`, else the default. */
+export function contractDataDir() {
+  return pkgVariable('omx-contract', 'datadir') ?? DEFAULT_DATADIR;
+}
+
 const once = (read) => {
   let v;
   return () => (v ??= read());
@@ -37,15 +68,13 @@ const once = (read) => {
 
 /** The installed omx-contract schema, where the descriptor words are declared. */
 export function contractSchemaFile() {
-  if (process.env.OMX_CONTRACT_SCHEMA) return process.env.OMX_CONTRACT_SCHEMA;
-  const dir = pkgVariable('omx-contract', 'datadir');
-  return dir && join(dir, 'omx-contract.schema.json');
+  return process.env.OMX_CONTRACT_SCHEMA || join(contractDataDir(), 'omx-contract.schema.json');
 }
 
 /** The descriptor's closed list of meanings, `unknown` aside: omx-contract's schema, `$defs.meaning`. */
 export const meanings = once(() => {
   const file = contractSchemaFile();
-  if (!file || !existsSync(file)) throw new Error(`vocabulary: omx-contract's schema is not installed (${file ?? 'pkg-config finds no omx-contract'}): install omx-contract-devel, or name the file in $OMX_CONTRACT_SCHEMA`);
+  if (!existsSync(file)) throw new Error(`vocabulary: omx-contract's schema is not installed (${file}): install omx-contract-data, or name the file in $OMX_CONTRACT_SCHEMA`);
   const list = JSON.parse(readFileSync(file, 'utf8')).$defs?.meaning?.enum;
   if (!Array.isArray(list)) throw new Error(`vocabulary: ${file} declares no $defs.meaning`);
   return Object.freeze(list.filter((m) => m !== 'unknown'));
@@ -66,11 +95,17 @@ export function meaningOfRole(role) {
   return meanings().includes(m) ? m : undefined;
 }
 
+/** The file of plugin-hostd's LV2 table: in `$PLUGIN_HOSTD_TABLES`, else in the first contract directory holding
+ * plugin-hostd (named in the first one when none does). */
+export function lv2TableFile() {
+  if (process.env.PLUGIN_HOSTD_TABLES) return join(process.env.PLUGIN_HOSTD_TABLES, 'lv2.json');
+  return join(packageDir('plugin-hostd') ?? join(contractDirs()[0], '3', 'plugin-hostd'), 'formats', 'lv2.json');
+}
+
 /** plugin-hostd's installed LV2 table: `{ <unit>: <LV2 source value> }` from its lookup rows of the unit word. */
 export const lv2UnitTable = once(() => {
-  const dir = process.env.PLUGIN_HOSTD_TABLES || (pkgVariable('omx-contract', 'contractdir') && join(pkgVariable('omx-contract', 'contractdir'), '3', 'plugin-hostd', 'formats'));
-  const file = dir && join(dir, 'lv2.json');
-  if (!file || !existsSync(file)) throw new Error(`vocabulary: plugin-hostd's LV2 table is not installed (${file ?? 'pkg-config finds no omx-contract contract directory'}): install plugin-hostd-devel, or name a directory holding lv2.json in $PLUGIN_HOSTD_TABLES`);
+  const file = lv2TableFile();
+  if (!existsSync(file)) throw new Error(`vocabulary: plugin-hostd's LV2 table is not installed (${file}): install plugin-hostd-contract, or name a directory holding lv2.json in $PLUGIN_HOSTD_TABLES`);
   const item = JSON.parse(readFileSync(file, 'utf8')).PLUGIN_HOSTD_LV2_MAP;
   if (item?.kind !== 'formatMap' || typeof item.rows !== 'object') throw new Error(`vocabulary: ${file} holds no PLUGIN_HOSTD_LV2_MAP formatMap`);
   const out = {};
@@ -85,14 +120,18 @@ export const lv2UnitTable = once(() => {
   return out;
 });
 
+/** The param-contract header: `$OMX_PARAM_CONTRACT_H`, else under omxplugins' pkg-config `includedir`, else the
+ * default; undefined when none is there. */
+export function paramContractHeader() {
+  if (process.env.OMX_PARAM_CONTRACT_H) return existsSync(process.env.OMX_PARAM_CONTRACT_H) ? process.env.OMX_PARAM_CONTRACT_H : undefined;
+  const inc = pkgVariable('omxplugins', 'includedir');
+  return [...(inc ? [join(inc, 'omx-plugins', 'omx_param_contract.h'), join(inc, 'omx_param_contract.h')] : []), DEFAULT_PARAM_CONTRACT_H].find(existsSync);
+}
+
 /** The param-contract header's unit values, by name without underscores (SEMITONE12TET): `Map<name, value>`. */
 export const headerUnits = once(() => {
-  let file = process.env.OMX_PARAM_CONTRACT_H;
-  if (!file) {
-    const inc = pkgVariable('omxplugins', 'includedir');
-    file = inc && [join(inc, 'omx-plugins', 'omx_param_contract.h'), join(inc, 'omx_param_contract.h')].find(existsSync);
-  }
-  if (!file || !existsSync(file)) throw new Error(`vocabulary: the param-contract header omx_param_contract.h is not installed (${file ?? 'pkg-config finds no omxplugins'}): install omx-plugins-devel, or name the file in $OMX_PARAM_CONTRACT_H`);
+  const file = paramContractHeader();
+  if (!file) throw new Error(`vocabulary: the param-contract header omx_param_contract.h is not installed (${process.env.OMX_PARAM_CONTRACT_H || DEFAULT_PARAM_CONTRACT_H}): install omx-plugins-devel, or name the file in $OMX_PARAM_CONTRACT_H`);
   const body = readFileSync(file, 'utf8').match(/enum omx_clap_param_unit \{([\s\S]*?)\};/)?.[1];
   if (!body) throw new Error(`vocabulary: ${file} declares no enum omx_clap_param_unit`);
   return new Map([...body.matchAll(/OMX_CLAP_UNIT_(\w+)\s*=\s*(0x[0-9a-fA-F]+|\d+)/g)].map((m) => [m[1].replaceAll('_', ''), Number(m[2])]));
@@ -132,8 +171,7 @@ export function contractUnits() {
 export function installedDescriptorFile(ref) {
   const m = /^([a-z0-9][a-z0-9.+-]*)\/([A-Za-z0-9._-]+)$/.exec(ref);
   if (!m) throw new Error(`vocabulary: '${ref}' is not <package>/<name>`);
-  const dir = pkgVariable('omx-contract', 'contractdir');
-  const file = dir && join(dir, '3', m[1], 'plugins', `${m[2]}.json`);
-  if (!file || !existsSync(file)) throw new Error(`vocabulary: no descriptor ${ref} is installed (${file ?? 'pkg-config finds no omx-contract contract directory'})`);
+  const file = contractDirs().map((d) => join(d, '3', m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
+  if (!file) throw new Error(`vocabulary: no descriptor ${ref} is installed (in ${contractDirs().join(':')})`);
   return file;
 }

@@ -11,6 +11,9 @@
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
  *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
+ *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
+ *                                                        directories, the meanings, the LV2 unit table, the param-contract
+ *                                                        header and each descriptor named; exit 1 when one is missing
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
@@ -23,7 +26,8 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages]\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--check]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
-  + '       omx-panel look [--check]\n';
+  + '       omx-panel look [--check]\n'
+  + '       omx-panel vocabulary [<package>/<name>]...\n';
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -80,11 +84,39 @@ async function layout(argv) {
   else process.stdout.write(`${JSON.stringify(x, (_k, v) => (typeof v === 'bigint' ? v.toString(16) : v), 2)}\n`);
 }
 
+/** Each source the layout and the MOD GUI read, read where it is installed: one line each, `ok` or `FAIL`. */
+async function vocabulary(refs) {
+  const v = await import(join(TOOLS, 'vocabulary.mjs'));
+  let failed = 0;
+  const line = (what, read) => {
+    try {
+      process.stdout.write(`ok   ${what} ${read()}\n`);
+    } catch (err) {
+      failed++;
+      process.stdout.write(`FAIL ${what} ${err.message}\n`);
+    }
+  };
+  line('contractdir', () => v.contractDirs().join(':'));
+  line('meanings', () => `${v.meanings().length} from ${v.contractSchemaFile()}`);
+  line('lv2-units', () => `${Object.keys(v.lv2UnitTable()).length} from ${v.lv2TableFile()}`);
+  line('param-contract', () => `${v.headerUnits().size} units from ${v.paramContractHeader()}`);
+  for (const ref of refs) {
+    line(`descriptor ${ref}`, () => {
+      const file = v.installedDescriptorFile(ref);
+      const d = JSON.parse(readFileSync(file, 'utf8'));
+      if (!Array.isArray(d.controls)) throw new Error(`${file} has no controls`);
+      return `${d.controls.length} controls from ${file}`;
+    });
+  }
+  process.exit(failed ? 1 : 0);
+}
+
 if (command === 'validate') validate(args);
 else if (command === 'layout') await layout(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'look') tool('look.mjs');
+else if (command === 'vocabulary') await vocabulary(args);
 else {
   process.stderr.write(USAGE);
   process.exit(2);

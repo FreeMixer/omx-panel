@@ -37,7 +37,7 @@ jobs:
         run: |
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins
           dnf config-manager addrepo --from-repofile=https://freemixer.github.io/rpm/freemixer.repo
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.0.0' 'plugin-hostd-devel >= 0.7.0' omx-plugins-devel
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' 'plugin-hostd-contract >= 0.12.0' omx-plugins-devel
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -67,7 +67,8 @@ jobs:
       binary-names: omx-panel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       needs-mod-host: false
-      # omx-contract-devel, plugin-hostd-devel and omx-plugins-devel, which %check reads, come from the channel
+      # omx-contract-data, plugin-hostd-contract and omx-plugins-devel (the param-contract header), which %check reads,
+      # come from the channel
       channel-deps: true
     secrets: inherit
 
@@ -82,7 +83,8 @@ jobs:
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       dependencies: ''
       requires: ''
-      # libomx-contract-dev, plugin-hostd-dev and omx-plugins-dev, which the tests read, come from the channel
+      # omx-contract-data, plugin-hostd-contract and omx-plugins-dev (the param-contract header), which the tests read,
+      # come from the channel
       channel-deps: true
     secrets: inherit
 
