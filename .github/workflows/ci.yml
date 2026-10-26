@@ -101,7 +101,7 @@ jobs:
       # the contract packages the channel does not publish yet (plugin-hostd 0.12.0, omx-plugins' next release): the
       # check installs without them, reads their files from the -devel payloads and reports both as not verified; it
       # refuses a name here once the channel publishes it
-      NOT_YET_PUBLISHED: plugin-hostd-contract omx-plugins-contract
+      NOT_YET_PUBLISHED: omx-plugins-contract
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
