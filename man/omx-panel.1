@@ -11,6 +11,10 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .B omx-panel
 .B vocabulary
 .RI [ package / name ]...
+.br
+.B omx-panel
+.B descriptors
+.B \-\-installed
 .SH DESCRIPTION
 .B omx-panel validate
 reads each skin given, a
@@ -26,6 +30,10 @@ given. A line starts with
 .B ok
 or, for a source that is not installed,
 .BR FAIL .
+.PP
+.B omx-panel descriptors \-\-installed
+prints the path of each installed plugin descriptor, one per line, found under every contract directory
+whatever contract major is installed.
 .SH EXIT STATUS
 .TP
 .B 0
