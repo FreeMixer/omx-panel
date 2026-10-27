@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 Name: omx-panel
-Version: 0.3.4
+Version: 0.4.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -20,6 +20,12 @@ BuildRequires: npm
 BuildRequires: omx-contract-data >= 3.3.0
 BuildRequires: plugin-hostd-contract >= 0.12.0
 BuildRequires: omx-plugins-contract >= 0.15.0
+# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe
+Recommends: python3-lilv
+Recommends: plugin-hostd
+# %%check runs omx-modgui-sync over a bundle
+BuildRequires: python3-lilv
+BuildRequires: systemd-rpm-macros
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
@@ -47,7 +53,7 @@ npm ci --no-audit --no-fund
 %make_build
 
 %install
-%make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir}
+%make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir} UNITDIR=%{_unitdir} SYSCONFDIR=%{_sysconfdir}
 
 %check
 make test
@@ -56,12 +62,24 @@ make test
 %license LICENSE
 %doc README.md docs/
 %{_bindir}/omx-panel
+%{_bindir}/omx-modgui-sync
 %{_mandir}/man1/omx-panel.1*
+%{_mandir}/man1/omx-modgui-sync.1*
+# installed, never enabled: no preset names it; `systemctl enable omx-modgui-sync` is the choice
+%{_unitdir}/omx-modgui-sync.service
+%dir %{_sysconfdir}/omx/
+%config(noreplace) %{_sysconfdir}/omx/modgui-sync.conf
 %{_datadir}/omx-panel/
 %dir %{_datadir}/omx/
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.0-1
+- omx-modgui-sync, moved here from the Zynthian image: gives a generated MOD GUI to
+  every LV2 plugin that ships none, into /var/lib/omx/modgui (standard directories,
+  set in /etc/omx/modgui-sync.conf). The unit is installed, not enabled. A plugin
+  that cannot get a GUI never fails the run (#44).
+
 * Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.3.4-1
 - The unit table is read from the contract data (param-units.json, installed by
   omx-plugins-contract) and not from the C header omx_param_contract.h, which

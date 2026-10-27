@@ -10,10 +10,12 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
 MANDIR ?= $(DATADIR)/man
+SYSCONFDIR ?= /etc
+UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look install
+.PHONY: all build check test spdx public-sources look install install-apt-hook
 
 all: build
 
@@ -53,3 +55,13 @@ install: build
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0644 man/omx-modgui-sync.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0755 bin/omx-modgui-sync $(DESTDIR)$(BINDIR)/
+	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(SYSCONFDIR)/omx
+	install -m 0644 systemd/omx-modgui-sync.service $(DESTDIR)$(UNITDIR)/
+	install -m 0644 etc/omx/modgui-sync.conf $(DESTDIR)$(SYSCONFDIR)/omx/
+
+# the apt hook is Debian's: debian/rules runs this, the RPM has no equivalent
+install-apt-hook:
+	install -d $(DESTDIR)$(SYSCONFDIR)/apt/apt.conf.d
+	install -m 0644 etc/apt/80omx-modgui-sync $(DESTDIR)$(SYSCONFDIR)/apt/apt.conf.d/
