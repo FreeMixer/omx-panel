@@ -40,7 +40,7 @@ jobs:
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' 'plugin-hostd-contract >= 0.12.0' omx-plugins-devel
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' 'plugin-hostd-contract >= 0.12.0' 'omx-plugins-contract >= 0.15.0'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -70,7 +70,7 @@ jobs:
       binary-names: omx-panel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       needs-mod-host: false
-      # omx-contract-data, plugin-hostd-contract and omx-plugins-devel (the param-contract header), which %check reads,
+      # omx-contract-data, plugin-hostd-contract and omx-plugins-contract (the param-contract unit table), which %check reads,
       # come from the channel
       channel-deps: true
     secrets: inherit
@@ -86,7 +86,7 @@ jobs:
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       dependencies: ''
       requires: ''
-      # omx-contract-data, plugin-hostd-contract and omx-plugins-dev (the param-contract header), which the tests read,
+      # omx-contract-data, plugin-hostd-contract and omx-plugins-contract (the param-contract unit table), which the tests read,
       # come from the channel
       channel-deps: true
     secrets: inherit

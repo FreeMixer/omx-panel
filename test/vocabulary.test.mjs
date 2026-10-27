@@ -19,7 +19,7 @@ const NO_PKG_CONFIG = '/nonexistent/pkg-config';
 /** The environment of a case: none of the lookup's variables but those given. */
 function envOf(set) {
   const env = { ...process.env };
-  for (const k of ['OMX_CONTRACT_PATH', 'OMX_CONTRACT_SCHEMA', 'PLUGIN_HOSTD_TABLES', 'OMX_PARAM_CONTRACT_H', 'PKG_CONFIG']) delete env[k];
+  for (const k of ['OMX_CONTRACT_PATH', 'OMX_CONTRACT_SCHEMA', 'PLUGIN_HOSTD_TABLES', 'PKG_CONFIG']) delete env[k];
   return { ...env, ...set };
 }
 
@@ -77,12 +77,11 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
 });
 
 test('omx-panel vocabulary reads each source where the lookup puts it, and fails on one that is missing', () => {
-  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
+  const UNITS = { OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value: { none: 0, db: 13, dbu: 0x101 } } };
+  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR, 'param-units.json': UNITS } });
   const schema = join(dir, 'omx-contract.schema.json');
   writeFileSync(schema, JSON.stringify({ $defs: { meaning: { enum: ['gain', 'delay', 'unknown'] } } }));
-  const header = join(dir, 'omx_param_contract.h');
-  writeFileSync(header, 'enum omx_clap_param_unit {\n  OMX_CLAP_UNIT_NONE = 0, OMX_CLAP_UNIT_DB = 13,\n  OMX_CLAP_UNIT_DBU = 0x101,\n};\n');
-  const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, OMX_PARAM_CONTRACT_H: header, PKG_CONFIG: NO_PKG_CONFIG };
+  const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, PKG_CONFIG: NO_PKG_CONFIG };
   const r = command(['omx-plugins/omx-delay'], set);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, new RegExp(`^ok   contractdir ${dir}$`, 'm'));

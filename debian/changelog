@@ -1,3 +1,13 @@
+omx-panel (0.3.4) unstable; urgency=medium
+
+  * The unit table is read from the contract data (param-units.json, installed
+    by omx-plugins-contract) and not from the C header omx_param_contract.h,
+    which only omx-plugins-dev ships: a runtime install lays out a control
+    with a unit. omx-plugins-contract (>= 0.15.0) is now a dependency.
+    $OMX_PARAM_CONTRACT_H is gone (#44).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 27 Oct 2026 22:00:00 +0000
+
 omx-panel (0.3.3) unstable; urgency=medium
 
   * The MOD GUI's brand is the vendor, else the plugin name, else the file
