@@ -1,0 +1,113 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.0.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "id": "http://theusualsuspects.lv2/Xenia",
+    "format": "lv2",
+    "uri": "http://theusualsuspects.lv2/Xenia",
+    "name": "Xenia",
+    "vendor": "The Usual Suspects",
+    "features": [
+      "instrument"
+    ]
+  },
+  "controls": [
+    {
+      "id": "freeWheeling",
+      "name": "Free Wheeling",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "unit": "unknown",
+        "default": 0,
+        "scale": "linear"
+      },
+      "meaning": "unknown",
+      "hidden": true,
+      "source": {
+        "from": "Xenia.lv2/dsp.ttl#freeWheeling"
+      }
+    },
+    {
+      "id": "enabled",
+      "name": "Enabled",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "unit": "unknown",
+        "default": 1,
+        "scale": "linear"
+      },
+      "meaning": "enabled",
+      "hidden": true,
+      "source": {
+        "from": "Xenia.lv2/dsp.ttl#enabled"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "audio_in_1",
+      "name": "Input",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": "audio_out_1",
+      "name": "Output",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": "audio_out_3",
+      "name": "Out 2",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": "in",
+      "name": "In",
+      "kind": "midi",
+      "direction": "in"
+    },
+    {
+      "id": "out",
+      "name": "Out",
+      "kind": "midi",
+      "direction": "out"
+    }
+  ],
+  "instrument": {
+    "polyphonic": false
+  },
+  "needs": {
+    "transport": true,
+    "extensions": {
+      "required": [
+        "opts:options",
+        "bufsz:boundedBlockLength",
+        "urid:map"
+      ],
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  }
+}

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 Name: omx-panel
-Version: 0.3.2
+Version: 0.3.3
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -63,6 +63,12 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.3.3-1
+- The MOD GUI's brand is the vendor, else the plugin name, else the file stem; a
+  plugin that states no vendor is no longer refused (#44).
+- `omx-panel modgui` exits 3, with one line and no stack trace, for a descriptor
+  with no visible control (#44).
+
 * Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.3.2-1
 - A reader that stops early (head, grep -q) ends the output quietly: exit 0, no
   stack trace (#42).
