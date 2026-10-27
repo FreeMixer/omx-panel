@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.4.0
+Version: 0.4.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -77,6 +77,11 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.1-1
+- The DEB builds on Debian bookworm again: python3-lilv is no build dependency
+  (bookworm has none); the omx-modgui-sync tests skip without it. The RPM is
+  unchanged (#44).
+
 * Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.0-1
 - omx-modgui-sync, moved here from the Zynthian image: gives a generated MOD GUI to
   every LV2 plugin that ships none, into /var/lib/omx/modgui (standard directories,
