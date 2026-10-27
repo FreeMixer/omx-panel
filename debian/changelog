@@ -1,3 +1,10 @@
+omx-panel (0.3.2) unstable; urgency=medium
+
+  * A reader that stops early (head, grep -q) ends the output quietly: exit 0,
+    no stack trace (#42).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 27 Oct 2026 20:00:00 +0000
+
 omx-panel (0.3.1) unstable; urgency=medium
 
   * `omx-panel descriptors --installed` lists the installed descriptor files,
