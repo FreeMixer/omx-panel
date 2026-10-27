@@ -18,7 +18,9 @@ Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
 Depends: nodejs (>= 18), omx-contract-data (>= 3.3.0), plugin-hostd-contract (>= 0.12.0), omx-plugins-contract (>= 0.15.0), ${misc:Depends}
-Recommends: python3-lilv, plugin-hostd
+Recommends: plugin-hostd
+# omx-modgui-sync lists the LV2 plugins with lilv; Debian bookworm has no python3-lilv (trixie and later do), so it is a suggestion
+Suggests: python3-lilv
 Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
  omx-panel makes panels for LV2 and CLAP plugins from what each plugin
  declares. It lays a panel out from a plugin's descriptor (sections, controls,
