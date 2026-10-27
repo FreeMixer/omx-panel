@@ -8,8 +8,7 @@ Build-Depends: debhelper-compat (= 13),
                npm,
                omx-contract-data (>= 3.3.0) <!nocheck>,
                plugin-hostd-contract (>= 0.12.0) <!nocheck>,
-               omx-plugins-contract (>= 0.15.0) <!nocheck>,
-               python3-lilv <!nocheck>
+               omx-plugins-contract (>= 0.15.0) <!nocheck>
 Standards-Version: 4.6.2
 Homepage: https://github.com/FreeMixer/omx-panel
 Rules-Requires-Root: no
