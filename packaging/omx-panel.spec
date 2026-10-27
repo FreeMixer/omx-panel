@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 Name: omx-panel
-Version: 0.3.3
+Version: 0.3.4
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -16,19 +16,18 @@ BuildRequires: nodejs >= 18
 # npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
-# header, which only omx-plugins-devel ships
+# unit table (param-units.json, from 0.15.0)
 BuildRequires: omx-contract-data >= 3.3.0
 BuildRequires: plugin-hostd-contract >= 0.12.0
-BuildRequires: omx-plugins-devel
+BuildRequires: omx-plugins-contract >= 0.15.0
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: omx-contract-data >= 3.3.0
 Requires: plugin-hostd-contract >= 0.12.0
-# the descriptors of omx-plugins' plugins, for modgui --installed
-Recommends: omx-plugins-contract
-# the param-contract header the unit tokens are judged by; $OMX_PARAM_CONTRACT_H names another
-Suggests: omx-plugins-devel
+# the param-contract unit table the unit tokens are judged by (param-units.json, from 0.15.0), and the descriptors of
+# omx-plugins' plugins, for modgui --installed
+Requires: omx-plugins-contract >= 0.15.0
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -63,6 +62,13 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.3.4-1
+- The unit table is read from the contract data (param-units.json, installed by
+  omx-plugins-contract) and not from the C header omx_param_contract.h, which
+  only omx-plugins-devel ships: a runtime install lays out a control with a
+  unit. omx-plugins-contract >= 0.15.0 is now required. $OMX_PARAM_CONTRACT_H
+  is gone (#44).
+
 * Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.3.3-1
 - The MOD GUI's brand is the vendor, else the plugin name, else the file stem; a
   plugin that states no vendor is no longer refused (#44).
