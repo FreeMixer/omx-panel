@@ -74,3 +74,11 @@ test('look: --check finds look.json fresh', () => {
   const r = run('look', '--check');
   assert.equal(r.status, 0, r.stderr);
 });
+
+test('modgui: a descriptor with nothing to draw exits 3 with one line and no stack trace', () => {
+  const out = join(mkdtempSync(join(tmpdir(), 'omx-panel-')), 'hidden-only.lv2');
+  const r = run('modgui', '--descriptor', join(ROOT, 'test/fixtures/descriptors/scanned-lv2-hidden-only.json'), '--out', out);
+  assert.equal(r.status, 3, r.stderr);
+  assert.match(r.stderr, /^modgui-gen: 'hidden-only' has no control to draw\n$/);
+  assert.equal(existsSync(out), false, 'nothing is written');
+});

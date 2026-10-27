@@ -124,6 +124,12 @@ export function travelFraction(p, v) {
   return p.max === p.min ? 0 : (v - p.min) / (p.max - p.min);
 }
 
+/** A descriptor with no visible control (a synth whose parameters are not LV2 ports): there is no face to make. Not a
+ * fault of the descriptor; `omx-panel modgui` exits 3 for it so a sweep records a skip. */
+export class NothingToDraw extends Error {
+  code = 'MODGUI_NOTHING_TO_DRAW';
+}
+
 /** The panel a descriptor is drawn with: the declared one, else the layout's sections and family over its
  * groups and meanings (tools/panel-description.mjs). */
 export function panelOf(descriptor, declared) {
@@ -138,7 +144,6 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
   const plugin = descriptor.plugin ?? {};
   const uri = plugin.format === 'lv2' ? plugin.id : plugin.uri;
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
-  if (!plugin.vendor) throw new Error(`modgui-gen: '${plugin.id}' states no vendor, the MOD GUI's brand`);
   const panel = panelOf(descriptor, declared);
   const controls = descriptor.controls ?? [];
   const seen = new Set();
@@ -161,8 +166,8 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
     }),
   }));
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
-  if (sections.length === 0 || sections[0].controls.length === 0) throw new Error(`modgui-gen: '${stem}' has an empty first section`);
-  return { uri, stem, name: plugin.name, brand: plugin.vendor, family: panel.family, sections };
+  if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
+  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections };
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
@@ -463,7 +468,7 @@ function walk(dir, base) {
     e.isDirectory() ? walk(join(dir, e.name), base) : [relative(base, join(dir, e.name))]).sort();
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check), 2 usage, 3 nothing to draw (no visible control)';
 
 export function main(argv) {
   const check = argv.includes('--check');
@@ -488,7 +493,14 @@ export function main(argv) {
   let stale = 0;
   const dir = resolve(out);
   const shown = (p) => relative(process.cwd(), join(dir, p));
-  const made = generateModgui(descriptor, { panel, stem, source }, look);
+  let made;
+  try {
+    made = generateModgui(descriptor, { panel, stem, source }, look);
+  } catch (err) {
+    if (err.code !== 'MODGUI_NOTHING_TO_DRAW') throw err;
+    console.error(err.message);
+    process.exit(3);
+  }
   if (toStdout) {
     for (const [p, bytes] of made) {
       if (p.endsWith('.png')) process.stdout.write(`# ${shown(p)}: ${bytes.length} bytes, sha256 ${createHash('sha256').update(bytes).digest('hex')}\n`);
