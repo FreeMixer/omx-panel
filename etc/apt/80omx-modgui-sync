@@ -1,0 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+// After packages are installed or removed, refresh the generated MOD GUIs (omx-modgui-sync) in the background, when
+// the unit is enabled. Nothing happens in a chroot.
+DPkg::Post-Invoke { "systemctl is-enabled --quiet omx-modgui-sync.service && systemctl --no-block start omx-modgui-sync.service >/dev/null 2>&1 || true"; };

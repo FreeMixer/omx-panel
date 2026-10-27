@@ -1,0 +1,66 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.\" Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+.TH OMX-MODGUI-SYNC 1 "2026-10-27" "omx-panel" "User Commands"
+.SH NAME
+omx-modgui-sync \- give a MOD GUI to every LV2 plugin that ships none
+.SH SYNOPSIS
+.B omx-modgui-sync
+.RB [ --dry-run ]
+.RB [ --no-scan ]
+.SH DESCRIPTION
+For each LV2 plugin on LV2_PATH with no MOD GUI anywhere, writes a bundle in MODGUI_DIR: modgui.ttl and modgui/ made by
+.BR "omx-panel modgui"
+from the plugin's descriptor, and a manifest.ttl, so lilv adds the GUI to the installed plugin. The plugin's own bundle is never touched.
+MOD-UI shows the bundles once MODGUI_DIR is on its LV2_PATH.
+.PP
+The descriptor is, in this order, the plugin's declaration in omx-contract
+.RB ( "omx-panel descriptors --installed" ),
+the newest one in DESCRIPTOR_DIRS (written by plugin-hostd and plugin-qualify), or, unless
+.BR --no-scan ,
+one made by
+.BR "plugin-hostd-probe describe" .
+.PP
+A bundle newer than its descriptor is left as it is. A bundle without the marker file .omx-modgui-sync is never written or removed; one with it goes away when its plugin is uninstalled or ships a MOD GUI of its own.
+.PP
+A plugin that cannot get a GUI never fails the run. One whose descriptor has no visible control (omx-panel modgui exit status 3) is counted as having nothing to draw; any other refusal is named in the summary. The run fails only when it cannot start: omx-panel, python3 or python3-lilv missing, or the plugins unreadable.
+.SH OPTIONS
+.TP
+.B --dry-run
+say what would be written or removed, and change nothing
+.TP
+.B --no-scan
+do not run plugin-hostd-probe for a plugin with no descriptor
+.SH ENVIRONMENT
+.TP
+.B MODGUI_DIR
+the bundles (default /var/lib/omx/modgui; $XDG_DATA_HOME/omx/modgui for a user other than root)
+.TP
+.B STATE_DIR
+the scans and work files (default /var/lib/omx/modgui-sync)
+.TP
+.B DESCRIPTOR_DIRS
+the scanned descriptors, a colon list (default /var/lib/omx/descriptors)
+.TP
+.B LV2_PATH
+where lilv looks for plugins (its default when unset)
+.SH FILES
+.TP
+.I /etc/omx/modgui-sync.conf
+KEY=value lines for the three directories above, read by the unit
+.TP
+.I omx-modgui-sync.service
+runs the sync once; installed but not enabled (systemctl enable omx-modgui-sync). On Debian,
+.I /etc/apt/apt.conf.d/80omx-modgui-sync
+starts it after each apt run when it is enabled.
+.SH EXIT STATUS
+.TP
+.B 0
+the run finished, whatever it could not draw
+.TP
+.B 1
+the run could not start
+.TP
+.B 2
+usage error
+.SH SEE ALSO
+.BR omx-panel (1)
