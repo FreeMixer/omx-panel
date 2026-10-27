@@ -107,7 +107,7 @@ async function vocabulary(refs) {
   line('contractdir', () => v.contractDirs().join(':'));
   line('meanings', () => `${v.meanings().length} from ${v.contractSchemaFile()}`);
   line('lv2-units', () => `${Object.keys(v.lv2UnitTable()).length} from ${v.lv2TableFile()}`);
-  line('param-contract', () => `${v.headerUnits().size} units from ${v.paramContractHeader()}`);
+  line('param-contract', () => `${v.paramUnits().size} units from ${v.paramUnitsFile()}`);
   for (const ref of refs) {
     line(`descriptor ${ref}`, () => {
       const file = v.installedDescriptorFile(ref);
