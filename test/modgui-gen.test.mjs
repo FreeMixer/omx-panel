@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { emitLook, TOKENS_CSS, LOOK_JSON } from '../tools/look.mjs';
-import { generateModgui, resolvePanel } from '../tools/modgui-gen.mjs';
+import { generateModgui, NothingToDraw, resolvePanel } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
@@ -100,4 +100,25 @@ test('look.json is what tokens.css resolves to, and a moved token moves it', () 
   const moved = css.replace(/--accent:[^;]+/g, '--accent: #123456');
   assert.notEqual(moved, css, 'the edit landed');
   assert.notEqual(emitLook(moved), emitLook(css));
+});
+
+test('the brand is the vendor, else the plugin name, else the stem: a missing vendor refuses nothing', () => {
+  const d = read('omx-delay.descriptor.json');
+  const panel = read('omx-delay.panel.json');
+  const brand = (x) => resolvePanel(x, { panel, stem: 'omx-delay' }).brand;
+  assert.ok(d.plugin.vendor && d.plugin.name, 'the fixture states both');
+  assert.equal(brand(d), d.plugin.vendor);
+  const name = d.plugin.name;
+  delete d.plugin.vendor;
+  assert.equal(brand(d), name);
+  delete d.plugin.name;
+  assert.equal(brand(d), 'omx-delay');
+  const ttl = new Map(generateModgui(d, { panel, stem: 'omx-delay', source: 's' })).get('modgui.ttl').toString();
+  assert.match(ttl, /modgui:brand "omx-delay"/);
+});
+
+test('a descriptor whose controls are all hidden has nothing to draw: a typed error, not a fault (a synth with no LV2 ports)', () => {
+  const d = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/descriptors/scanned-lv2-hidden-only.json'), 'utf8'));
+  assert.ok(d.controls.length > 0 && d.controls.every((c) => c.hidden), 'the fixture has controls, all hidden');
+  assert.throws(() => resolvePanel(d, { stem: 'hidden-only' }), (err) => err instanceof NothingToDraw && err.code === 'MODGUI_NOTHING_TO_DRAW');
 });
