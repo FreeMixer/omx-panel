@@ -26,7 +26,7 @@ jobs:
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' omx-plugins-devel
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.3.0' 'omx-plugins-contract >= 0.15.0'
           # plugin-hostd's LV2 table: plugin-hostd-contract from 0.12.0; plugin-hostd-devel installs the same file before it
           dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.12.0' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
