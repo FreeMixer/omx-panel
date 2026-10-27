@@ -39,7 +39,7 @@ case "$PKG" in
     unpack() { (cd "$2" && dnf -q download "$1" >/dev/null 2>&1) && (cd / && rpm2cpio "$2"/*.rpm | cpio -idm --quiet "./usr/share/omx-contract/contract.d/3/$3/*"); }
     dnf install -y -q --setopt=install_weak_deps=False cpio >/dev/null 2>&1
     dnf -q makecache >/dev/null 2>&1
-    reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' | sed 's/ *$//')
+    reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' -e '^config(' | sed 's/ *$//')
     weak=$(rpm -qp --recommends "$PKG")
     ;;
   *.deb)
