@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# the build runs with --nodeps, without systemd-rpm-macros: the unit directory is then the one it defines
+%{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
+
 Name: omx-panel
 Version: 0.4.0
 Release: 1%{?dist}
