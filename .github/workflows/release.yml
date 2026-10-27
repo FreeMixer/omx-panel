@@ -35,7 +35,7 @@ jobs:
     steps:
       - name: Install node
         run: |
-          dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins
+          dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv
       - name: Add the OpenMixer repository
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Install the vocabulary the suite reads

@@ -13,6 +13,10 @@ the plugin's own declaration, in the omx look, vintage or modern.
   ([docs/panel-layout.md](docs/panel-layout.md)).
 - The MOD GUI generator: `omx-panel modgui` writes a plugin's MOD GUI from its descriptor, its images rasterised
   byte for byte, in the omx look (`tools/look/tokens.css`) ([docs/modgui.md](docs/modgui.md)).
+- The sync: `omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, into
+  `/var/lib/omx/modgui` (on MOD-UI's `LV2_PATH`), one bundle per plugin, never touching a bundle that is not its own.
+  The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync`. A plugin that cannot get a GUI never
+  fails the run; `omx-modgui-sync(1)` has the directories, the exit status and the summary.
 - The skin package: its schema, `omx-panel validate`, and its facts as a module (`src/skin-package.ts`: the
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
   ([docs/skin-package.md](docs/skin-package.md)).
