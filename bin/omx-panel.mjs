@@ -22,6 +22,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSkin } from '../lib/validate.mjs';
 
+// A reader that stops early (head, grep -q) closes the pipe: stop writing and exit 0, as a filter does (#42).
+process.stdout.on('error', (err) => {
+  if (err.code === 'EPIPE') process.exit(0);
+  throw err;
+});
+
 const TOOLS = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages]\n'

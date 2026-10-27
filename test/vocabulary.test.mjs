@@ -118,3 +118,16 @@ test('omx-panel descriptors --installed lists each installed descriptor, whateve
   assert.ok(!r.stdout.includes(old));
   assert.equal(spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'descriptors'], { encoding: 'utf8' }).status, 2);
 });
+
+test('a reader that stops early ends the listing quietly: exit 0, no stack trace (#42)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  for (let i = 0; i < 3000; i++) {
+    const rel = `7/omx-plugins/plugins/omx-plugin-with-a-long-name-${i}.json`;
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
+  }
+  const r = spawnSync('bash', ['-c', 'set -o pipefail; "$0" "$1" descriptors --installed | head -n1', process.execPath, join(ROOT, 'dist/bin/omx-panel.mjs')], { encoding: 'utf8', env: envOf({ OMX_CONTRACT_PATH: dir }) });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stderr, '');
+  assert.equal(r.stdout.split('\n').filter(Boolean).length, 1);
+});
