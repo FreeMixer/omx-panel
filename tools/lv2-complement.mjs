@@ -19,7 +19,8 @@
  * Nothing is written for a bundle none of whose plugins is `grouped` (`nothing-to-do`, `no-confident-grouping`), and
  * the installed files are never written. A bundle the restatement cannot carry is refused with a reason, never
  * written: TTL the reader cannot parse, a version at lilv's ceiling (an int) or not an integer, more than one
- * version, binary or bundle for a plugin URI, a dynamic manifest, a data file outside the bundle.
+ * version, binary or bundle for a plugin URI, a dynamic manifest, a data file outside the bundle, a generated group
+ * node that would merge into a node already stated or into another plugin's (group-iri-collision).
  *
  *   node tools/lv2-complement.mjs --out <dir> [--lv2-path <a:b:...>] [--state <dir>] [--only <bundle.lv2>]...
  *                                 [--dry-run | --check] [--verbose] [--log-prefix <name>]
@@ -282,11 +283,13 @@ function serialize(triples, header, blank) {
 
 /**
  * The bundle's files: every installed TTL file lilv reads for the bundle's plugins, restated, with the versions
- * raised, the seeAlso references pointing at the restated files, and the inferred groups added.
+ * raised, the seeAlso references pointing at the restated files, and the inferred groups added. `target`, the
+ * directory the bundle will be written to, lets the group-node guard also resolve each generated node where lilv will.
  * @param {Plan} plan
+ * @param {string} [target]
  * @returns {Map<string, string>} file name in the new bundle -> its text
  */
-export function renderBundle(plan) {
+export function renderBundle(plan, target) {
   const { bundle } = plan;
   if (!plan.write) throw new Error(`${bundle.dir}: nothing to write`);
   const restated = new Map([...bundle.files.values()].map((f) => [f.url, f.name]));
@@ -314,11 +317,14 @@ export function renderBundle(plan) {
     stated.anywhere.add(`${termKey(t.s)}\0${t.p.v}`);
   };
   for (const [name, triples] of out) for (const t of triples) stated.note(name, t);
+  // every IRI the installed files state, as the reader resolved it, and the group nodes generated so far, per file
+  const nodes = { iris: new Set(), generated: new Map(), target };
+  for (const f of bundle.files.values()) for (const t of f.triples) for (const x of [t.s, t.p, t.o]) if (x.t === 'iri') nodes.iris.add(x.v);
   for (const p of plan.plugins) {
     const s = { t: 'iri', v: p.uri };
     manifest.push({ s, p: { t: 'iri', v: `${LV2}minorVersion` }, o: int(p.version.next.minor) });
     manifest.push({ s, p: { t: 'iri', v: `${LV2}microVersion` }, o: int(p.version.next.micro) });
-    if (p.verdict.outcome === 'grouped') addGroups(bundle, p, out, stated);
+    if (p.verdict.outcome === 'grouped') addGroups(bundle, p, out, stated, nodes);
   }
   const texts = new Map();
   let fileIndex = 0;
@@ -335,8 +341,34 @@ export function renderBundle(plan) {
   return texts;
 }
 
+/** `ref` resolved against `base` by the Turtle reader itself: the IRI a reader of that file gives it. */
+function resolveAs(base, ref) {
+  return parseTurtle(`<${ref}> <urn:p> <urn:o> .`, base)[0].s.v;
+}
+
+/**
+ * The guard on a generated group node `<#fragment>` in file `name`: refused (`group-iri-collision`) when the IRI it
+ * resolves to, against the installed file (what the plugin's own `<#fragment>` there means) or against the written
+ * file at `nodes.target` (what lilv will read), is one the bundle already states, or when another generated group in
+ * that file already took it (two grouped plugins whose URIs end alike). Refused rather than given a suffix: a node
+ * whose name nobody can predict from the plugin and the group symbol would surprise whoever looks it up.
+ */
+function guardNode(bundle, p, g, name, fragment, nodes) {
+  const ref = `#${fragment}`;
+  const where = [/** @type {TtlFile} */ (bundle.files.get(name)).url];
+  if (nodes.target) where.push(pathToFileURL(join(nodes.target, name)).href);
+  for (const base of where) {
+    const iri = resolveAs(base, ref);
+    if (nodes.iris.has(iri)) throw new Refusal('group-iri-collision', `${p.uri}: group ${g.symbol}'s node <${ref}> in ${name} is ${iri}, which the bundle already states`);
+  }
+  const key = `${name}\0${fragment}`;
+  const other = nodes.generated.get(key);
+  if (other !== undefined) throw new Refusal('group-iri-collision', `${p.uri}: group ${g.symbol}'s node <${ref}> in ${name} is also ${other}'s`);
+  nodes.generated.set(key, p.uri);
+}
+
 /** The statements of the inferred groups of plugin `p`, added to the file that states its ports. */
-function addGroups(bundle, p, out, stated) {
+function addGroups(bundle, p, out, stated, nodes) {
   const P = (v) => ({ t: 'iri', v });
   const lit = (v) => ({ t: 'lit', v: String(v), dt: `${XSD}string` });
   const int = (n) => ({ t: 'lit', v: String(n), dt: `${XSD}integer` });
@@ -377,6 +409,8 @@ function addGroups(bundle, p, out, stated) {
       node = { t: 'bnode', v: g.node.slice(k + 1) };
     } else if (g.node !== undefined) {
       node = P(g.node);
+    } else {
+      guardNode(bundle, p, g, file, `${slug}-${g.symbol}`, nodes);
     }
     // a blank node is stated in its own file only; an IRI may be stated in any of the bundle's files
     const known = (pred) => (node.t === 'iri' && !node.rel ? stated.anywhere.has(`${termKey(node)}\0${pred}`) : has(target, node, pred));
@@ -424,7 +458,7 @@ export function outName(bundleDir) {
  * from the bundle path lilv hands it (ours now) still finds them.
  */
 export function writeBundle(plan, target, stateDir, writer = writerId()) {
-  const texts = renderBundle(plan);
+  const texts = renderBundle(plan, target);
   mkdirSync(stateDir, { recursive: true });
   const work = mkdtempSync(join(stateDir, 'complement.'));
   try {
@@ -584,7 +618,7 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
     // a bundle of ours there and not up to date: say what changed, it is replaced whole
     const change = ours ? staleness(target, plan, writer) : '';
     try {
-      renderBundle(plan);
+      renderBundle(plan, target);
       const what = `${grouped.length} of ${plan.plugins.length} plugin(s) grouped (${grouped.join(', ')})`;
       if (check) {
         if (ours) {

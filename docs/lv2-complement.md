@@ -50,7 +50,13 @@ For an installed bundle `<dir>/<name>.lv2` holding at least one plugin whose ver
   ports, typed `pg:Group`, with `lv2:symbol`, `lv2:name` and `lv2:displayPriority`, and `pg:group` on each of its
   ports, found by `lv2:symbol` in that file. A group the plugin states itself (rule 1) keeps its own node: only what
   that node lacks of `lv2:symbol`, `lv2:name` and `lv2:displayPriority` is added, and a port that already carries a
-  `pg:group` keeps it.
+  `pg:group` keeps it. A generated node never merges into one already there: `<#<plugin>-<symbol>>` is resolved as the
+  Turtle reader resolves it, against the installed file (what the plugin's own `<#…>` of that fragment means) and
+  against the written file at its target (what lilv will read), and when either IRI is one the bundle already states,
+  or another grouped plugin of the same file would take the same node (two plugin URIs ending in the same word), the
+  bundle is refused (`group-iri-collision`). Refused rather than given a suffix: a node whose name cannot be predicted
+  from the plugin and the group symbol would surprise whoever looks it up, and over the 979 plugins on the desk the
+  guard refuses none (37 bundles, 84 grouped plugins, as before), so the conservative choice costs nothing measured.
 - **the marker** `.omx-complement-sync`, in the bundle, as omx-modgui-sync marks its own with `.omx-modgui-sync`:
 
   ```
@@ -87,7 +93,9 @@ not give on the installed files.
     `binary-ambiguous` (two `lv2:binary`; `no-binary` for none), `plugin-in-several-bundles` (the plugin URI declared by
     two installed bundles: lilv picks between them by version, and the restatement cannot say which it replaces),
     `port-symbol-ambiguous` (two ports of one symbol);
-  - `dynamic-manifest`, `data-outside-bundle` (a plugin's `rdfs:seeAlso` outside its bundle), `ports-split-across-files`.
+  - `dynamic-manifest`, `data-outside-bundle` (a plugin's `rdfs:seeAlso` outside its bundle), `ports-split-across-files`;
+  - `group-iri-collision`: a generated group node whose IRI the bundle already states, or that two grouped plugins of
+    one file would share (above).
 ## What is removed
 
 A bundle of ours left in place past its time does harm: its bumped version keeps winning, so it would hide an upgraded

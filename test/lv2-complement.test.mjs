@@ -247,6 +247,65 @@ describe('the groups', () => {
   });
 });
 
+describe('a generated group node never merges into a node already there', () => {
+  // synthetic, ours (test/fixtures/lv2-complement): a nine-control equaliser that already states <#collide-band_1>,
+  // the node the writer would generate for its first group; and two such plugins in one file whose URIs end alike
+  const COMPLEMENT_FIXTURES = '../lv2-complement';
+
+  it('a node the plugin already declares under the generated fragment (resolved as the reader does): refused, with the reason', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const { dir, uris } = installed(lv2, 'collide', [`${COMPLEMENT_FIXTURES}/collision`]);
+    const p = plan(dir);
+    assert.equal(p.plugins[0].verdict.outcome, 'grouped', 'the rules group it: only the node stops it');
+    assert.deepEqual(p.plugins[0].verdict.groups.map((g) => g.symbol), ['band_1', 'band_2', 'band_3']);
+    const own = pathToFileURL(join(dir, 'plugin.ttl')).href;
+    assert.ok(readInstalledBundle(dir).files.get('plugin.ttl').triples.some((t) => t.s.v === `${own}#collide-band_1`), 'the fixture states the node');
+    assert.throws(() => renderBundle(p), (e) => e.reason === 'group-iri-collision' && e.message.includes(`${uris[0]}: group band_1's node <#collide-band_1>`));
+    const r = run(lv2, out);
+    assert.equal(r.counts.written, 0, r.lines.join('\n'));
+    assert.equal(r.refusals['group-iri-collision'], 1, r.lines.join('\n'));
+    assert.match(r.lines.join('\n'), /^refused .*collide\.lv2: group-iri-collision: .*<#collide-band_1> in plugin\.ttl is .*plugin\.ttl#collide-band_1, which the bundle already states/m);
+    assert.deepEqual(existsSync(out) ? readdirSync(out) : [], []);
+  });
+
+  it('the same node written by the bundle itself (resolved against the written file) is a collision too', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    // the absolute IRI the generated <#collide-band_2> takes once written at its target
+    const target = join(out, 'omx-complement-collide.lv2');
+    const { dir } = installed(lv2, 'collide', [`${COMPLEMENT_FIXTURES}/collision`], {
+      manifestExtra: `<${pathToFileURL(join(target, 'plugin.ttl')).href}#collide-band_2> <http://www.w3.org/2000/01/rdf-schema#comment> "ours, by accident" .\n`,
+    });
+    writeFileSync(join(dir, 'plugin.ttl'), readFileSync(join(dir, 'plugin.ttl'), 'utf8').replace(/^<#collide-band_1>/m, '<#unrelated>'));
+    assert.doesNotThrow(() => renderBundle(plan(dir)), 'without the target, nothing resolves there');
+    assert.throws(() => renderBundle(plan(dir), target), (e) => e.reason === 'group-iri-collision' && e.message.includes('<#collide-band_2>'));
+  });
+
+  it('two grouped plugins in one file whose nodes would be the same: refused, never one group node for both', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const { dir, uris } = installed(lv2, 'twins', [`${COMPLEMENT_FIXTURES}/twins`]);
+    assert.equal(uris.length, 2);
+    const p = plan(dir);
+    assert.ok(p.plugins.every((x) => x.verdict.outcome === 'grouped'));
+    assert.throws(() => renderBundle(p), (e) => e.reason === 'group-iri-collision' && /<#twin-band_1> in plugin\.ttl is also http:\/\/example\.org\/omx-panel\/test\/a\/twin's/.test(e.message));
+    const r = run(lv2, out);
+    assert.deepEqual([r.counts.written, r.refusals['group-iri-collision']], [0, 1], r.lines.join('\n'));
+  });
+
+  it('a fragment the plugin does not use is written as before (the guard does not refuse what does not collide)', () => {
+    const root = scratch();
+    const { dir } = installed(join(root, 'lv2'), 'collide', [`${COMPLEMENT_FIXTURES}/collision`]);
+    writeFileSync(join(dir, 'plugin.ttl'), readFileSync(join(dir, 'plugin.ttl'), 'utf8').replace(/^<#collide-band_1>/m, '<#collide-band_1-own>'));
+    const r = run(join(root, 'lv2'), join(root, 'out'));
+    assert.equal(r.counts.written, 1, r.lines.join('\n'));
+  });
+});
+
 describe('the marker, and a second run', () => {
   it('names the installed bundle, the writer, the content hash, each plugin and each file', () => {
     const root = scratch();
