@@ -189,12 +189,11 @@ describe('each rule, on real plugins', () => {
     assertWellFormed(v, plugin);
     assert.deepEqual(shape(v.groups), [
       'General [5] level mode',
-      // the symbols number the transitions from 0 (`freq0` is "Transition 1"): a singleton breaks that stem's
-      // pattern, so the numbered groups are the bands and the transitions share their leading word
-      'Transition [3] freq0 freq1 freq2',
-      'Group 1 [3] level1 active1 phase1 delay1',
-      'Group 2 [3] level2 active2 phase2 delay2',
-      'Group 3 [3] level3 active3 phase3 delay3',
+      // the symbols number the transitions from 0 (`freq0` is "Transition 1") and the bands from 1: two numberings,
+      // so the symbol pass places nothing; the names number both from 1, the transitions lacking only the last band
+      'Group 1 [3] freq0 level1 active1 phase1 delay1',
+      'Group 2 [3] freq1 level2 active2 phase2 delay2',
+      'Group 3 [3] freq2 level3 active3 phase3 delay3',
       'Group 4 [3] level4 active4 phase4 delay4',
     ]);
   });
@@ -229,6 +228,29 @@ describe('each rule, on real plugins', () => {
     const v = inferGroups({ uri: 'urn:t', ports });
     const groups = v.groups ?? v.attempt.groups;
     assert.ok(!groups.some((g) => /^Group /.test(g.name)), JSON.stringify(shape(groups)));
+  });
+
+  it('3: two unrelated numberings are no band pattern: attack stages 1-4, release stages 1-3 (AMS advenv)', () => {
+    const { plugin } = load('ams-advenv');
+    const v = inferGroups(plugin, null);
+    // the number passes place nothing ("Attack Time 4" has no release beside it); the leading words find the stages
+    assert.ok(!(v.groups ?? v.attempt.groups).some((g) => /^Group /.test(g.name)));
+    assert.deepEqual(shape(v.groups), [
+      'General [5] timeScale sustain delay',
+      'Attack [3] attackTime1 attackTime2 attackTime3 attackTime4 attackLevel1 attackLevel2 attackLevel3',
+      'Release [3] releaseTime1 releaseTime2 releaseTime3 releaseLevel1 releaseLevel2',
+    ]);
+  });
+
+  it('3: a stem numbered inside the pattern but fewer is another thing numbered, left to later passes', () => {
+    const ports = [];
+    for (const b of [1, 2, 3]) ports.push({ symbol: `gain${b}`, name: `Gain ${b}` }, { symbol: `pan${b}`, name: `Pan ${b}` });
+    // {2, 3} is inside {1, 2, 3} but neither the pattern nor the pattern less its last number
+    ports.push({ symbol: 'trig2', name: 'Trig 2' }, { symbol: 'trig3', name: 'Trig 3' });
+    const v = inferGroups({ uri: 'urn:t', ports: ports.map((p, i) => ({ ...p, index: i, control: true, input: true })) });
+    assert.equal(v.outcome, 'grouped');
+    assert.deepEqual(shape(v.groups).slice(0, 3), ['Group 1 [3] gain1 pan1', 'Group 2 [3] gain2 pan2', 'Group 3 [3] gain3 pan3']);
+    assert.ok(v.groups.slice(3).some((g) => g.ports.join(' ') === 'trig2 trig3'), JSON.stringify(shape(v.groups)));
   });
 
   it('4: a shared units:unit, refused when two controls remain in no group (ZamGate)', () => {

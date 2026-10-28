@@ -24,5 +24,6 @@ zam-gate             ZamGate_dsp.ttl             ZamGate.lv2               lv2-z
 mda-rezfilter        RezFilter.ttl               mda.lv2                   lv2-mdala-plugins-1.2.12-1                            GPL-3.0-or-later AND LicenseRef-Callaway-BSD
 mda-jx10             JX10.ttl                    mda.lv2                   lv2-mdala-plugins-1.2.12-1                            GPL-3.0-or-later AND LicenseRef-Callaway-BSD
 lsp-graph-eq-x16     graph_equalizer_x16_stereo.ttl  lsp-plugins.lv2  lsp-plugins-lv2-1.2.29-1                    LGPL-3.0-or-later AND Zlib
+ams-advenv           advenv.ttl                  ams.lv2                   ams-lv2-1.2.2-3                                       GPL-2.0-or-later
 omx-comp             omx-comp.ttl modgui.ttl     omx-comp.lv2              omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
 omx-eq8              omx-eq8.ttl                 omx-eq8.lv2               omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
