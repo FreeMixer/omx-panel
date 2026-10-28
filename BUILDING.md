@@ -30,13 +30,16 @@ omx-panel validate <skin.json | skin package directory>...
 omx-panel layout   --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages]
 omx-panel modgui   --descriptor <file> | --installed <package>/<name> [--panel <file>] --out <bundle.lv2> [--check]
 omx-panel import   <bundle.lv2> --out <skins dir> [--plugin <uri>]
+omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose]
 omx-panel look     [--check]
 omx-panel vocabulary [<package>/<name>]...
 ```
 
 `validate`: exit 0 every file is valid, 1 a file is not (each fault named by file and path), 2 a usage or read
 error. `import`: one `MODGUI-IMPORT-JSON` line, exit 0 written, 3 refused, 2 usage. `vocabulary`: one `ok` or
-`FAIL` line for each source read, exit 0 every source is read, 1 one is not installed.
+`FAIL` line for each source read, exit 0 every source is read, 1 one is not installed. `complement`: one line per
+bundle written, refused or skipped and a summary, exit 0 when the run finished whatever it refused, 1 when it could
+not start, 2 usage.
 
 ## Layout
 
@@ -48,6 +51,8 @@ tools/modgui-gen.mjs raster.mjs   the MOD GUI and its images
 tools/look.mjs look/ look.json    the omx look's tokens and their resolved values
 tools/modgui-test.sh modgui-terms.ttl  a written MOD GUI held to its descriptor
 tools/modgui-import.mjs turtle-read.mjs  a MOD GUI bundle in, a skin package out
+tools/group-infer.mjs             the port groups an LV2 plugin lacks, inferred
+tools/lv2-complement.mjs          the replacing bundle that carries them to lilv (bin/omx-complement-sync runs it)
 schema/                           the skin package schema, the panel's widget list
 lib/validate.mjs bin/omx-panel.mjs  the validator and the command
 examples/skins/                   a skin package that validates
