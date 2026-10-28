@@ -72,7 +72,12 @@ title).
      section, channel, ch, osc, oscillator, voice, step, tap, stage, lfo, env, envelope, part, layer, op, operator),
      else "Group 1". A stem is numbered only when its whole
      pattern is: every control whose word after the stem starts with a digit lands in a numbered group, or the pass
-     places none of that stem's controls ("Band gain 16" ... "Band gain 1K" is left to the next pass);
+     places none of that stem's controls ("Band gain 16" ... "Band gain 1K" is left to the next pass). And the numbers
+     must be one numbering: the pattern is the number set most stems carry; a stem with it, or with it less its last
+     number (the last band lacking a control), belongs; a stem numbered inside it but fewer is another thing (mixtri's
+     two triggers) and is left to the next pass; a stem numbered outside it is an unrelated numbering (AMS advenv:
+     attack stages 1-4, release stages 1-3) and the pass places nothing; and every numbered group holds the same stems,
+     at most one group lacking one;
    - a shared leading word ("Highpass Frequency", "Highpass Resonance"), or the first two when the second is a number
      and more follows ("Band 1 Freq", `b1_freq`); a control whose whole name is that word joins it ("Highpass").
      When every control of an earlier group shares the key, the controls join that group rather than cut the

@@ -373,6 +373,7 @@ function rulePrefix(state, rule) {
  * plugin repeats the pattern: at least two numbers, each on at least MIN_GROUP_SIZE controls. A stem is numbered
  * only when its whole pattern is: every control whose word after the stem starts with a digit ("Band gain 16",
  * "Band gain 1K", "Band gain 31.5") lands in a numbered group, or the pass places none of that stem's controls.
+ * And the numbers must be one numbering (oneNumbering), or the pass places nothing.
  */
 function trailingNumber(state, rule, tokensOf) {
   const left = unplacedOf(state).map((p) => ({ p, t: tokensOf(p).map((w) => w.toLowerCase()) }));
@@ -382,6 +383,8 @@ function trailingNumber(state, rule, tokensOf) {
     members.push({ p, n: String(Number(t[t.length - 1])), stem: tokensOf(p).slice(0, -1) });
   }
   const stemKey = (m) => m.stem.join(' ').toLowerCase();
+  // judged over every numbered control, before a broken stem is dropped: advenv's lone "Attack Time 4" is the evidence
+  if (unrelatedNumbering(members, stemKey)) return;
   let repeated;
   for (;;) {
     const classes = new Map();
@@ -401,6 +404,7 @@ function trailingNumber(state, rule, tokensOf) {
     if (broken.size === 0) break;
     members = members.filter((m) => !broken.has(stemKey(m)));
   }
+  repeated = oneNumbering(repeated, stemKey);
   if (repeated.length < 2) return;
   for (const [n, ms] of repeated) {
     // the section word may be in the names when the pass numbered the symbols (fil4: `sec1` is "Section 1")
@@ -409,6 +413,56 @@ function trailingNumber(state, rule, tokensOf) {
     const word = section ? capitalize(section[0]) : 'Group';
     place(state, rule, { key: `${word} ${n}`, name: `${word} ${n}` }, ms.map((m) => m.p));
   }
+}
+
+/**
+ * The numbered classes, kept only when they are one numbering of one set of sections. The pattern is the number set
+ * most stems carry (a tie goes to the larger set). A stem with that set, or with it less its last number (the last
+ * band lacking one control), is part of the pattern; a stem whose numbers all fall inside it but are fewer is another
+ * thing numbered (mixtri's two triggers) and is left to the later passes; a stem with a number outside the pattern
+ * is an unrelated numbering (AMS advenv: attack stages 1-4, release stages 1-3) and the pass places nothing. Then
+ * every class must hold the same stems, at most one class lacking one of them.
+ */
+const sig = (set) => [...set].sort((a, b) => a - b).join(',');
+
+/** Each stem's set of numbers, and the pattern: the set most stems carry (a tie goes to the larger set). */
+function numbering(members, stemKey) {
+  const sets = new Map();
+  for (const m of members) {
+    if (!sets.has(stemKey(m))) sets.set(stemKey(m), new Set());
+    sets.get(stemKey(m)).add(Number(m.n));
+  }
+  const counts = new Map();
+  for (const set of sets.values()) counts.set(sig(set), (counts.get(sig(set)) ?? 0) + 1);
+  const best = [...counts].sort((a, b) => b[1] - a[1] || b[0].split(',').length - a[0].split(',').length || (a[0] < b[0] ? -1 : 1))[0];
+  return { sets, pattern: best ? best[0].split(',').map(Number) : [] };
+}
+
+/** A stem numbered outside the pattern: two unrelated numberings, and the pass places nothing. */
+function unrelatedNumbering(members, stemKey) {
+  const { sets, pattern } = numbering(members, stemKey);
+  return [...sets.values()].some((set) => [...set].some((n) => !pattern.includes(n)));
+}
+
+function oneNumbering(repeated, stemKey) {
+  const { sets, pattern } = numbering(repeated.flatMap(([, ms]) => ms), stemKey);
+  if (pattern.length === 0) return [];
+  const patternSig = sig(new Set(pattern));
+  const lessLast = sig(new Set(pattern.slice(0, -1)));
+  const keep = new Set();
+  for (const [stem, set] of sets) {
+    if ([...set].some((n) => !pattern.includes(n))) return [];
+    if (sig(set) === patternSig || sig(set) === lessLast) keep.add(stem);
+  }
+  const kept = repeated
+    .map(([n, ms]) => [n, ms.filter((m) => keep.has(stemKey(m)))])
+    .filter(([, ms]) => ms.length >= MIN_GROUP_SIZE);
+  let short = 0;
+  for (const [, ms] of kept) {
+    const missing = keep.size - new Set(ms.map(stemKey)).size;
+    if (missing > 1 || (missing === 1 && ++short > 1)) return [];
+  }
+  return kept;
 }
 
 const capitalize = (w) => (w === w.toLowerCase() ? w[0].toUpperCase() + w.slice(1) : w);
