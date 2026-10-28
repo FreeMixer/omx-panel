@@ -7,7 +7,8 @@
 // descriptor's groups; the look resolves to look.json.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -135,4 +136,33 @@ test('a control name holding a line break, a return or a tab writes Turtle with 
   assert.ok(ttl.includes('lv2:name "Fb Tone\\nLo<>Hi\\rmid\\tend \\"q\\" \\\\"'), ttl);
   // The same name in the icon template stays one HTML attribute and one text node.
   assert.ok(files.get('modgui/icon-omx-delay.html').toString('utf8').includes('Fb Tone'));
+});
+
+test('a bundle manifest gets rdfs:seeAlso <modgui.ttl> once; --check refuses one without it; no manifest, none made', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mg28-'));
+  const bundle = join(dir, 'omx-delay.lv2');
+  const args = ['--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'), '--out', bundle, '--source', SOURCE];
+  // no manifest: modgui.ttl is written, no manifest is created
+  assert.equal(cli(...args).status, 0);
+  assert.ok(!existsSync(join(bundle, 'manifest.ttl')));
+  // a third-party manifest naming only its own data: the triple is added
+  const manifest = join(bundle, 'manifest.ttl');
+  const own = '@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n<urn:openmixer:delay> a lv2:Plugin ; lv2:binary <delay.so> .\n';
+  writeFileSync(manifest, own);
+  const stale = cli('--check', ...args);
+  assert.equal(stale.status, 1);
+  assert.match(stale.stderr, /modgui: MANIFEST .*manifest\.ttl has no rdfs:seeAlso <modgui\.ttl>/);
+  assert.equal(cli(...args).status, 0);
+  const once = readFileSync(manifest, 'utf8');
+  assert.ok(once.startsWith(own));
+  assert.match(once, /<urn:openmixer:delay> <http:\/\/www\.w3\.org\/2000\/01\/rdf-schema#seeAlso> <modgui\.ttl> \.\n$/);
+  // idempotent: a second run changes nothing, and --check passes
+  assert.equal(cli(...args).status, 0);
+  assert.equal(readFileSync(manifest, 'utf8'), once);
+  assert.equal(cli('--check', ...args).status, 0);
+  // a manifest that already says it, in the prefixed spelling, is left as it is
+  const said = `${own}<urn:openmixer:delay> rdfs:seeAlso <modgui.ttl> .\n`;
+  writeFileSync(manifest, said);
+  assert.equal(cli(...args).status, 0);
+  assert.equal(readFileSync(manifest, 'utf8'), said);
 });
