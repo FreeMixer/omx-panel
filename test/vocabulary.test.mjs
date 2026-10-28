@@ -19,7 +19,7 @@ const NO_PKG_CONFIG = '/nonexistent/pkg-config';
 /** The environment of a case: none of the lookup's variables but those given. */
 function envOf(set) {
   const env = { ...process.env };
-  for (const k of ['OMX_CONTRACT_PATH', 'OMX_CONTRACT_SCHEMA', 'PLUGIN_HOSTD_TABLES', 'OMX_PARAM_CONTRACT_H', 'PKG_CONFIG']) delete env[k];
+  for (const k of ['OMX_CONTRACT_PATH', 'OMX_CONTRACT_SCHEMA', 'PLUGIN_HOSTD_TABLES', 'PKG_CONFIG']) delete env[k];
   return { ...env, ...set };
 }
 
@@ -77,12 +77,11 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
 });
 
 test('omx-panel vocabulary reads each source where the lookup puts it, and fails on one that is missing', () => {
-  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
+  const UNITS = { OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value: { none: 0, db: 13, dbu: 0x101 } } };
+  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR, 'param-units.json': UNITS } });
   const schema = join(dir, 'omx-contract.schema.json');
   writeFileSync(schema, JSON.stringify({ $defs: { meaning: { enum: ['gain', 'delay', 'unknown'] } } }));
-  const header = join(dir, 'omx_param_contract.h');
-  writeFileSync(header, 'enum omx_clap_param_unit {\n  OMX_CLAP_UNIT_NONE = 0, OMX_CLAP_UNIT_DB = 13,\n  OMX_CLAP_UNIT_DBU = 0x101,\n};\n');
-  const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, OMX_PARAM_CONTRACT_H: header, PKG_CONFIG: NO_PKG_CONFIG };
+  const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, PKG_CONFIG: NO_PKG_CONFIG };
   const r = command(['omx-plugins/omx-delay'], set);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, new RegExp(`^ok   contractdir ${dir}$`, 'm'));
@@ -99,4 +98,35 @@ test('an install with omx-contract-data and no omx-contract.pc reads its schema 
   const r = command([], { PKG_CONFIG: NO_PKG_CONFIG });
   assert.match(r.stdout, /^ok   contractdir \/usr\/share\/omx-contract\/contract\.d$/m);
   assert.match(r.stdout, /^ok   meanings \d+ from \/usr\/share\/omx-contract\/omx-contract\.schema\.json$/m);
+});
+
+test('omx-panel descriptors --installed lists each installed descriptor, whatever the contract major', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  const put = (rel) => {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
+    return join(dir, rel);
+  };
+  const a = put('7/omx-plugins/plugins/omx-delay.json');
+  const b = put('7/omx-dsp/plugins/omx-eq.json');
+  put('7/omx-dsp/formats/lv2.json');
+  const old = put('3/omx-plugins/plugins/omx-delay.json');
+  const r = spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'descriptors', '--installed'], { encoding: 'utf8', env: envOf({ OMX_CONTRACT_PATH: dir }) });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(r.stdout.split('\n').filter(Boolean), [b, a].sort());
+  assert.ok(!r.stdout.includes(old));
+  assert.equal(spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'descriptors'], { encoding: 'utf8' }).status, 2);
+});
+
+test('a reader that stops early ends the listing quietly: exit 0, no stack trace (#42)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  for (let i = 0; i < 3000; i++) {
+    const rel = `7/omx-plugins/plugins/omx-plugin-with-a-long-name-${i}.json`;
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
+  }
+  const r = spawnSync('bash', ['-c', 'set -o pipefail; "$0" "$1" descriptors --installed | head -n1', process.execPath, join(ROOT, 'dist/bin/omx-panel.mjs')], { encoding: 'utf8', env: envOf({ OMX_CONTRACT_PATH: dir }) });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stderr, '');
+  assert.equal(r.stdout.split('\n').filter(Boolean).length, 1);
 });

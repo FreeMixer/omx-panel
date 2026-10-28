@@ -1,0 +1,326 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#******************************************************************************
+# Give a MOD GUI to every installed LV2 plugin that ships none, made by
+# omx-panel from the plugin's descriptor, so MOD-UI shows a panel for each.
+#
+#   omx-modgui-sync [--dry-run] [--no-scan]
+#   omx-modgui-sync --check
+#
+# For each plugin on the LV2 search list with no MOD GUI anywhere, it writes a bundle in MODGUI_DIR
+# (omx-modgui-<name>.lv2): modgui.ttl and modgui/ from `omx-panel modgui`, and a manifest.ttl holding the same
+# triples, so lilv adds the GUI to the installed plugin. The plugin's own bundle is never touched. MOD-UI shows the
+# bundles when MODGUI_DIR is on the LV2_PATH it reads; `--check` says whether it is.
+#
+# The descriptor is, in this order: the plugin's declaration in omx-contract
+# (`omx-panel descriptors --installed`, then `omx-panel modgui --installed <package>/<name>`; our own plugins), the
+# newest one in DESCRIPTOR_DIRS (written by plugin-hostd and plugin-qualify),
+# or, unless --no-scan, one made here by `plugin-hostd-probe describe`.
+#
+# A bundle newer than its descriptor is left as it is. A bundle without our
+# marker file is never written or removed. One of ours goes away when its
+# plugin is uninstalled or ships a MOD GUI of its own.
+#
+# One plugin that cannot get a GUI never fails the run: it is counted and named
+# in the summary. The run fails only when it cannot start (omx-panel or lilv
+# missing, the plugins unreadable).
+#
+# Where it looks and writes (the environment, or the unit's EnvironmentFile=/etc/omx/modgui-sync.conf, overrides):
+#   LV2_PATH         the LV2 search list   $LV2_PATH, else plugin-hostd's default, as plugin-hostd and plugin-qualify
+#                                          read it: /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
+#   MODGUI_DIR       the bundles           /usr/local/lib/lv2 for root, ~/.lv2 for a user (both on the LV2 search
+#                                          lists by convention); a directory that also holds plugins is fine
+#   STATE_DIR        scans and work files  /var/lib/omx/modgui-sync  (user: $XDG_DATA_HOME/omx/modgui-sync)
+#   DESCRIPTOR_DIRS  scanned descriptors   /var/lib/omx/descriptors  (user: $XDG_DATA_HOME/omx/descriptors)
+# CLAP plugins have no MOD GUI and get no bundle; `--check` also lists the CLAP search list (CLAP_PATH, ~/.clap,
+# /usr/lib/clap: the CLAP specification's).
+#******************************************************************************
+
+if [ "$(id -u)" = 0 ]; then
+	base=/var/lib/omx
+	default_modgui=/usr/local/lib/lv2
+else
+	base=${XDG_DATA_HOME:-$HOME/.local/share}/omx
+	default_modgui=$HOME/.lv2
+fi
+MODGUI_DIR=${MODGUI_DIR:-$default_modgui}
+DESCRIPTOR_DIRS=${DESCRIPTOR_DIRS:-$base/descriptors}
+# Our scans and work files. Not under MODGUI_DIR: lilv reads every bundle there.
+STATE_DIR=${STATE_DIR:-$base/modgui-sync}
+SCAN_DIR="$STATE_DIR/descriptors"
+VIEW_DIR="$STATE_DIR/view"
+MARKER=.omx-modgui-sync
+SCAN_TIMEOUT=30
+PREFIX=omx-modgui-
+
+# The search list, by the rule plugin-hostd and plugin-qualify share
+if [ -n "$LV2_PATH" ]; then
+	lv2_source='$LV2_PATH'
+else
+	LV2_PATH=/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
+	lv2_source="plugin-hostd's default"
+fi
+export LV2_PATH
+
+dry_run=0
+scan=1
+check=0
+for arg in "$@"; do
+	case "$arg" in
+		--dry-run) dry_run=1 ;;
+		--no-scan) scan=0 ;;
+		--check) check=1 ;;
+		*) echo "Usage: omx-modgui-sync [--dry-run] [--no-scan] | --check" >&2; exit 2 ;;
+	esac
+done
+
+# What this run would read and write, and whether the programs that show the GUIs read the folder too
+if [ "$check" = 1 ]; then
+	echo "LV2 search list (from $lv2_source):"
+	echo "$LV2_PATH" | tr ':' '\n' | sed 's/^/  /'
+	case ":$LV2_PATH:" in
+		*":$MODGUI_DIR:"*) echo "GUI bundles go to $MODGUI_DIR: it is on that list" ;;
+		*) echo "GUI bundles go to $MODGUI_DIR: it is NOT on that list; add it to LV2_PATH or set MODGUI_DIR to a folder on it" ;;
+	esac
+	for unit in mod-host mod-ui; do
+		command -v systemctl >/dev/null && systemctl cat "$unit.service" >/dev/null 2>&1 || continue
+		theirs=$(systemctl show -p Environment --value "$unit.service" | tr ' ' '\n' | sed -n 's/^LV2_PATH=//p')
+		if [ -z "$theirs" ]; then
+			echo "$unit: its unit sets no LV2_PATH; its own default applies, which this check cannot read"
+		else
+			case ":$theirs:" in
+				*":$MODGUI_DIR:"*) echo "$unit: reads LV2_PATH and $MODGUI_DIR is on it" ;;
+				*) echo "$unit: reads LV2_PATH and $MODGUI_DIR is NOT on it; it will not show these GUIs until it is" ;;
+			esac
+		fi
+	done
+	echo "CLAP search list (the CLAP specification's; CLAP plugins get no MOD GUI):"
+	echo "${CLAP_PATH:+$CLAP_PATH:}$HOME/.clap:/usr/lib/clap" | tr ':' '\n' | sed 's/^/  /'
+	exit 0
+fi
+
+for cmd in omx-panel python3; do
+	command -v "$cmd" >/dev/null || { echo "omx-modgui-sync: $cmd is not installed" >&2; exit 1; }
+done
+python3 -I -c 'import lilv' 2>/dev/null || { echo "omx-modgui-sync: python3-lilv is not installed" >&2; exit 1; }
+command -v plugin-hostd-probe >/dev/null || scan=0
+
+# MOD-UI reads bundles from its LV2_PATH only (lilv's default when unset)
+case ":$LV2_PATH:" in
+	*":$MODGUI_DIR:"*) ;;
+	*) echo "omx-modgui-sync: note: $MODGUI_DIR is not on LV2_PATH; MOD-UI shows these GUIs once it is" >&2 ;;
+esac
+
+# The descriptors packages installed, one file per line: omx-panel knows where and which contract major
+installed_list=$(omx-panel descriptors --installed) || {
+	echo "omx-modgui-sync: omx-panel descriptors --installed failed" >&2
+	exit 1
+}
+
+mkdir -p "$MODGUI_DIR" "$STATE_DIR"
+
+# MODGUI_DIR may hold plugins as well: lilv sees it through a directory of links to every bundle that is not ours,
+# so a GUI of ours never counts as a plugin's own
+rm -rf "$VIEW_DIR"
+mkdir -p "$VIEW_DIR"
+for b in "$MODGUI_DIR"/*.lv2; do
+	[ -d "$b" ] && [ ! -f "$b/$MARKER" ] && ln -s "$b" "$VIEW_DIR/${b##*/}"
+done
+
+# One line per LV2 plugin: uri, bundle dir, has a MOD GUI outside MODGUI_DIR
+# (1/0), descriptor (installed:<package>/<name>:<path>, file:<path> or -), name.
+plan() {
+	python3 -I - "$MODGUI_DIR" "$DESCRIPTOR_DIRS:$SCAN_DIR" "$installed_list" "$VIEW_DIR" <<'EOF'
+import glob, hashlib, json, os, re, sys
+from urllib.parse import unquote, urlparse
+
+modgui_dir, descriptor_dirs, installed_list, view_dir = sys.argv[1:5]
+own = os.path.realpath(modgui_dir)
+os.environ["LV2_PATH"] = ":".join(view_dir if os.path.realpath(p) == own else p
+                                  for p in os.environ["LV2_PATH"].split(":") if p)
+import lilv
+
+def lv2_uri(path, formats=("lv2",)):
+    try:
+        with open(path) as f:
+            p = json.load(f).get("plugin", {})
+    except (OSError, ValueError):
+        return None
+    return p.get("uri") if p.get("format") in formats and p.get("uri") else None
+
+# A declaration names the LV2 URI whatever format it was written for
+installed = {}
+for path in sorted(installed_list.split("\n")):
+    uri = lv2_uri(path, ("lv2", "clap")) if path else None
+    if uri:
+        parts = path.split(os.sep)
+        installed[uri] = ("%s/%s" % (parts[-3], os.path.splitext(parts[-1])[0]), path)
+
+scanned = {}
+for d in descriptor_dirs.split(":"):
+    for path in glob.glob(os.path.join(d, "*.json")) if d else []:
+        uri = lv2_uri(path)
+        if uri and (uri not in scanned or os.path.getmtime(path) > os.path.getmtime(scanned[uri])):
+            scanned[uri] = path
+
+world = lilv.World()
+world.load_all()
+gui = world.new_uri("http://moddevices.com/ns/modgui#gui")
+names = set()
+for plugin in sorted(world.get_all_plugins(), key=lambda p: str(p.get_uri())):
+    uri = str(plugin.get_uri())
+    bundle = unquote(urlparse(str(plugin.get_bundle_uri())).path).rstrip("/")
+    has_gui = 1 if len(plugin.get_value(gui)) else 0
+    if uri in installed:
+        src = "installed:%s:%s" % installed[uri]
+    elif uri in scanned:
+        src = "file:" + scanned[uri]
+    else:
+        src = "-"
+    stem = os.path.basename(bundle)
+    stem = stem[:-4] if stem.endswith(".lv2") else stem
+    tail = re.split(r"[/#:]", uri.rstrip("/#"))[-1]
+    name = re.sub(r"[^A-Za-z0-9._-]+", "_", stem if tail in stem else "%s-%s" % (stem, tail))
+    if name in names:
+        name = "%s-%s" % (name, hashlib.sha1(uri.encode()).hexdigest()[:8])
+    names.add(name)
+    print("\t".join((uri, bundle, str(has_gui), src, name)))
+EOF
+}
+
+generated=0 fresh=0 own_gui=0 no_descriptor=0 no_controls=0 nothing_to_draw=0 removed=0 failed=0
+skipped_triggers=
+declare -A wanted
+
+say() { echo "omx-modgui-sync: $*"; }
+
+# A plugin with no control has no panel to draw
+has_controls() {
+	python3 -I -c 'import json, sys; sys.exit(0 if json.load(open(sys.argv[1])).get("controls") else 1)' "$1" 2>/dev/null
+}
+
+# A descriptor made here for a plugin nobody has scanned yet
+scan_descriptor() {
+	local uri=$1 name=$2 out="$SCAN_DIR/$2.json" bundle=$3
+	if [ -f "$out.failed" ] && [ ! "$bundle/manifest.ttl" -nt "$out.failed" ]; then
+		return 1
+	fi
+	mkdir -p "$SCAN_DIR"
+	# shellcheck disable=SC2153 # LV2_PATH comes from the caller
+	if timeout "$SCAN_TIMEOUT" plugin-hostd-probe describe "lv2:$uri" >"$out.tmp" 2>/dev/null && [ -s "$out.tmp" ]; then
+		mv "$out.tmp" "$out"
+		rm -f "$out.failed"
+		echo "$out"
+		return 0
+	fi
+	rm -f "$out.tmp"
+	touch "$out.failed"
+	return 1
+}
+
+generate() {
+	local uri=$1 name=$2 src=$3 out="$MODGUI_DIR/$PREFIX$2.lv2" tmp args desc_file
+	if [ "${src%%:*}" = installed ]; then
+		# installed:<package>/<name>:<descriptor file>
+		desc_file="${src#installed:}"
+		args=(--installed "${desc_file%%:*}")
+		desc_file="${desc_file#*:}"
+	else
+		args=(--descriptor "${src#file:}")
+		desc_file="${src#file:}"
+	fi
+	if [ -e "$out" ] && [ ! -f "$out/$MARKER" ]; then
+		say "skip $uri: $out is not ours"
+		return
+	fi
+	if ! has_controls "$desc_file"; then
+		no_controls=$((no_controls + 1))
+		return
+	fi
+	if [ -f "$out/$MARKER" ] && [ "$out/modgui.ttl" -nt "$desc_file" ] && [ "$out/manifest.ttl" -nt "$desc_file" ] &&
+		[ "$(head -n 1 "$out/$MARKER")" = "$uri" ]; then
+		fresh=$((fresh + 1))
+		return
+	fi
+	if [ "$dry_run" = 1 ]; then
+		say "would write $out for $uri from ${args[*]}"
+		generated=$((generated + 1))
+		return
+	fi
+	tmp=$(mktemp -d "$STATE_DIR/tmp.XXXXXX")
+	local status=0 reason
+	(cd "$tmp" && omx-panel modgui "${args[@]}" --out "$tmp/$name.lv2" --source "$desc_file" >/dev/null 2>"$tmp/stderr") || status=$?
+	if [ "$status" != 0 ]; then
+		if [ "$status" = 3 ]; then
+			# omx-panel's exit 3: the descriptor has no visible control, there is no face to make
+			nothing_to_draw=$((nothing_to_draw + 1))
+		else
+			reason=$(grep -m1 '^Error:' "$tmp/stderr" || tail -n 1 "$tmp/stderr")
+			say "no MOD GUI for $uri: ${reason:-omx-panel exited $status}"
+			failed=$((failed + 1))
+		fi
+		rm -rf "$tmp"
+		return
+	fi
+	# omx-panel leaves a trigger control off the face and names it on stderr: the summary line names it too
+	local trig
+	trig=$(sed -n "s/^modgui: skipped trigger control '\(.*\)'\$/\1/p" "$tmp/stderr" | paste -sd, -)
+	[ -z "$trig" ] || skipped_triggers="${skipped_triggers:+$skipped_triggers; }$name: $trig"
+	{
+		echo "# Written by omx-modgui-sync for a plugin that ships no MOD GUI."
+		echo "# The plugin itself lives in its own bundle; this one adds its GUI."
+		grep -v '^#' "$tmp/$name.lv2/modgui.ttl"
+	} >"$tmp/$name.lv2/manifest.ttl"
+	printf '%s\n%s\n' "$uri" "${args[*]}" >"$tmp/$name.lv2/$MARKER"
+	rm -rf "$out"
+	mv "$tmp/$name.lv2" "$out"
+	rm -rf "$tmp"
+	say "wrote $out for $uri"
+	generated=$((generated + 1))
+}
+
+plan_out=$(plan) || { echo "omx-modgui-sync: could not read the LV2 plugins" >&2; exit 1; }
+
+while IFS=$'\t' read -r uri bundle has_gui src name; do
+	[ -n "$uri" ] || continue
+	if [ "$has_gui" = 1 ]; then
+		own_gui=$((own_gui + 1))
+		continue
+	fi
+	wanted["$PREFIX$name"]=1
+	if [ "$src" = - ]; then
+		if [ "$scan" = 1 ] && [ "$dry_run" = 0 ] && file=$(scan_descriptor "$uri" "$name" "$bundle"); then
+			src="file:$file"
+		else
+			no_descriptor=$((no_descriptor + 1))
+			continue
+		fi
+	fi
+	generate "$uri" "$name" "$src"
+done <<<"$plan_out"
+
+# Ours, no longer wanted: the plugin is gone or ships a MOD GUI now
+for marker in "$MODGUI_DIR"/*.lv2/"$MARKER"; do
+	[ -f "$marker" ] || continue
+	bundle=${marker%/*}
+	name=${bundle##*/}
+	name=${name%.lv2}
+	[ -n "${wanted[$name]}" ] && continue
+	uri=$(head -n 1 "$marker")
+	if [ "$dry_run" = 1 ]; then
+		say "would remove $bundle"
+	else
+		rm -rf "$bundle"
+		say "removed $bundle: $uri ships its own MOD GUI now or is gone"
+	fi
+	removed=$((removed + 1))
+done
+
+trig_note=${skipped_triggers:+", and left trigger controls off the face ($skipped_triggers)"}
+say "$generated written, $fresh up to date, $own_gui ship their own, $no_descriptor without a descriptor," \
+	"$no_controls without controls, $nothing_to_draw with nothing to draw, $removed removed, $failed could not be drawn$trig_note"
+if [ $((generated + removed)) -gt 0 ] && [ "$dry_run" = 0 ]; then
+	say "MOD-UI shows the change the next time it starts"
+fi
+exit 0

@@ -155,8 +155,18 @@ const keyOfText = (s) => {
   return /^[a-z]/.test(k) ? k : `s_${k}`;
 };
 
-/** The key a layout names a control by: its symbol, else an LV2 control's id (its port symbol), else its name. */
-export const keyOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : c.name);
+/** A descriptor with no control to lay out (none stated, or every one hidden): there is no panel to make, and the
+ * layout says so by code instead of answering an empty one. */
+export class NoControls extends Error {
+  code = 'PANEL_NO_CONTROLS';
+}
+
+/**
+ * The key a layout names a control by: its symbol, else an LV2 control's id (its port symbol), else a CLAP
+ * control's numeric id as `p<id>` (the id is the one thing a CLAP plugin keeps unique and stable, and a bare
+ * number is not in the key grammar), else its name.
+ */
+export const keyOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : Number.isInteger(c.id) ? `p${c.id}` : c.name);
 
 /** The ports a layout carries: the audio inputs and outputs with their channels, the side-chain, the notes in. */
 function portsOf(ports = []) {
@@ -277,6 +287,10 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     }),
   );
 
+  if (controls.length === 0) {
+    const listsPrograms = ['programs', 'presets'].map((k) => [k, descriptor[k]]).find(([, v]) => Array.isArray(v) && v.length > 0);
+    throw new NoControls(`${where}: no control to lay out (${all.length === 0 ? 'the descriptor states no controls' : `its ${all.length} controls are all hidden`})${listsPrograms ? `; its ${listsPrograms[1].length} ${listsPrograms[0]} are not drawn, a program list is not a control` : ''}`);
+  }
   return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports) };
 }
 

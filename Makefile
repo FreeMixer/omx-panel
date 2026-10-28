@@ -10,6 +10,8 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
 MANDIR ?= $(DATADIR)/man
+SYSCONFDIR ?= /etc
+UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
@@ -53,3 +55,10 @@ install: build
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0644 man/omx-modgui-sync.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0755 bin/omx-modgui-sync $(DESTDIR)$(BINDIR)/
+	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(SYSCONFDIR)/omx
+	install -m 0644 systemd/omx-modgui-sync.service $(DESTDIR)$(UNITDIR)/
+	install -d $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d
+	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
+	install -m 0644 etc/omx/modgui-sync.conf $(DESTDIR)$(SYSCONFDIR)/omx/

@@ -7,12 +7,13 @@
 // descriptor's groups; the look resolves to look.json.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { emitLook, TOKENS_CSS, LOOK_JSON } from '../tools/look.mjs';
-import { generateModgui, resolvePanel } from '../tools/modgui-gen.mjs';
+import { ChoiceNoValues, generateModgui, NothingToDraw, resolvePanel } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
@@ -100,4 +101,121 @@ test('look.json is what tokens.css resolves to, and a moved token moves it', () 
   const moved = css.replace(/--accent:[^;]+/g, '--accent: #123456');
   assert.notEqual(moved, css, 'the edit landed');
   assert.notEqual(emitLook(moved), emitLook(css));
+});
+
+test('the brand is the vendor, else the plugin name, else the stem: a missing vendor refuses nothing', () => {
+  const d = read('omx-delay.descriptor.json');
+  const panel = read('omx-delay.panel.json');
+  const brand = (x) => resolvePanel(x, { panel, stem: 'omx-delay' }).brand;
+  assert.ok(d.plugin.vendor && d.plugin.name, 'the fixture states both');
+  assert.equal(brand(d), d.plugin.vendor);
+  const name = d.plugin.name;
+  delete d.plugin.vendor;
+  assert.equal(brand(d), name);
+  delete d.plugin.name;
+  assert.equal(brand(d), 'omx-delay');
+  const ttl = new Map(generateModgui(d, { panel, stem: 'omx-delay', source: 's' })).get('modgui.ttl').toString();
+  assert.match(ttl, /modgui:brand "omx-delay"/);
+});
+
+test('a descriptor whose controls are all hidden has nothing to draw: a typed error, not a fault (a synth with no LV2 ports)', () => {
+  const d = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/descriptors/scanned-lv2-hidden-only.json'), 'utf8'));
+  assert.ok(d.controls.length > 0 && d.controls.every((c) => c.hidden), 'the fixture has controls, all hidden');
+  assert.throws(() => resolvePanel(d, { stem: 'hidden-only' }), (err) => err instanceof NothingToDraw && err.code === 'MODGUI_NOTHING_TO_DRAW');
+});
+
+test('a control name holding a line break, a return or a tab writes Turtle with no raw break inside a string', () => {
+  const d = read('omx-delay.descriptor.json');
+  const name = 'Fb Tone\nLo<>Hi\rmid\tend "q" \\';
+  d.controls.find((c) => c.symbol === 'fxDelayTime').name = name;
+  const files = new Map(gen(d));
+  const ttl = files.get('modgui.ttl').toString('utf8');
+  // A Turtle short string ("...") may not hold a raw line feed or carriage return: with every well-formed
+  // string taken out, no quote may be left over (a string cut by a line end leaves one).
+  assert.doesNotMatch(ttl.replace(/"(?:[^"\\\n\r]|\\.)*"/g, ''), /"/);
+  assert.ok(ttl.includes('lv2:name "Fb Tone\\nLo<>Hi\\rmid\\tend \\"q\\" \\\\"'), ttl);
+  // The same name in the icon template stays one HTML attribute and one text node.
+  assert.ok(files.get('modgui/icon-omx-delay.html').toString('utf8').includes('Fb Tone'));
+});
+
+test('a bundle manifest gets rdfs:seeAlso <modgui.ttl> once; --check refuses one without it; no manifest, none made', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mg28-'));
+  const bundle = join(dir, 'omx-delay.lv2');
+  const args = ['--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'), '--out', bundle, '--source', SOURCE];
+  // no manifest: modgui.ttl is written, no manifest is created
+  assert.equal(cli(...args).status, 0);
+  assert.ok(!existsSync(join(bundle, 'manifest.ttl')));
+  // a third-party manifest naming only its own data: the triple is added
+  const manifest = join(bundle, 'manifest.ttl');
+  const own = '@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n<urn:openmixer:delay> a lv2:Plugin ; lv2:binary <delay.so> .\n';
+  writeFileSync(manifest, own);
+  const stale = cli('--check', ...args);
+  assert.equal(stale.status, 1);
+  assert.match(stale.stderr, /modgui: MANIFEST .*manifest\.ttl has no rdfs:seeAlso <modgui\.ttl>/);
+  assert.equal(cli(...args).status, 0);
+  const once = readFileSync(manifest, 'utf8');
+  assert.ok(once.startsWith(own));
+  assert.match(once, /<urn:openmixer:delay> <http:\/\/www\.w3\.org\/2000\/01\/rdf-schema#seeAlso> <modgui\.ttl> \.\n$/);
+  // idempotent: a second run changes nothing, and --check passes
+  assert.equal(cli(...args).status, 0);
+  assert.equal(readFileSync(manifest, 'utf8'), once);
+  assert.equal(cli('--check', ...args).status, 0);
+  // a manifest that already says it, in the prefixed spelling, is left as it is
+  const said = `${own}<urn:openmixer:delay> rdfs:seeAlso <modgui.ttl> .\n`;
+  writeFileSync(manifest, said);
+  assert.equal(cli(...args).status, 0);
+  assert.equal(readFileSync(manifest, 'utf8'), said);
+});
+
+test('a trigger control beside a normal one is left off the face and reported: the normal one is drawn (the ZLFO shape)', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.controls.push({ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' });
+  const panel = read('omx-delay.panel.json');
+  panel.sections[0].controls.push('cv_trigger');
+  const r = resolvePanel(d, { panel, stem: 'omx-delay' });
+  assert.deepEqual(r.skipped, ['cv_trigger']);
+  assert.ok(!r.sections.flatMap((s) => s.controls).some((c) => c.symbol === 'cv_trigger'));
+  assert.ok(r.sections[0].controls.length > 0);
+  const ttl = new Map(gen(d, panel)).get('modgui.ttl').toString();
+  assert.doesNotMatch(ttl, /cv_trigger/);
+  // with no declared panel the layout lists it and the generator still draws the rest
+  const auto = resolvePanel(d, { stem: 'omx-delay' });
+  assert.deepEqual(auto.skipped, ['cv_trigger']);
+  assert.ok(auto.sections.flatMap((s) => s.controls).length > 0);
+  // the CLI says so on stderr and exits 0
+  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  writeFileSync(join(dir, 'p.json'), JSON.stringify(panel));
+  const run = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stderr, /^modgui: skipped trigger control 'cv_trigger'\n$/);
+});
+
+test('a descriptor whose only control is a trigger has nothing to draw: exit 3', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.controls = [{ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' }];
+  assert.throws(() => resolvePanel(d, { stem: 'omx-delay' }), (err) => err instanceof NothingToDraw);
+  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  assert.equal(cli('--descriptor', join(dir, 'd.json'), '--out', join(dir, 'x.lv2')).status, 3);
+});
+
+test('a choice with ids and labels and no values is refused by code, naming the control, not a TypeError', () => {
+  const d = read('omx-delay.descriptor.json');
+  const choice = { symbol: 'mod_source', id: 'mod_source', name: 'Mod source', kind: 'choice', ids: ['a', 'b', 'c'], labels: ['A', 'B', 'C'], default: 'a' };
+  d.controls.push(choice);
+  const panel = read('omx-delay.panel.json');
+  panel.sections[0].controls.push('mod_source');
+  assert.throws(() => gen(d, panel), (err) => err instanceof ChoiceNoValues && err.code === 'MODGUI_CHOICE_NO_VALUES' && /'mod_source'/.test(err.message) && /values/.test(err.message));
+  // the same choice with values is drawn
+  choice.values = [0, 1, 2];
+  assert.doesNotThrow(() => gen(d, panel));
+  // the CLI prints it as one line, no stack
+  delete choice.values;
+  const dir = mkdtempSync(join(tmpdir(), 'mg30-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  writeFileSync(join(dir, 'p.json'), JSON.stringify(panel));
+  const r = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /^MODGUI_CHOICE_NO_VALUES: .*'mod_source'.*\n$/);
 });

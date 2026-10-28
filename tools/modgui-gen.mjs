@@ -27,7 +27,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOOK_JSON, LOOK_TOKENS } from './look.mjs';
-import { panelLayout } from './panel-description.mjs';
+import { keyOf, panelLayout } from './panel-description.mjs';
 import { canvas, disc, encodePng, rgbOf, roundRect, segment } from './raster.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
@@ -51,6 +51,12 @@ export const GEOMETRY = Object.freeze({
   radius: 10, sectionRadius: 6, filmFrames: 65, thumbScale: 0.5,
 });
 
+/** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
+ * the descriptor's to say, an index is not it, so the generator refuses and names the control. */
+export class ChoiceNoValues extends Error {
+  code = 'MODGUI_CHOICE_NO_VALUES';
+}
+
 /**
  * A descriptor control as the travel this generator draws: `{ kind, min, max, def, points? }`, `kind` `toggle`
  * (0..1), `integer` (a choice, or a travel of step 1) or none (a continuous travel); a choice's `points` are its
@@ -61,6 +67,7 @@ export function travelOf(c) {
   if (c.readonly) return undefined;
   if (c.kind === 'toggle') return { kind: 'toggle', min: 0, max: 1, def: c.default ? 1 : 0 };
   if (c.kind === 'choice') {
+    if (!Array.isArray(c.values)) throw new ChoiceNoValues(`modgui-gen: choice control '${c.symbol ?? c.id ?? c.name}' states no \`values\`; the descriptor must say the value the plugin reads for each of its ids`);
     const points = c.values.map((value, k) => ({ value, label: c.labels?.[k] ?? c.ids[k] }));
     const at = c.ids.indexOf(c.default);
     return { kind: 'integer', min: points[0].value, max: points[points.length - 1].value, def: at >= 0 ? c.values[at] : c.default, points };
@@ -81,7 +88,9 @@ function readoutRange(c) {
 const choicesOf = (p) => p.points;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const ttlStr = (s) => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+const TTL_ESCAPES = { '\\': '\\\\', '"': '\\"', '\n': '\\n', '\r': '\\r', '\t': '\\t' };
+/** A Turtle short string: backslash, quote and the line breaks and tab it may not hold raw are escaped. */
+const ttlStr = (s) => `"${String(s).replace(/[\\"\n\r\t]/g, (ch) => TTL_ESCAPES[ch])}"`;
 
 /**
  * The widget a declared parameter takes when its panel names none: a toggle is a switch; a parameter with
@@ -124,6 +133,12 @@ export function travelFraction(p, v) {
   return p.max === p.min ? 0 : (v - p.min) / (p.max - p.min);
 }
 
+/** A descriptor with no visible control (a synth whose parameters are not LV2 ports): there is no face to make. Not a
+ * fault of the descriptor; `omx-panel modgui` exits 3 for it so a sweep records a skip. */
+export class NothingToDraw extends Error {
+  code = 'MODGUI_NOTHING_TO_DRAW';
+}
+
 /** The panel a descriptor is drawn with: the declared one, else the layout's sections and family over its
  * groups and meanings (tools/panel-description.mjs). */
 export function panelOf(descriptor, declared) {
@@ -138,17 +153,29 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
   const plugin = descriptor.plugin ?? {};
   const uri = plugin.format === 'lv2' ? plugin.id : plugin.uri;
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
-  if (!plugin.vendor) throw new Error(`modgui-gen: '${plugin.id}' states no vendor, the MOD GUI's brand`);
-  const panel = panelOf(descriptor, declared);
+  let panel;
+  try {
+    panel = panelOf(descriptor, declared);
+  } catch (err) {
+    throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
+  }
   const controls = descriptor.controls ?? [];
   const seen = new Set();
+  // A trigger is momentary and how MOD-UI wires a momentary port is not verified: it is left off the face and reported.
+  const skipped = [];
+  const isTrigger = (symbol) => controls.find((x) => (x.symbol ?? x.id) === symbol)?.kind === 'trigger';
   const sections = panel.sections.map((s) => ({
     key: s.key,
     label: s.label,
-    controls: s.controls.map((symbol) => {
+    controls: s.controls.filter((symbol) => {
+      if (!isTrigger(symbol)) return true;
+      seen.add(symbol);
+      skipped.push(symbol);
+      return false;
+    }).map((symbol) => {
       if (seen.has(symbol)) throw new Error(`modgui-gen: '${symbol}' is in two sections`);
       seen.add(symbol);
-      const c = controls.find((x) => (x.symbol ?? x.id) === symbol);
+      const c = controls.find((x) => keyOf(x) === symbol);
       if (!c) throw new Error(`modgui-gen: panel names '${symbol}', which '${stem}' has no control for`);
       if (c.readonly) {
         if (panel.widgets?.[symbol] !== undefined) throw new Error(`modgui-gen: '${symbol}' is a readout and takes no widget`);
@@ -159,10 +186,10 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
       const widget = widgetFor(panel, symbol, q);
       return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, ...(widget === 'selector' ? { options: optionsOf(q) } : {}) };
     }),
-  }));
+  })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
-  if (sections.length === 0 || sections[0].controls.length === 0) throw new Error(`modgui-gen: '${stem}' has an empty first section`);
-  return { uri, stem, name: plugin.name, brand: plugin.vendor, family: panel.family, sections };
+  if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
+  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, skipped };
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
@@ -463,7 +490,18 @@ function walk(dir, base) {
     e.isDirectory() ? walk(join(dir, e.name), base) : [relative(base, join(dir, e.name))]).sort();
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]';
+const SEE_ALSO = 'http://www.w3.org/2000/01/rdf-schema#seeAlso';
+
+/** Whether a bundle manifest points a lilv host at modgui.ttl (`rdfs:seeAlso <modgui.ttl>`, any spelling of the predicate). */
+export const manifestSeesModgui = (text) => /(?:rdfs:seeAlso|rdf-schema#seeAlso>)[^.;]*<modgui\.ttl>/.test(text);
+
+/** The manifest with `<uri> rdfs:seeAlso <modgui.ttl>` added, or unchanged when it already has it. */
+export function withModguiSeeAlso(text, uri) {
+  if (manifestSeesModgui(text)) return text;
+  return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
+}
+
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
@@ -488,7 +526,20 @@ export function main(argv) {
   let stale = 0;
   const dir = resolve(out);
   const shown = (p) => relative(process.cwd(), join(dir, p));
-  const made = generateModgui(descriptor, { panel, stem, source }, look);
+  const manifest = join(dir, 'manifest.ttl');
+  let made;
+  try {
+    made = generateModgui(descriptor, { panel, stem, source }, look);
+  } catch (err) {
+    if (err.code === 'MODGUI_CHOICE_NO_VALUES') {
+      console.error(`${err.code}: ${err.message}`);
+      process.exit(1);
+    }
+    if (err.code !== 'MODGUI_NOTHING_TO_DRAW') throw err;
+    console.error(err.message);
+    process.exit(3);
+  }
+  for (const symbol of resolvePanel(descriptor, { panel, stem }).skipped) console.error(`modgui: skipped trigger control '${symbol}'`);
   if (toStdout) {
     for (const [p, bytes] of made) {
       if (p.endsWith('.png')) process.stdout.write(`# ${shown(p)}: ${bytes.length} bytes, sha256 ${createHash('sha256').update(bytes).digest('hex')}\n`);
@@ -501,6 +552,10 @@ export function main(argv) {
         console.error(`modgui: STALE ${shown(p)} (run \`node tools/modgui-gen.mjs\`)`);
         stale++;
       }
+    }
+    if (existsSync(manifest) && !manifestSeesModgui(readFileSync(manifest, 'utf8'))) {
+      console.error(`modgui: MANIFEST ${shown('manifest.ttl')} has no rdfs:seeAlso <${MODGUI_TTL}>, so a lilv host never reads the MOD GUI (run \`node tools/modgui-gen.mjs\`)`);
+      stale++;
     }
     const want = new Set(made.map(([p]) => p));
     for (const p of walk(join(dir, MODGUI_DIR), dir)) {
@@ -515,6 +570,15 @@ export function main(argv) {
       mkdirSync(dirname(join(dir, p)), { recursive: true });
       writeFileSync(join(dir, p), bytes);
       console.log(`modgui: wrote ${shown(p)}`);
+    }
+    // a lilv host reads modgui.ttl only if the bundle manifest points at it; with no manifest nothing is created
+    if (existsSync(manifest)) {
+      const text = readFileSync(manifest, 'utf8');
+      const next = withModguiSeeAlso(text, resolvePanel(descriptor, { panel, stem }).uri);
+      if (next !== text) {
+        writeFileSync(manifest, next);
+        console.log(`modgui: added rdfs:seeAlso <${MODGUI_TTL}> to ${shown('manifest.ttl')}`);
+      }
     }
   }
   if (check) {

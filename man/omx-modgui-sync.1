@@ -1,0 +1,77 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.\" Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+.TH OMX-MODGUI-SYNC 1 "2026-10-28" "omx-panel" "User Commands"
+.SH NAME
+omx-modgui-sync \- give a MOD GUI to every LV2 plugin that ships none
+.SH SYNOPSIS
+.B omx-modgui-sync
+.RB [ --dry-run ]
+.RB [ --no-scan ]
+.br
+.B omx-modgui-sync
+.B --check
+.SH DESCRIPTION
+For each LV2 plugin on the LV2 search list with no MOD GUI anywhere, writes a bundle named omx-modgui-<name>.lv2 in MODGUI_DIR: modgui.ttl and modgui/ made by
+.BR "omx-panel modgui"
+from the plugin's descriptor, and a manifest.ttl, so lilv adds the GUI to the installed plugin. The plugin's own bundle is never touched.
+MODGUI_DIR may be a folder that also holds plugins.
+.PP
+The descriptor is, in this order, the plugin's declaration in omx-contract
+.RB ( "omx-panel descriptors --installed" ),
+the newest one in DESCRIPTOR_DIRS (written by plugin-hostd and plugin-qualify), or, unless
+.BR --no-scan ,
+one made by
+.BR "plugin-hostd-probe describe" .
+.PP
+A bundle newer than its descriptor is left as it is. A bundle without the marker file .omx-modgui-sync is never written or removed; one with it goes away when its plugin is uninstalled or ships a MOD GUI of its own.
+.PP
+A plugin that cannot get a GUI never fails the run. One whose descriptor has no visible control (omx-panel modgui exit status 3) is counted as having nothing to draw; any other refusal is named in the summary. The run fails only when it cannot start: omx-panel, python3 or python3-lilv missing, or the plugins unreadable.
+.PP
+CLAP plugins have no MOD GUI and get no bundle.
+.SH OPTIONS
+.TP
+.B --dry-run
+say what would be written or removed, and change nothing
+.TP
+.B --no-scan
+do not run plugin-hostd-probe for a plugin with no descriptor
+.TP
+.B --check
+change nothing and report: the LV2 search list and where it came from, whether MODGUI_DIR is on it, whether the LV2_PATH that the mod-host and mod-ui units run with holds MODGUI_DIR (MOD-UI shows the bundles only if it does), and the CLAP search list
+.SH ENVIRONMENT
+.TP
+.B LV2_PATH
+the LV2 search list. Unset, it is plugin-hostd's default, which plugin-hostd and plugin-qualify read too: /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
+.TP
+.B MODGUI_DIR
+the bundles (default /usr/local/lib/lv2 for root, ~/.lv2 for a user)
+.TP
+.B STATE_DIR
+the scans and work files (default /var/lib/omx/modgui-sync; $XDG_DATA_HOME/omx/modgui-sync for a user other than root)
+.TP
+.B DESCRIPTOR_DIRS
+the scanned descriptors, a colon list (default /var/lib/omx/descriptors)
+.TP
+.B CLAP_PATH
+only for
+.BR --check :
+the CLAP search list is CLAP_PATH, then ~/.clap, then /usr/lib/clap
+.SH FILES
+.TP
+.I /etc/omx/modgui-sync.conf
+KEY=value lines for the variables above, read by the unit
+.TP
+.I omx-modgui-sync.service
+runs the sync once; installed but not enabled (systemctl enable omx-modgui-sync). Enabled, it runs at boot and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-modgui-sync.conf, queues it from ExecStartPost when the unit is enabled). If a scan finishes while a GUI run is still running, that start is a no-op until the next scan.
+.SH EXIT STATUS
+.TP
+.B 0
+the run finished, whatever it could not draw; or --check reported
+.TP
+.B 1
+the run could not start
+.TP
+.B 2
+usage error
+.SH SEE ALSO
+.BR omx-panel (1)

@@ -10,8 +10,8 @@
  *   - the unit tokens: the token of a descriptor unit is the LV2 unit a face writes for it, plugin-hostd's
  *     installed LV2 table read backwards (`<contractdir>/3/plugin-hostd/formats/lv2.json`, installed by
  *     plugin-hostd-contract; `$PLUGIN_HOSTD_TABLES`, a directory holding lv2.json, stands in), or the name of a unit
- *     in the param-contract extension's vendor block; a token is served when that extension's header gives it a
- *     value (`omx_param_contract.h`, installed by omx-plugins-devel; `$OMX_PARAM_CONTRACT_H` stands in);
+ *     in the param-contract extension's vendor block; a token is served when that extension's unit table gives it a
+ *     value (`<contractdir>/3/omx-plugins/param-units.json`, installed by omx-plugins-contract);
  *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
  *
@@ -23,7 +23,7 @@
  * A reader whose source is not installed throws, naming what to install; nothing is guessed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
@@ -40,8 +40,6 @@ function pkgVariable(pkg, name) {
 /** Where omx-contract-data installs its files and the contract directory, for an install with no omx-contract.pc. */
 export const DEFAULT_DATADIR = '/usr/share/omx-contract';
 export const DEFAULT_CONTRACTDIR = '/usr/share/omx-contract/contract.d';
-/** Where omx-plugins-devel installs the param-contract header. */
-const DEFAULT_PARAM_CONTRACT_H = '/usr/include/omx-plugins/omx_param_contract.h';
 
 /** The contract directories, in the order they are read: `$OMX_CONTRACT_PATH`, else omx-contract's `contractdir`,
  * else the default. */
@@ -120,21 +118,20 @@ export const lv2UnitTable = once(() => {
   return out;
 });
 
-/** The param-contract header: `$OMX_PARAM_CONTRACT_H`, else under omxplugins' pkg-config `includedir`, else the
- * default; undefined when none is there. */
-export function paramContractHeader() {
-  if (process.env.OMX_PARAM_CONTRACT_H) return existsSync(process.env.OMX_PARAM_CONTRACT_H) ? process.env.OMX_PARAM_CONTRACT_H : undefined;
-  const inc = pkgVariable('omxplugins', 'includedir');
-  return [...(inc ? [join(inc, 'omx-plugins', 'omx_param_contract.h'), join(inc, 'omx_param_contract.h')] : []), DEFAULT_PARAM_CONTRACT_H].find(existsSync);
+/** The param-contract unit table: `<contractdir>/3/omx-plugins/param-units.json`, which omx-plugins-contract installs. */
+export function paramUnitsFile() {
+  const dir = packageDir('omx-plugins');
+  const file = dir && join(dir, 'param-units.json');
+  return file && existsSync(file) ? file : undefined;
 }
 
-/** The param-contract header's unit values, by name without underscores (SEMITONE12TET): `Map<name, value>`. */
-export const headerUnits = once(() => {
-  const file = paramContractHeader();
-  if (!file) throw new Error(`vocabulary: the param-contract header omx_param_contract.h is not installed (${process.env.OMX_PARAM_CONTRACT_H || DEFAULT_PARAM_CONTRACT_H}): install omx-plugins-devel, or name the file in $OMX_PARAM_CONTRACT_H`);
-  const body = readFileSync(file, 'utf8').match(/enum omx_clap_param_unit \{([\s\S]*?)\};/)?.[1];
-  if (!body) throw new Error(`vocabulary: ${file} declares no enum omx_clap_param_unit`);
-  return new Map([...body.matchAll(/OMX_CLAP_UNIT_(\w+)\s*=\s*(0x[0-9a-fA-F]+|\d+)/g)].map((m) => [m[1].replaceAll('_', ''), Number(m[2])]));
+/** The param-contract units' values, by name in capitals without underscores (SEMITONE12TET): `Map<name, value>`. */
+export const paramUnits = once(() => {
+  const file = paramUnitsFile();
+  if (!file) throw new Error('vocabulary: the param-contract unit table param-units.json is not installed: install omx-plugins-contract (>= 0.15.0)');
+  const value = JSON.parse(readFileSync(file, 'utf8')).OMX_PARAM_CONTRACT_UNITS?.value;
+  if (!value || typeof value !== 'object') throw new Error(`vocabulary: ${file} declares no OMX_PARAM_CONTRACT_UNITS value`);
+  return new Map(Object.entries(value).map(([name, code]) => [name.replaceAll('_', '').toUpperCase(), code]));
 });
 
 /** The first value of the extension's vendor block: the units of its own, past the LV2 ones. */
@@ -146,14 +143,14 @@ export function unitTokenOf(unit) {
   const source = lv2UnitTable()[unit];
   if (source) return source.startsWith('units:') ? source.slice('units:'.length) : source.split('#').pop().toLowerCase();
   const name = String(unit).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  return (headerUnits().get(name) ?? 0) >= VENDOR_BLOCK ? name.toLowerCase() : undefined;
+  return (paramUnits().get(name) ?? 0) >= VENDOR_BLOCK ? name.toLowerCase() : undefined;
 }
 
 /** The token of a unit the param-contract extension serves (one with a header value, or "" for none), else undefined. */
 export function servedToken(unit) {
   if (unit === '') return 'none';
   const token = unitTokenOf(unit);
-  return token && headerUnits().get(token.toUpperCase()) ? token : undefined;
+  return token && paramUnits().get(token.toUpperCase()) ? token : undefined;
 }
 
 /** Every unit plugin-hostd's LV2 table maps, and "", with its contract unit: `{ <unit>: [token, header value] }`, a unit
@@ -161,7 +158,7 @@ export function servedToken(unit) {
 export function contractUnits() {
   return Object.fromEntries(['', ...Object.keys(lv2UnitTable())].map((u) => {
     const token = u === '' ? undefined : unitTokenOf(u);
-    const value = token ? headerUnits().get(token.toUpperCase()) ?? 0 : 0;
+    const value = token ? paramUnits().get(token.toUpperCase()) ?? 0 : 0;
     return [u, value ? [token, value] : ['none', 0]];
   }));
 }
@@ -174,4 +171,30 @@ export function installedDescriptorFile(ref) {
   const file = contractDirs().map((d) => join(d, '3', m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
   if (!file) throw new Error(`vocabulary: no descriptor ${ref} is installed (in ${contractDirs().join(':')})`);
   return file;
+}
+
+/** Every descriptor file installed under the contract directories, sorted: `<contractdir>/<major>/<package>/plugins/*.json`,
+ * whatever majors are installed. A `<package>/<name>` installed under several majors or directories is listed once,
+ * from the highest major of the first contract directory that holds it. */
+export function installedDescriptorFiles() {
+  const names = (dir, keep) => {
+    try {
+      return readdirSync(dir, { withFileTypes: true }).filter(keep).map((e) => e.name);
+    } catch {
+      return [];
+    }
+  };
+  const seen = new Map();
+  for (const d of contractDirs()) {
+    const majors = names(d, (e) => e.isDirectory() && /^[0-9]+$/.test(e.name)).sort((a, b) => Number(b) - Number(a));
+    for (const major of majors) {
+      for (const pkg of names(join(d, major), (e) => e.isDirectory())) {
+        for (const f of names(join(d, major, pkg, 'plugins'), (e) => !e.isDirectory() && e.name.endsWith('.json'))) {
+          const ref = `${pkg}/${f}`;
+          if (!seen.has(ref)) seen.set(ref, join(d, major, pkg, 'plugins', f));
+        }
+      }
+    }
+  }
+  return [...seen.values()].sort();
 }

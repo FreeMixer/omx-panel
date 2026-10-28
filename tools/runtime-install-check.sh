@@ -39,7 +39,7 @@ case "$PKG" in
     unpack() { (cd "$2" && dnf -q download "$1" >/dev/null 2>&1) && (cd / && rpm2cpio "$2"/*.rpm | cpio -idm --quiet "./usr/share/omx-contract/contract.d/3/$3/*"); }
     dnf install -y -q --setopt=install_weak_deps=False cpio >/dev/null 2>&1
     dnf -q makecache >/dev/null 2>&1
-    reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' | sed 's/ *$//')
+    reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' -e '^config(' | sed 's/ *$//')
     weak=$(rpm -qp --recommends "$PKG")
     ;;
   *.deb)
@@ -137,15 +137,14 @@ done
 # 4. the installed command reads the installed contract data, nothing set and no omx-contract.pc
 [ ! -e /usr/share/pkgconfig/omx-contract.pc ] && [ ! -e /usr/lib64/pkgconfig/omx-contract.pc ] \
   && pass "no omx-contract.pc is installed" || fail "omx-contract.pc is installed: the lookup without it is not exercised"
-out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA -u PLUGIN_HOSTD_TABLES -u OMX_PARAM_CONTRACT_H omx-panel vocabulary "$DESCRIPTOR" || true)
+out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA -u PLUGIN_HOSTD_TABLES omx-panel vocabulary "$DESCRIPTOR" || true)
 echo "$out"
 expect() { grep -qE "$2" <<< "$out" && pass "omx-panel vocabulary: $1" || fail "omx-panel vocabulary: $1"; }
 expect "the contract directory is $CONTRACTDIR" "^ok   contractdir $CONTRACTDIR\$"
 expect "the meanings from omx-contract-data's schema" '^ok   meanings [1-9][0-9]* from /usr/share/omx-contract/omx-contract\.schema\.json$'
 expect "the LV2 table from the contract directory" "^ok   lv2-units [1-9][0-9]* from $CONTRACTDIR/3/plugin-hostd/formats/lv2\\.json\$"
 expect "the descriptor $DESCRIPTOR from the contract directory" "^ok   descriptor $DESCRIPTOR [1-9][0-9]* controls from $CONTRACTDIR/3/${DESCRIPTOR%%/*}/plugins/${DESCRIPTOR#*/}\\.json\$"
-grep -q '^FAIL param-contract' <<< "$out" \
-  && unverified+=("a layout of a control with a unit: the param-contract header ships only in the development package")
+expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-plugins/param-units\\.json\$"
 
 for u in "${unverified[@]}"; do echo "::warning::not verified: $u"; done
 [ "$fails" -eq 0 ] || { echo "runtime-install-check: $fails check(s) failed" >&2; exit 1; }
