@@ -65,9 +65,11 @@ export const MAX_UNPLACED = 0;
 export const MIN_GROUPS = 2;
 
 /**
- * At most this many groups. A group is at least one screen; the widest plugin grouped by band that we know
- * (a 32-band equaliser: omx-eq32) needs 32. Beyond that the rules are slicing something that is not a set of
- * sections (a long step sequencer, a matrix), and port order is the safer layout.
+ * At most this many groups: the ceiling we accept, not a size any plugin needs. A group is at least one screen, and
+ * 32 screens of sections is already more than an operator pages through. A 32-band equaliser does not fit under it
+ * once its own input and output groups are counted (LSP's x32 graphic equalisers need 36) and is refused, left in
+ * port order; so is anything wider, where the rules are more likely slicing a step sequencer or a matrix than finding
+ * sections. Raising it is a ruling on how many screens are too many, not a fix.
  */
 export const MAX_GROUPS = 32;
 
