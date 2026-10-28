@@ -170,11 +170,46 @@ describe('each rule, on real plugins', () => {
     assertWellFormed(v, plugin);
     assert.deepEqual(shape(v.groups), [
       'General [5] level mode',
-      'Group 1 [3] freq0 level1 active1 phase1 delay1',
-      'Group 2 [3] freq1 level2 active2 phase2 delay2',
-      'Group 3 [3] freq2 level3 active3 phase3 delay3',
+      // the symbols number the transitions from 0 (`freq0` is "Transition 1"): a singleton breaks that stem's
+      // pattern, so the numbered groups are the bands and the transitions share their leading word
+      'Transition [3] freq0 freq1 freq2',
+      'Group 1 [3] level1 active1 phase1 delay1',
+      'Group 2 [3] level2 active2 phase2 delay2',
+      'Group 3 [3] level3 active3 phase3 delay3',
       'Group 4 [3] level4 active4 phase4 delay4',
     ]);
+  });
+
+  it('3: the symbol numbers the bands where the name prints a frequency (LSP Graphic Equalizer x16 Stereo)', () => {
+    const { plugin, modgui } = load('lsp-graph-eq-x16');
+    const v = inferGroups(plugin, modgui);
+    assertWellFormed(v, plugin);
+    const bands = Array.from({ length: 16 }, (_, b) => `Group ${b} [3] xs_${b} xm_${b} xe_${b} g_${b}`);
+    assert.deepEqual(shape(v.groups), [
+      'Input [3] g_in ife_l ife_r',
+      'Output [3] g_out ofe_l ofe_r bal',
+      'More [5] mode slope react shift zoom',
+      'Return [3] rfe_l rfe_r',
+      ...bands,
+    ]);
+  });
+
+  it('3: names first would have made a 64-control "Band" blob of the same plugin: the pass order is the fix', () => {
+    const { plugin, modgui } = load('lsp-graph-eq-x16');
+    const namesFirst = [['name', 'trailing'], ['name', 'leading'], ['symbol', 'trailing'], ['symbol', 'leading']];
+    const v = inferGroups(plugin, modgui, { prefixPasses: namesFirst });
+    const blob = (v.groups ?? v.attempt.groups).find((g) => g.name === 'Band');
+    assert.equal(blob?.ports.length, 64);
+  });
+
+  it('3: a numbered stem some control breaks ("Band gain 1K", "31.5") is placed by no numbered group', () => {
+    const ports = [
+      ['g_a', 'Band gain 16'], ['s_a', 'Band solo 16'], ['g_b', 'Band gain 25'], ['s_b', 'Band solo 25'],
+      ['g_c', 'Band gain 1K'], ['s_c', 'Band solo 1K'],
+    ].map(([symbol, name], i) => ({ symbol, name, index: i, control: true, input: true }));
+    const v = inferGroups({ uri: 'urn:t', ports });
+    const groups = v.groups ?? v.attempt.groups;
+    assert.ok(!groups.some((g) => /^Group /.test(g.name)), JSON.stringify(shape(groups)));
   });
 
   it('4: a shared units:unit, refused when two controls remain in no group (ZamGate)', () => {
