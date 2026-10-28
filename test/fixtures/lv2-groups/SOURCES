@@ -28,6 +28,7 @@ mda-jx10             JX10.ttl                    mda.lv2                   lv2-m
 lsp-graph-eq-x16     graph_equalizer_x16_stereo.ttl  lsp-plugins.lv2  lsp-plugins-lv2-1.2.29-1                    LGPL-3.0-or-later AND Zlib
 juced-drumsynth      drumsynth-lv2.ttl           drumsynth.lv2             DISTRHO-Ports-1.1.0-4                                 GPL-2.0-or-later
 ams-advenv           advenv.ttl                  ams.lv2                   ams-lv2-1.2.2-3                                       GPL-2.0-or-later
+lsp-crossover-mono   crossover_mono.ttl          lsp-plugins.lv2           lsp-plugins-lv2-1.2.29-1                              LGPL-3.0-or-later AND Zlib
 omx-comp             omx-comp.ttl modgui.ttl     omx-comp.lv2              omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
 omx-eq8              omx-eq8.ttl                 omx-eq8.lv2               omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
 synthetic            eq8-priorities.ttl          (synthetic, from omx-eq8.lv2)  omx-plugins-lv2-0.15.1-1                 GPL-3.0-or-later (ours)

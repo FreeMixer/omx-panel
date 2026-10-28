@@ -75,7 +75,9 @@ title).
      1"), else the pass's, counted from 1 when a symbol counts from 0. Its word is the first word every name of the
      group starts with ("Band 1 gain" -> "Band 1"), else a section word among its controls' names or symbols
      (`SECTION_WORDS`: band, section, channel, ch, osc, oscillator, voice, step, tap, stage, lfo, env, envelope,
-     part, layer, op, operator; so "Frequency 1", "Gain 1", "Section 1" are "Section 1"), else "Group". A stem is
+     part, layer, op, operator; so "Frequency 1", "Gain 1", "Section 1" are "Section 1"), or held anywhere in more than
+     half the group's names ("Solo band 1", "Mute band 1", "Band gain 1" beside "Hue 1": "Band 1"), else "Group". A
+     label an earlier group already holds is never emitted with a " 2": the pass places nothing for that group. A stem is
      numbered only when its whole pattern is: every control whose word after the stem starts with a digit lands in a numbered group, or the pass
      places none of that stem's controls ("Band gain 16" ... "Band gain 1K" is left to the next pass). And the numbers
      must be one numbering: the pattern is the number set most stems carry; a stem with it, or with it less its last
