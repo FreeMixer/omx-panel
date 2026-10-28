@@ -410,6 +410,20 @@ describe('a bundle of ours no longer wanted is removed, and only ours', () => {
     assert.ok(!existsSync(b));
   });
 
+  it('its installed bundle declares no plugin now (an upgrade emptied its manifest): removed, and why', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const dir = join(lv2, 'emptied.lv2');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'manifest.ttl'), '@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n');
+    const b = leftBehind(out, dir);
+    const r = run(lv2, out);
+    assert.equal(r.counts.removed, 1, r.lines.join('\n'));
+    assert.match(r.lines.join('\n'), new RegExp(`^removed ${b}: ${dir}: it declares no plugin now$`, 'm'));
+    assert.ok(!existsSync(b));
+  });
+
   it('nothing without the marker is removed: an unmarked directory of our name, a marked one of another name, a link to a marked one', () => {
     const root = scratch();
     const lv2 = join(root, 'lv2');
@@ -422,6 +436,9 @@ describe('a bundle of ours no longer wanted is removed, and only ours', () => {
     const otherName = join(out, 'someone-else.lv2');
     mkdirSync(otherName);
     writeFileSync(join(otherName, MARKER), `${dir}\n`);
+    const noSuffix = join(out, 'omx-complement-foo');
+    mkdirSync(noSuffix);
+    writeFileSync(join(noSuffix, MARKER), `${dir}\n`);
     const elsewhere = leftBehind(join(root, 'elsewhere'), dir);
     symlinkSync(elsewhere, join(out, 'omx-complement-linked.lv2'));
     const before = treeHash(out);
@@ -429,6 +446,7 @@ describe('a bundle of ours no longer wanted is removed, and only ours', () => {
     assert.equal(r.counts.removed, 0, r.lines.join('\n'));
     assert.equal(treeHash(out), before);
     assert.ok(existsSync(join(elsewhere, MARKER)));
+    assert.ok(existsSync(join(noSuffix, MARKER)), 'a marked omx-complement-foo (no .lv2) is not a bundle of ours');
   });
 
   it('--dry-run says what it would remove and removes nothing; --only removes only what was written for the bundles named', () => {
@@ -513,6 +531,31 @@ describe('the degenerate cases are refused with a reason and never written', () 
     assert.equal(r.refusals['plugin-in-several-bundles'], 2);
     assert.equal(r.counts.written, 0);
     empty(join(root, 'out'));
+  });
+
+  it('two installed bundles whose complements would have one name (same basename, two roots, different plugins): both refused, never rewritten in turn', () => {
+    const root = scratch();
+    const lv2a = join(root, 'usr-lib-lv2');
+    const lv2b = join(root, 'usr-local-lib-lv2');
+    const out = join(root, 'out');
+    const a = installed(lv2a, 'same', ['swh-triplepara']);
+    const b = installed(lv2b, 'same', ['mda-rezfilter']);
+    assert.equal(outName(a.dir), outName(b.dir));
+    assert.notDeepEqual(a.uris, b.uris, 'different plugins: plugin-in-several-bundles does not see it');
+    const go = () => {
+      const lines = [];
+      const r = sync({ lv2Path: `${out}:${lv2a}:${lv2b}`, outDir: out, stateDir: join(root, 'state'), log: (l) => lines.push(l) });
+      return { ...r, lines };
+    };
+    // a complement written for one of them by an earlier writer: removed once both are refused
+    mkdirSync(join(out, outName(a.dir)), { recursive: true });
+    writeFileSync(join(out, outName(a.dir), MARKER), `${a.dir}\nwriter an earlier writer\nsource-sha256 x\n`);
+    const first = go();
+    assert.deepEqual([first.counts.written, first.refusals['out-name-collision'], first.counts.removed], [0, 2, 1], first.lines.join('\n'));
+    assert.match(first.lines.join('\n'), /^refused .*usr-lib-lv2\/same\.lv2: out-name-collision: .* would both be complemented as omx-complement-same\.lv2$/m);
+    const second = go();
+    assert.deepEqual([second.counts.written, second.counts.replaced, second.counts.removed, second.refusals['out-name-collision']], [0, 0, 0, 2], second.lines.join('\n'));
+    assert.deepEqual(readdirSync(out), []);
   });
 
   it('a dynamic manifest', () => {

@@ -562,6 +562,11 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
       read.set(dir, e);
     }
   }
+  // Two installed bundles whose complements would have one name (the same basename in two roots, or names that
+  // differ only in what outName replaces): each would find the marker naming the other and rewrite the bundle on
+  // every run. Both are refused, whatever their verdicts, so the outcome does not flip as the rules change.
+  const byOut = new Map();
+  for (const dir of read.keys()) byOut.set(outName(dir), [...(byOut.get(outName(dir)) ?? []), dir]);
   const onlySet = new Set(only.map((d) => resolve(d)));
   // the bundles of ours this run leaves in effect: up to date, or written (in a dry run, would be written)
   const kept = new Set();
@@ -596,6 +601,11 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
     }
     if (plan.refusal) {
       refuse(dir, plan.refusal);
+      continue;
+    }
+    const sharing = (byOut.get(outName(dir)) ?? []).filter((d) => d !== dir);
+    if (sharing.length > 0) {
+      refuse(dir, new Refusal('out-name-collision', `${dir} and ${sharing.join(', ')} would both be complemented as ${outName(dir)}`));
       continue;
     }
     if (!plan.write) {
@@ -643,7 +653,7 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
   if (existsSync(outDir)) {
     for (const name of readdirSync(outDir).sort()) {
       const b = join(outDir, name);
-      if (!name.startsWith(PREFIX) || !isOurs(b) || kept.has(b)) continue;
+      if (!name.startsWith(PREFIX) || !name.endsWith('.lv2') || !isOurs(b) || kept.has(b)) continue;
       const marker = readFileSync(join(b, MARKER), 'utf8').split('\n');
       const source = marker[0];
       if (onlySet.size > 0 && !onlySet.has(source)) continue;

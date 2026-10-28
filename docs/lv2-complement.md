@@ -95,7 +95,13 @@ not give on the installed files.
     `port-symbol-ambiguous` (two ports of one symbol);
   - `dynamic-manifest`, `data-outside-bundle` (a plugin's `rdfs:seeAlso` outside its bundle), `ports-split-across-files`;
   - `group-iri-collision`: a generated group node whose IRI the bundle already states, or that two grouped plugins of
-    one file would share (above).
+    one file would share (above);
+  - `out-name-collision`: two installed bundles whose complements would have the same name
+    (`omx-complement-<name>.lv2`: the same bundle name in two folders of the search list, or names that differ only in
+    characters the name replaces with `_`). Both are refused, whatever their verdicts: written, each run would find
+    the other's marker and rewrite it, never up to date, and every rewrite in `/usr/local/lib/lv2` would queue another
+    scan through plugin-qualify's path unit.
+
 ## What is removed
 
 A bundle of ours left in place past its time does harm: its bumped version keeps winning, so it would hide an upgraded
