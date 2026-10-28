@@ -236,6 +236,38 @@ describe('each rule, on real plugins', () => {
     ]);
   });
 
+  it('3: a section word most names of a group hold labels it; no label is emitted twice (LSP Crossover Mono x8)', () => {
+    const { plugin } = load('lsp-crossover-mono');
+    const v = inferGroups(plugin, null);
+    assertWellFormed(v, plugin);
+    const splits = Array.from({ length: 7 }, (_, i) => `Group ${i + 1} [3] frs_${i + 1} sf_${i + 1}`);
+    // "Solo band 0", "Mute band 0", "Band gain 0", "Band delay 0" beside "Phase invert 0" and "Hue 0": "Band 0"
+    const bands = Array.from({ length: 8 }, (_, b) => `Band ${b} [3] bs_${b} bm_${b} bp_${b} bg_${b} bd_${b} hue_${b}`);
+    assert.deepEqual(shape(v.groups), [
+      'General [5] mode smapply',
+      'Input [3] g_in ife',
+      'Output [3] g_out ofe',
+      'More [5] react shift zoom flt crv',
+      ...splits,
+      ...bands,
+    ]);
+  });
+
+  it('3: a numbered label an earlier group holds is not emitted with a " 2": the pass places nothing for it', () => {
+    const ports = [];
+    for (const b of [1, 2, 3]) ports.push({ symbol: `a${b}`, name: `Alpha ${b}` }, { symbol: `b${b}`, name: `Beta ${b}` });
+    // numbered {2, 3} inside {1, 2, 3}: left by the symbol pass, numbered again by the names as "Group 2", "Group 3"
+    for (const b of [2, 3]) ports.push({ symbol: `c${b}`, name: `Gamma ${b}` }, { symbol: `d${b}`, name: `Delta ${b}` });
+    const v = inferGroups({ uri: 'urn:t', ports: ports.map((p, i) => ({ ...p, index: i, control: true, input: true })) });
+    assert.deepEqual(shape(v.groups ?? v.attempt.groups), [
+      'Group 1 [3] a1 b1',
+      'Group 2 [3] a2 b2',
+      'Group 3 [3] a3 b3',
+      // Gamma 2, Gamma 3 differ only by their number: no leading-word group either; the index run takes them
+      'More [5] c2 d2 c3 d3',
+    ]);
+  });
+
   it('3: names first would have made a 64-control "Band" blob of the same plugin: the pass order is the fix', () => {
     const { plugin, modgui } = load('lsp-graph-eq-x16');
     const namesFirst = [['name', 'trailing'], ['name', 'leading'], ['symbol', 'trailing'], ['symbol', 'leading']];
