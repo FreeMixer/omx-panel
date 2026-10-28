@@ -406,13 +406,39 @@ function trailingNumber(state, rule, tokensOf) {
   }
   repeated = oneNumbering(repeated, stemKey);
   if (repeated.length < 2) return;
-  for (const [n, ms] of repeated) {
-    // the section word may be in the names when the pass numbered the symbols (fil4: `sec1` is "Section 1")
+  const labels = numberedLabels(repeated, tokensOf === TOKENS.symbol);
+  for (const [n, ms] of repeated) place(state, rule, { key: labels.get(n), name: labels.get(n) }, ms.map((m) => m.p));
+}
+
+/**
+ * The label of each numbered group. The number: the names' own, when the names number the same controls into the same
+ * groups (each name holds one number, the same within a group, another in each group), since a name is what the
+ * operator reads; otherwise the pass's, counted from 1 when a symbol pass counts from 0. The word: the first word
+ * every name of the group starts with ("Band 1 gain" -> "Band 1"), else a section word among their names or symbols
+ * (fil4's "Section 1"), else "Group".
+ */
+function numberedLabels(repeated, bySymbol) {
+  const nameNumber = (p) => {
+    const t = nameTokens(p.name);
+    const nums = t.filter(isNumber);
+    return nums.length === 1 ? Number(nums[0]) : undefined;
+  };
+  const perClass = repeated.map(([, ms]) => new Set(ms.map((m) => nameNumber(m.p))));
+  const agree =
+    perClass.every((set) => set.size === 1 && ![...set].includes(undefined)) &&
+    new Set(perClass.map((set) => [...set][0])).size === perClass.length;
+  const shift = bySymbol && Math.min(...repeated.map(([n]) => Number(n))) === 0 ? 1 : 0;
+  const labels = new Map();
+  repeated.forEach(([n, ms], i) => {
+    const number = agree ? [...perClass[i]][0] : Number(n) + shift;
+    const firsts = ms.map((m) => nameTokens(m.p.name)[0] ?? '');
+    const first = firsts[0] && !isNumber(firsts[0]) && firsts.every((w) => w.toLowerCase() === firsts[0].toLowerCase()) ? firsts[0] : undefined;
     const stems = ms.flatMap((m) => [m.stem, nameTokens(m.p.name).slice(0, -1), symbolTokens(m.p.symbol).slice(0, -1)]);
-    const section = stems.find((s) => s.length === 1 && SECTION_WORDS.has(s[0].toLowerCase()));
-    const word = section ? capitalize(section[0]) : 'Group';
-    place(state, rule, { key: `${word} ${n}`, name: `${word} ${n}` }, ms.map((m) => m.p));
-  }
+    const section = stems.find((st) => st.length === 1 && SECTION_WORDS.has(st[0].toLowerCase()));
+    const word = first ? capitalize(first) : section ? capitalize(section[0]) : 'Group';
+    labels.set(n, `${word} ${number}`);
+  });
+  return labels;
 }
 
 /**

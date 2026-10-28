@@ -10,6 +10,8 @@
 #
 # directory          files                       bundle                    package (Fedora 44)                                   licence
 swh-delayorama       plugin.ttl                  delayorama-swh.lv2        lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
+swh-phasers          plugin.ttl                  phasers-swh.lv2           lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
+swh-triplepara       plugin.ttl                  triple_para-swh.lv2       lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
 swh-gate             plugin.ttl                  gate-swh.lv2              lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
 calf-compressor      Compressor.ttl              calf.lv2                  lv2-calf-plugins-0.90.9-3                             GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
 calf-xover4band      XOver4Band.ttl              calf.lv2                  lv2-calf-plugins-0.90.9-3                             GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
