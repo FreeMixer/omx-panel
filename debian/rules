@@ -17,7 +17,6 @@ endif
 
 override_dh_auto_install:
 	dh_auto_install -- PREFIX=/usr BINDIR=/usr/bin DATADIR=/usr/share UNITDIR=/usr/lib/systemd/system SYSCONFDIR=/etc
-	$(MAKE) install-apt-hook DESTDIR=$(CURDIR)/debian/omx-panel SYSCONFDIR=/etc
 	# the vendored modules' lint and VCS dotfiles are theirs, not the package's: lintian refuses .eslintrc.yml
 	find debian/omx-panel/usr/share/omx-panel -path '*/node_modules/*' -name '.*' -type f -delete
 
