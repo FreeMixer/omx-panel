@@ -1,0 +1,180 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# SYNTHETIC, ours: two plugins in one file, <.../a/twin> and <.../b/twin>, the same three-band equaliser of nine
+# controls that states no port group. Their URIs end in the same word, so the complement writer's group nodes for both
+# would be <#twin-band_1> ...: test/lv2-complement.test.mjs, the two must not share a node.
+@prefix doap: <http://usefulinc.com/ns/doap#> .
+@prefix lv2: <http://lv2plug.in/ns/lv2core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://example.org/omx-panel/test/a/twin>
+	a lv2:Plugin , lv2:EQPlugin ;
+	doap:name "Twin test equaliser A" ;
+	doap:license <http://usefulinc.com/doap/licenses/gpl> ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 0 ;
+		lv2:symbol "b1_freq" ;
+		lv2:name "Band 1 Frequency" ;
+		lv2:default 1000 ;
+		lv2:minimum 20 ;
+		lv2:maximum 20000
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 1 ;
+		lv2:symbol "b1_gain" ;
+		lv2:name "Band 1 Gain" ;
+		lv2:default 0 ;
+		lv2:minimum -24 ;
+		lv2:maximum 24
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 2 ;
+		lv2:symbol "b1_q" ;
+		lv2:name "Band 1 Q" ;
+		lv2:default 1 ;
+		lv2:minimum 0.1 ;
+		lv2:maximum 10
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "b2_freq" ;
+		lv2:name "Band 2 Frequency" ;
+		lv2:default 1000 ;
+		lv2:minimum 20 ;
+		lv2:maximum 20000
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 4 ;
+		lv2:symbol "b2_gain" ;
+		lv2:name "Band 2 Gain" ;
+		lv2:default 0 ;
+		lv2:minimum -24 ;
+		lv2:maximum 24
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 5 ;
+		lv2:symbol "b2_q" ;
+		lv2:name "Band 2 Q" ;
+		lv2:default 1 ;
+		lv2:minimum 0.1 ;
+		lv2:maximum 10
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 6 ;
+		lv2:symbol "b3_freq" ;
+		lv2:name "Band 3 Frequency" ;
+		lv2:default 1000 ;
+		lv2:minimum 20 ;
+		lv2:maximum 20000
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 7 ;
+		lv2:symbol "b3_gain" ;
+		lv2:name "Band 3 Gain" ;
+		lv2:default 0 ;
+		lv2:minimum -24 ;
+		lv2:maximum 24
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 8 ;
+		lv2:symbol "b3_q" ;
+		lv2:name "Band 3 Q" ;
+		lv2:default 1 ;
+		lv2:minimum 0.1 ;
+		lv2:maximum 10
+	] .
+
+<http://example.org/omx-panel/test/b/twin>
+	a lv2:Plugin , lv2:EQPlugin ;
+	doap:name "Twin test equaliser B" ;
+	doap:license <http://usefulinc.com/doap/licenses/gpl> ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 0 ;
+		lv2:symbol "b1_freq" ;
+		lv2:name "Band 1 Frequency" ;
+		lv2:default 1000 ;
+		lv2:minimum 20 ;
+		lv2:maximum 20000
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 1 ;
+		lv2:symbol "b1_gain" ;
+		lv2:name "Band 1 Gain" ;
+		lv2:default 0 ;
+		lv2:minimum -24 ;
+		lv2:maximum 24
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 2 ;
+		lv2:symbol "b1_q" ;
+		lv2:name "Band 1 Q" ;
+		lv2:default 1 ;
+		lv2:minimum 0.1 ;
+		lv2:maximum 10
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "b2_freq" ;
+		lv2:name "Band 2 Frequency" ;
+		lv2:default 1000 ;
+		lv2:minimum 20 ;
+		lv2:maximum 20000
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 4 ;
+		lv2:symbol "b2_gain" ;
+		lv2:name "Band 2 Gain" ;
+		lv2:default 0 ;
+		lv2:minimum -24 ;
+		lv2:maximum 24
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 5 ;
+		lv2:symbol "b2_q" ;
+		lv2:name "Band 2 Q" ;
+		lv2:default 1 ;
+		lv2:minimum 0.1 ;
+		lv2:maximum 10
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 6 ;
+		lv2:symbol "b3_freq" ;
+		lv2:name "Band 3 Frequency" ;
+		lv2:default 1000 ;
+		lv2:minimum 20 ;
+		lv2:maximum 20000
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 7 ;
+		lv2:symbol "b3_gain" ;
+		lv2:name "Band 3 Gain" ;
+		lv2:default 0 ;
+		lv2:minimum -24 ;
+		lv2:maximum 24
+	] ;
+	lv2:port [
+		a lv2:InputPort , lv2:ControlPort ;
+		lv2:index 8 ;
+		lv2:symbol "b3_q" ;
+		lv2:name "Band 3 Q" ;
+		lv2:default 1 ;
+		lv2:minimum 0.1 ;
+		lv2:maximum 10
+	] .

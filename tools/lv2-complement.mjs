@@ -9,7 +9,8 @@
  * lv2:microVersion one above what is installed, so lilv's duplicate rule loads ours; the inferred group nodes (lv2:symbol,
  * lv2:name, lv2:displayPriority) and pg:group on each port, by port symbol. A marker file, `.omx-complement-sync`, in
  * the bundle names the installed bundle, the content hash and every plugin's versions: a second run over the same
- * installed files writes nothing, and deleting the bundle is the whole removal.
+ * installed files writes nothing, and deleting the bundle is the whole removal: the sync deletes a bundle of ours whose
+ * installed bundle is gone, changed into one it refuses, or needs no groups now (lane G3).
  *
  * The unit is the installed BUNDLE, not the plugin: lilv drops the whole old bundle when one of its plugins is
  * replaced ("Dropping old bundle"), so a bundle with several plugins (Calf's, LSP's, MDA's) is restated whole, every
@@ -18,16 +19,20 @@
  * Nothing is written for a bundle none of whose plugins is `grouped` (`nothing-to-do`, `no-confident-grouping`), and
  * the installed files are never written. A bundle the restatement cannot carry is refused with a reason, never
  * written: TTL the reader cannot parse, a version at lilv's ceiling (an int) or not an integer, more than one
- * version, binary or bundle for a plugin URI, a dynamic manifest, a data file outside the bundle.
+ * version, binary or bundle for a plugin URI, a dynamic manifest, a data file outside the bundle, a generated group
+ * node that would merge into a node already stated or into another plugin's (group-iri-collision).
  *
  *   node tools/lv2-complement.mjs --out <dir> [--lv2-path <a:b:...>] [--state <dir>] [--only <bundle.lv2>]...
- *                                 [--dry-run] [--verbose] [--log-prefix <name>]
+ *                                 [--dry-run | --check] [--verbose] [--log-prefix <name>]
  *
- * One line per bundle written, refused or skipped (and with --verbose one per plugin, its verdict), and a summary; exit 0 when the run finished (whatever it refused),
- * 1 when it could not start, 2 on usage.
+ * One line per bundle written, replaced, removed, refused or skipped (and with --verbose one per plugin, its verdict),
+ * and a summary; exit 0 when the run finished (whatever it refused), 1 when it could not start, 2 on usage. A bundle of
+ * ours (named omx-complement-*, holding the marker) that is no longer wanted is removed, with the reason; nothing
+ * unmarked is ever removed. --dry-run writes and removes nothing and says what it would; --check also writes nothing
+ * and exits 3 when a bundle of ours is stale (the run would remove it) or out of date (it would write it again).
  */
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -278,11 +283,13 @@ function serialize(triples, header, blank) {
 
 /**
  * The bundle's files: every installed TTL file lilv reads for the bundle's plugins, restated, with the versions
- * raised, the seeAlso references pointing at the restated files, and the inferred groups added.
+ * raised, the seeAlso references pointing at the restated files, and the inferred groups added. `target`, the
+ * directory the bundle will be written to, lets the group-node guard also resolve each generated node where lilv will.
  * @param {Plan} plan
+ * @param {string} [target]
  * @returns {Map<string, string>} file name in the new bundle -> its text
  */
-export function renderBundle(plan) {
+export function renderBundle(plan, target) {
   const { bundle } = plan;
   if (!plan.write) throw new Error(`${bundle.dir}: nothing to write`);
   const restated = new Map([...bundle.files.values()].map((f) => [f.url, f.name]));
@@ -310,11 +317,14 @@ export function renderBundle(plan) {
     stated.anywhere.add(`${termKey(t.s)}\0${t.p.v}`);
   };
   for (const [name, triples] of out) for (const t of triples) stated.note(name, t);
+  // every IRI the installed files state, as the reader resolved it, and the group nodes generated so far, per file
+  const nodes = { iris: new Set(), generated: new Map(), target };
+  for (const f of bundle.files.values()) for (const t of f.triples) for (const x of [t.s, t.p, t.o]) if (x.t === 'iri') nodes.iris.add(x.v);
   for (const p of plan.plugins) {
     const s = { t: 'iri', v: p.uri };
     manifest.push({ s, p: { t: 'iri', v: `${LV2}minorVersion` }, o: int(p.version.next.minor) });
     manifest.push({ s, p: { t: 'iri', v: `${LV2}microVersion` }, o: int(p.version.next.micro) });
-    if (p.verdict.outcome === 'grouped') addGroups(bundle, p, out, stated);
+    if (p.verdict.outcome === 'grouped') addGroups(bundle, p, out, stated, nodes);
   }
   const texts = new Map();
   let fileIndex = 0;
@@ -331,8 +341,34 @@ export function renderBundle(plan) {
   return texts;
 }
 
+/** `ref` resolved against `base` by the Turtle reader itself: the IRI a reader of that file gives it. */
+function resolveAs(base, ref) {
+  return parseTurtle(`<${ref}> <urn:p> <urn:o> .`, base)[0].s.v;
+}
+
+/**
+ * The guard on a generated group node `<#fragment>` in file `name`: refused (`group-iri-collision`) when the IRI it
+ * resolves to, against the installed file (what the plugin's own `<#fragment>` there means) or against the written
+ * file at `nodes.target` (what lilv will read), is one the bundle already states, or when another generated group in
+ * that file already took it (two grouped plugins whose URIs end alike). Refused rather than given a suffix: a node
+ * whose name nobody can predict from the plugin and the group symbol would surprise whoever looks it up.
+ */
+function guardNode(bundle, p, g, name, fragment, nodes) {
+  const ref = `#${fragment}`;
+  const where = [/** @type {TtlFile} */ (bundle.files.get(name)).url];
+  if (nodes.target) where.push(pathToFileURL(join(nodes.target, name)).href);
+  for (const base of where) {
+    const iri = resolveAs(base, ref);
+    if (nodes.iris.has(iri)) throw new Refusal('group-iri-collision', `${p.uri}: group ${g.symbol}'s node <${ref}> in ${name} is ${iri}, which the bundle already states`);
+  }
+  const key = `${name}\0${fragment}`;
+  const other = nodes.generated.get(key);
+  if (other !== undefined) throw new Refusal('group-iri-collision', `${p.uri}: group ${g.symbol}'s node <${ref}> in ${name} is also ${other}'s`);
+  nodes.generated.set(key, p.uri);
+}
+
 /** The statements of the inferred groups of plugin `p`, added to the file that states its ports. */
-function addGroups(bundle, p, out, stated) {
+function addGroups(bundle, p, out, stated, nodes) {
   const P = (v) => ({ t: 'iri', v });
   const lit = (v) => ({ t: 'lit', v: String(v), dt: `${XSD}string` });
   const int = (n) => ({ t: 'lit', v: String(n), dt: `${XSD}integer` });
@@ -373,6 +409,8 @@ function addGroups(bundle, p, out, stated) {
       node = { t: 'bnode', v: g.node.slice(k + 1) };
     } else if (g.node !== undefined) {
       node = P(g.node);
+    } else {
+      guardNode(bundle, p, g, file, `${slug}-${g.symbol}`, nodes);
     }
     // a blank node is stated in its own file only; an IRI may be stated in any of the bundle's files
     const known = (pred) => (node.t === 'iri' && !node.rel ? stated.anywhere.has(`${termKey(node)}\0${pred}`) : has(target, node, pred));
@@ -420,7 +458,7 @@ export function outName(bundleDir) {
  * from the bundle path lilv hands it (ours now) still finds them.
  */
 export function writeBundle(plan, target, stateDir, writer = writerId()) {
-  const texts = renderBundle(plan);
+  const texts = renderBundle(plan, target);
   mkdirSync(stateDir, { recursive: true });
   const work = mkdtempSync(join(stateDir, 'complement.'));
   try {
@@ -490,15 +528,24 @@ export function installedBundles(lv2Path) {
 }
 
 /**
- * Plan (and, unless `dryRun`, write) a complement for every installed bundle on `lv2Path` that needs one, into `outDir`.
- * @returns {{ counts: Record<string, number>, refusals: Record<string, number>, lines: string[] }}
+ * Plan (and, unless `dryRun` or `check`, write) a complement for every installed bundle on `lv2Path` that needs one,
+ * into `outDir`, and remove every bundle of ours that is no longer wanted. Ours is a directory `omx-complement-*.lv2`
+ * holding the marker; nothing else in `outDir` is ever removed or written. A bundle of ours is kept only when this run
+ * finds it up to date or writes it again; any other is stale and removed, the log naming it and why: its installed
+ * bundle is gone (or no longer on the search list), changed and is now refused, needs no groups now, or is refused on
+ * the current rules. `check` writes and removes nothing and names each bundle of ours that is stale or out of date.
+ * @returns {{ counts: Record<string, number>, refusals: Record<string, number> }}
  */
-export function sync({ lv2Path, outDir, stateDir, dryRun = false, verbose = false, only = [], log = () => {}, writer = writerId() }) {
-  const counts = { written: 0, fresh: 0, refused: 0, notOurs: 0, stale: 0, grouped: 0, nothingToDo: 0, noConfident: 0, unreadable: 0, plugins: 0 };
+export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false, verbose = false, only = [], log = () => {}, writer = writerId() }) {
+  const counts = { written: 0, replaced: 0, outOfDate: 0, fresh: 0, refused: 0, notOurs: 0, removed: 0, grouped: 0, nothingToDo: 0, noConfident: 0, unreadable: 0, plugins: 0 };
   const refusals = {};
+  const noWrite = dryRun || check;
+  // why an installed bundle has no complement this run: the removal names it
+  const why = new Map();
   const refuse = (dir, e) => {
     counts.refused++;
     refusals[e.reason] = (refusals[e.reason] ?? 0) + 1;
+    why.set(dir, `it is refused now (${e.message})`);
     log(`refused ${dir}: ${e.message}`);
   };
   const dirs = installedBundles(lv2Path);
@@ -515,8 +562,14 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, verbose = fals
       read.set(dir, e);
     }
   }
+  // Two installed bundles whose complements would have one name (the same basename in two roots, or names that
+  // differ only in what outName replaces): each would find the marker naming the other and rewrite the bundle on
+  // every run. Both are refused, whatever their verdicts, so the outcome does not flip as the rules change.
+  const byOut = new Map();
+  for (const dir of read.keys()) byOut.set(outName(dir), [...(byOut.get(outName(dir)) ?? []), dir]);
   const onlySet = new Set(only.map((d) => resolve(d)));
-  const wanted = new Set();
+  // the bundles of ours this run leaves in effect: up to date, or written (in a dry run, would be written)
+  const kept = new Set();
   for (const [dir, b] of read) {
     if (onlySet.size > 0 && !onlySet.has(dir)) continue;
     if (b instanceof Refusal) {
@@ -524,7 +577,10 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, verbose = fals
       refuse(dir, b);
       continue;
     }
-    if (b.plugins.length === 0) continue;
+    if (b.plugins.length === 0) {
+      why.set(dir, 'it declares no plugin now');
+      continue;
+    }
     let plan;
     try {
       plan = planBundle(b, { elsewhere: (uri) => (declaredIn.get(uri) ?? []).filter((d) => d !== dir) });
@@ -547,59 +603,114 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, verbose = fals
       refuse(dir, plan.refusal);
       continue;
     }
-    if (!plan.write) continue;
+    const sharing = (byOut.get(outName(dir)) ?? []).filter((d) => d !== dir);
+    if (sharing.length > 0) {
+      refuse(dir, new Refusal('out-name-collision', `${dir} and ${sharing.join(', ')} would both be complemented as ${outName(dir)}`));
+      continue;
+    }
+    if (!plan.write) {
+      why.set(dir, 'none of its plugins comes out grouped on the current rules');
+      continue;
+    }
     const target = join(outDir, outName(dir));
-    wanted.add(target);
     const grouped = plan.plugins.filter((p) => p.verdict.outcome === 'grouped').map((p) => p.uri);
-    if (existsSync(target) && !existsSync(join(target, MARKER))) {
+    const ours = isOurs(target);
+    if (existsSync(target) && !ours) {
       counts.notOurs++;
       log(`skip ${dir}: ${target} is not ours`);
       continue;
     }
-    if (existsSync(target) && isFresh(target, plan, writer)) {
+    if (ours && isFresh(target, plan, writer)) {
       counts.fresh++;
+      kept.add(target);
       continue;
     }
+    // a bundle of ours there and not up to date: say what changed, it is replaced whole
+    const change = ours ? staleness(target, plan, writer) : '';
     try {
-      if (dryRun) {
-        renderBundle(plan);
-        log(`would write ${target} for ${dir}: ${grouped.length} of ${plan.plugins.length} plugin(s) grouped (${grouped.join(', ')})`);
+      renderBundle(plan, target);
+      const what = `${grouped.length} of ${plan.plugins.length} plugin(s) grouped (${grouped.join(', ')})`;
+      if (check) {
+        if (ours) {
+          counts.outOfDate++;
+          log(`out of date ${target}: ${change}; the sync writes it again`);
+        } else log(`missing ${target} for ${dir}: ${what}; the sync writes it`);
+      } else if (dryRun) {
+        log(`would ${ours ? 'replace' : 'write'} ${target} for ${dir}${ours ? ` (${change})` : ''}: ${what}`);
       } else {
         writeBundle(plan, target, stateDir, writer);
-        log(`wrote ${target} for ${dir}: ${grouped.length} of ${plan.plugins.length} plugin(s) grouped (${grouped.join(', ')})`);
+        log(`${ours ? 'replaced' : 'wrote'} ${target} for ${dir}${ours ? ` (${change})` : ''}: ${what}`);
       }
       counts.written++;
+      if (ours) counts.replaced++;
+      kept.add(target);
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
       refuse(dir, e);
     }
   }
-  // Ours, no longer wanted: its installed bundle is gone, changed, or needs no groups now. Removal is lane G3's.
-  if (onlySet.size === 0 && existsSync(outDir)) {
+  // Ours, no longer wanted: removed. With --only, only the bundles written for the bundles named.
+  if (existsSync(outDir)) {
     for (const name of readdirSync(outDir).sort()) {
       const b = join(outDir, name);
-      if (!name.startsWith(PREFIX) || !existsSync(join(b, MARKER)) || wanted.has(b)) continue;
-      counts.stale++;
-      log(`stale ${b}: ${readFileSync(join(b, MARKER), 'utf8').split('\n')[0]} needs no complement now (left in place)`);
+      if (!name.startsWith(PREFIX) || !name.endsWith('.lv2') || !isOurs(b) || kept.has(b)) continue;
+      const marker = readFileSync(join(b, MARKER), 'utf8').split('\n');
+      const source = marker[0];
+      if (onlySet.size > 0 && !onlySet.has(source)) continue;
+      const installed = read.get(source);
+      let reason;
+      if (installed === undefined) reason = `its installed bundle ${source} is gone, or no longer on the search list`;
+      else {
+        const changed = !(installed instanceof Refusal) && marker[2] !== `source-sha256 ${installed.hash}`;
+        reason = `${source}: ${changed ? 'it changed, and ' : ''}${why.get(source) ?? `it is complemented by ${join(outDir, outName(source))} now`}`;
+      }
+      counts.removed++;
+      if (check) log(`stale ${b}: ${reason}; the sync removes it`);
+      else if (dryRun) log(`would remove ${b}: ${reason}`);
+      else {
+        rmSync(b, { recursive: true, force: true });
+        log(`removed ${b}: ${reason}`);
+      }
     }
   }
   return { counts, refusals };
 }
 
+/** A directory of ours: a real directory (not a link) holding the marker. The marker is the proof of ownership. */
+export function isOurs(dir) {
+  try {
+    return lstatSync(dir).isDirectory() && lstatSync(join(dir, MARKER)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/** Why a bundle of ours is not up to date for `plan`: its installed files changed, or the rules (the writer) did. */
+function staleness(target, plan, writer) {
+  const [dir, w, h] = readFileSync(join(target, MARKER), 'utf8').split('\n');
+  const changes = [];
+  if (dir !== plan.bundle.dir) changes.push(`it was written for ${dir}`);
+  if (h !== `source-sha256 ${plan.bundle.hash}`) changes.push('the installed files changed');
+  if (w !== `writer ${writer}`) changes.push('the rules changed');
+  return changes.join(', ') || 'its marker is not this writer\'s';
+}
+
 /** The summary line. */
 export function summary({ counts, refusals }, dryRun = false) {
   const why = Object.entries(refusals).sort().map(([r, n]) => `${n} ${r}`).join(', ');
-  return `${counts.written} ${dryRun ? 'would be written' : 'written'}, ${counts.fresh} up to date, ${counts.refused} refused${why ? ` (${why})` : ''}, `
-    + `${counts.notOurs} not ours, ${counts.stale} stale; plugins: ${counts.plugins} read, ${counts.grouped} grouped, `
+  const would = (done, todo) => (dryRun ? todo : done);
+  return `${counts.written} ${would('written', 'would be written')}${counts.replaced ? ` (${counts.replaced} ${would('replacing', 'would replace')} an out-of-date one)` : ''}, `
+    + `${counts.fresh} up to date, ${counts.refused} refused${why ? ` (${why})` : ''}, `
+    + `${counts.notOurs} not ours, ${counts.removed} ${would('removed', 'would be removed')}; plugins: ${counts.plugins} read, ${counts.grouped} grouped, `
     + `${counts.nothingToDo} nothing to do, ${counts.noConfident} without a confident grouping`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 
-const USAGE = 'usage: lv2-complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose] [--log-prefix <name>]\n';
+const USAGE = 'usage: lv2-complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose] [--log-prefix <name>]\n';
 
 function main(argv) {
-  const opts = { only: [], dryRun: false, verbose: false, lv2Path: process.env.LV2_PATH, prefix: 'lv2-complement' };
+  const opts = { only: [], dryRun: false, check: false, verbose: false, lv2Path: process.env.LV2_PATH, prefix: 'lv2-complement' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const val = () => argv[++i] ?? (process.stderr.write(USAGE), process.exit(2));
@@ -609,19 +720,20 @@ function main(argv) {
     else if (a === '--only') opts.only.push(val());
     else if (a === '--log-prefix') opts.prefix = val();
     else if (a === '--dry-run') opts.dryRun = true;
+    else if (a === '--check') opts.check = true;
     else if (a === '--verbose') opts.verbose = true;
     else {
       process.stderr.write(USAGE);
       process.exit(2);
     }
   }
-  if (!opts.out || !opts.lv2Path) {
+  if (!opts.out || !opts.lv2Path || (opts.dryRun && opts.check)) {
     process.stderr.write(USAGE);
     process.exit(2);
   }
   const say = (line) => process.stdout.write(`${opts.prefix}: ${line}\n`);
   const outDir = resolve(opts.out);
-  if (!opts.dryRun) {
+  if (!opts.dryRun && !opts.check) {
     try {
       mkdirSync(outDir, { recursive: true });
     } catch (e) {
@@ -632,8 +744,13 @@ function main(argv) {
   if (!opts.lv2Path.split(':').includes(outDir) && !opts.lv2Path.split(':').map((p) => resolve(p)).includes(outDir)) {
     say(`note: ${outDir} is not on the LV2 search list; lilv loads these bundles once it is`);
   }
-  const result = sync({ lv2Path: opts.lv2Path, outDir, stateDir: resolve(opts.state ?? tmpdir()), dryRun: opts.dryRun, verbose: opts.verbose, only: opts.only, log: say });
-  say(summary(result, opts.dryRun));
+  const result = sync({ lv2Path: opts.lv2Path, outDir, stateDir: resolve(opts.state ?? tmpdir()), dryRun: opts.dryRun, check: opts.check, verbose: opts.verbose, only: opts.only, log: say });
+  say(summary(result, opts.dryRun || opts.check));
+  if (opts.check) {
+    const stale = result.counts.removed + result.counts.outOfDate;
+    say(stale ? `${stale} bundle(s) of ours stale or out of date: ${result.counts.removed} to remove, ${result.counts.outOfDate} to write again` : 'no bundle of ours is stale');
+    process.exit(stale ? 3 : 0);
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
