@@ -677,19 +677,16 @@
 <urn:openmixer:eq8#bands>
     a pg:Group ;
     lv2:symbol "bands" ;
-    lv2:displayPriority 30 ;
     rdfs:label "Bands" .
 
 <urn:openmixer:eq8#hpf>
     a pg:Group ;
     lv2:symbol "hpf" ;
-    lv2:displayPriority 20 ;
     rdfs:label "HPF" .
 
 <urn:openmixer:eq8#lpf>
     a pg:Group ;
     lv2:symbol "lpf" ;
-    lv2:displayPriority 10 ;
     rdfs:label "LPF" .
 
 <urn:openmixer:unit#dBoct>
