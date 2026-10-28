@@ -90,12 +90,37 @@ test('a refusal other than nothing-to-draw is named in the summary and still exi
   const r = rig();
   bundle(r.lv2, 'testtrig', 'urn:test:trig', 'Test Trigger');
   descriptor(r.desc, 'testtrig.json', 'urn:test:trig', 'scanned-lv2-compressor.json', (d) => {
+    d.controls = [{ id: 'note', name: 'Note', kind: 'text', meaning: 'unknown' }];
+  });
+  const run = r.run();
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.match(run.stdout, /no MOD GUI for urn:test:trig: Error: modgui-gen: 'note' is not a declared control input with a travel/);
+  assert.match(run.stdout, /1 could not be drawn/);
+});
+
+test('a trigger control beside a normal one is left off the face and named in the summary line', { skip }, () => {
+  const r = rig();
+  bundle(r.lv2, 'testzlfo', 'urn:test:zlfo', 'Test ZLFO');
+  descriptor(r.desc, 'testzlfo.json', 'urn:test:zlfo', 'scanned-lv2-compressor.json', (d) => {
+    d.controls = [...d.controls.filter((c) => c.id === 'makeup'), { id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' }];
+  });
+  const run = r.run();
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.match(run.stdout, /1 written/);
+  assert.match(run.stdout, /0 could not be drawn, and left trigger controls off the face \(.*: cv_trigger\)/);
+  assert.doesNotMatch(readFileSync(join(r.out, r.bundles()[0], 'manifest.ttl'), 'utf8'), /cv_trigger/);
+});
+
+test('a plugin whose only control is a trigger has nothing to draw', { skip }, () => {
+  const r = rig();
+  bundle(r.lv2, 'testtrig2', 'urn:test:trig2', 'Test Trigger Only');
+  descriptor(r.desc, 'testtrig2.json', 'urn:test:trig2', 'scanned-lv2-compressor.json', (d) => {
     d.controls = [{ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' }];
   });
   const run = r.run();
   assert.equal(run.status, 0, run.stdout + run.stderr);
-  assert.match(run.stdout, /no MOD GUI for urn:test:trig: Error: modgui-gen: 'cv_trigger' is not a declared control input with a travel/);
-  assert.match(run.stdout, /1 could not be drawn/);
+  assert.match(run.stdout, /1 with nothing to draw/);
+  assert.deepEqual(r.bundles(), []);
 });
 
 test('a bundle without our marker is left alone, and one of ours goes with its plugin', { skip }, () => {
