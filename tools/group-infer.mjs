@@ -183,7 +183,8 @@ export function placeableControls(ports) {
  * Infer `plugin`'s port groups. `modgui` is the plugin's own MOD GUI layout, or null when it has none.
  * @param {PluginPorts} plugin
  * @param {ModguiLayout | null} [modgui]
- * @param {{ rules?: typeof RULES }} [options] `rules` replaces the rule order (the order is the contract: tests only)
+ * @param {{ rules?: typeof RULES, prefixPasses?: typeof PREFIX_PASSES }} [options] another rule order, or another
+ *   order of rule 3's passes (the orders are the contract: tests only)
  */
 export function inferGroups(plugin, modgui = null, options = {}) {
   const controls = placeableControls(plugin.ports);
@@ -200,6 +201,7 @@ export function inferGroups(plugin, modgui = null, options = {}) {
     plugin,
     modgui,
     controls,
+    prefixPasses: options.prefixPasses,
     /** @type {Map<string, number>} symbol -> the rule that placed it */
     placedBy: new Map(),
     /** @type {{ key: string, name: string, ports: Port[], rule: number, node?: string, own?: OwnGroup }[]} */
@@ -338,33 +340,65 @@ function leadingKey(tokens) {
   return null;
 }
 
-/** 3: a shared trailing number (one group per number), then a shared leading word; by name, then by symbol. */
+const TOKENS = { name: (p) => nameTokens(p.name), symbol: (p) => symbolTokens(p.symbol) };
+const PASSES = { trailing: trailingNumber, leading: leadingWord };
+
+/**
+ * Rule 3's passes, in order. The symbol's trailing number comes first: a symbol numbers a band the same way on every
+ * control (`xs_9`, `g_9`), where a name may print its frequency ("Band gain 1K", "31.5") and number nothing.
+ */
+export const PREFIX_PASSES = [
+  ['symbol', 'trailing'],
+  ['name', 'trailing'],
+  ['name', 'leading'],
+  ['symbol', 'leading'],
+];
+
+/** 3: a shared trailing number (one group per number), then a shared leading word, in PREFIX_PASSES order. */
 function rulePrefix(state, rule) {
-  for (const tokensOf of [(p) => nameTokens(p.name), (p) => symbolTokens(p.symbol)]) {
-    trailingNumber(state, rule, tokensOf);
-    leadingWord(state, rule, tokensOf);
-  }
+  for (const [source, pass] of state.prefixPasses ?? PREFIX_PASSES) PASSES[pass](state, rule, TOKENS[source]);
 }
 
 /**
  * Controls whose last word is their only number ("Gain 1", "Freq 1", `gain1`) are one group per number, when the
- * plugin repeats the pattern: at least two numbers, each on at least MIN_GROUP_SIZE controls.
+ * plugin repeats the pattern: at least two numbers, each on at least MIN_GROUP_SIZE controls. A stem is numbered
+ * only when its whole pattern is: every control whose word after the stem starts with a digit ("Band gain 16",
+ * "Band gain 1K", "Band gain 31.5") lands in a numbered group, or the pass places none of that stem's controls.
  */
 function trailingNumber(state, rule, tokensOf) {
-  const classes = new Map();
-  for (const p of unplacedOf(state)) {
-    const t = tokensOf(p);
+  const left = unplacedOf(state).map((p) => ({ p, t: tokensOf(p).map((w) => w.toLowerCase()) }));
+  let members = [];
+  for (const { p, t } of left) {
     if (t.length < 2 || !isNumber(t[t.length - 1]) || t.slice(0, -1).some(isNumber)) continue;
-    const n = String(Number(t[t.length - 1]));
-    if (!classes.has(n)) classes.set(n, []);
-    classes.get(n).push({ p, stem: t.slice(0, -1) });
+    members.push({ p, n: String(Number(t[t.length - 1])), stem: tokensOf(p).slice(0, -1) });
   }
-  const repeated = [...classes].filter(([, members]) => members.length >= MIN_GROUP_SIZE);
+  const stemKey = (m) => m.stem.join(' ').toLowerCase();
+  let repeated;
+  for (;;) {
+    const classes = new Map();
+    for (const m of members) {
+      if (!classes.has(m.n)) classes.set(m.n, []);
+      classes.get(m.n).push(m);
+    }
+    repeated = [...classes].filter(([, ms]) => ms.length >= MIN_GROUP_SIZE);
+    const inRepeated = new Set(repeated.flatMap(([, ms]) => ms.map((m) => m.p.symbol)));
+    // A stem whose pattern some control breaks (a singleton number, a "1K", a "31.5") is dropped whole.
+    const broken = new Set();
+    for (const stem of new Set(members.map(stemKey))) {
+      const words = stem.split(' ');
+      const sharers = left.filter(({ t }) => t.length > words.length && words.every((w, i) => t[i] === w) && /^\p{N}/u.test(t[words.length]));
+      if (sharers.some(({ p }) => !inRepeated.has(p.symbol))) broken.add(stem);
+    }
+    if (broken.size === 0) break;
+    members = members.filter((m) => !broken.has(stemKey(m)));
+  }
   if (repeated.length < 2) return;
-  for (const [n, members] of repeated) {
-    const section = members.map((m) => m.stem).find((s) => s.length === 1 && SECTION_WORDS.has(s[0].toLowerCase()));
+  for (const [n, ms] of repeated) {
+    // the section word may be in the names when the pass numbered the symbols (fil4: `sec1` is "Section 1")
+    const stems = ms.flatMap((m) => [m.stem, nameTokens(m.p.name).slice(0, -1), symbolTokens(m.p.symbol).slice(0, -1)]);
+    const section = stems.find((s) => s.length === 1 && SECTION_WORDS.has(s[0].toLowerCase()));
     const word = section ? capitalize(section[0]) : 'Group';
-    place(state, rule, { key: `${word} ${n}`, name: `${word} ${n}` }, members.map((m) => m.p));
+    place(state, rule, { key: `${word} ${n}`, name: `${word} ${n}` }, ms.map((m) => m.p));
   }
 }
 
@@ -482,9 +516,16 @@ function plainLiteral(terms) {
   return (lits.find((t) => !t.lang) ?? lits.find((t) => /^en\b/i.test(t.lang ?? '')) ?? lits[0])?.v;
 }
 
-/** The plugins the triples describe (every subject typed lv2:Plugin), by URI. */
+/**
+ * The plugins the triples describe, by URI: every subject typed lv2:Plugin, or carrying an indexed lv2:port (a plugin's own
+ * file read without its bundle's manifest, which is where some bundles, LSP's, state the type).
+ */
 export function pluginUris(triples) {
-  return [...new Set(triples.filter((t) => t.p.v === `${RDF}type` && t.o.v === `${LV2}Plugin` && t.s.t === 'iri').map((t) => t.s.v))].sort();
+  // a preset carries lv2:port too, but its ports state values, never an lv2:index
+  const indexed = new Set(triples.filter((t) => t.p.v === `${LV2}index`).map((t) => termKey(t.s)));
+  const isPlugin = (t) =>
+    t.s.t === 'iri' && ((t.p.v === `${RDF}type` && t.o.v === `${LV2}Plugin`) || (t.p.v === `${LV2}port` && indexed.has(termKey(t.o))));
+  return [...new Set(triples.filter(isPlugin).map((t) => t.s.v))].sort();
 }
 
 /**
