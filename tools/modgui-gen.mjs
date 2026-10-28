@@ -153,7 +153,12 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
   const plugin = descriptor.plugin ?? {};
   const uri = plugin.format === 'lv2' ? plugin.id : plugin.uri;
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
-  const panel = panelOf(descriptor, declared);
+  let panel;
+  try {
+    panel = panelOf(descriptor, declared);
+  } catch (err) {
+    throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
+  }
   const controls = descriptor.controls ?? [];
   const seen = new Set();
   // A trigger is momentary and how MOD-UI wires a momentary port is not verified: it is left off the face and reported.
