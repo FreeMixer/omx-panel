@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.5.0
+Version: 0.6.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -83,6 +83,32 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.6.0-1
+- The LV2 complement is new: the port groups an LV2 plugin does not declare
+  are inferred from what it does declare (designations, shared name or
+  symbol prefixes and trailing numbers, units, runs of port index, its own
+  MOD GUI) and written into a replacing bundle, so the Zynthian touchscreen
+  shows a plugin in sections instead of screens of four. A plugin whose
+  grouping is not confident, or whose own groups are complete, is left as
+  it is (plugin-hostd#218, G1, G2).
+- omx-panel complement writes that bundle, named omx-complement-<bundle>.lv2
+  and marked, beside the installed one; the installed files are never
+  written. The inference is exported as
+  @openmixer/omx-panel/group-infer (plugin-hostd#218, G1, G2).
+- omx-complement-sync is a new binary, with omx-complement-sync.service and
+  a man page. The unit is installed but not enabled; enabled, a drop-in on
+  plugin-qualify-sync.service queues it after each scan, as for
+  omx-modgui-sync (plugin-hostd#218, G2).
+- A bundle of ours that is no longer wanted is removed, not reported, and
+  omx-panel complement --check exits 3 for a stale or out-of-date bundle
+  (plugin-hostd#218, G3).
+- A generated group node never merges into one already in the bundle: a
+  bundle that would collide is refused as group-iri-collision, and two
+  bundles that would share one complement name are both refused
+  (plugin-hostd#218, G3).
+- The Turtle reader keeps an absolute IRI as written, and resolves only a
+  relative one (plugin-hostd#218, G2).
+
 * Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.5.0-1
 - A CLAP control whose id is a number is keyed p<id>, so two parameters of
   one name no longer stop the layout; the published keys of scanned CLAP
