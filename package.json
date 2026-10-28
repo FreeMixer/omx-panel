@@ -42,6 +42,10 @@
       "types": "./dist/tools/modgui-import.d.mts",
       "default": "./dist/tools/modgui-import.mjs"
     },
+    "./group-infer": {
+      "types": "./dist/tools/group-infer.d.mts",
+      "default": "./dist/tools/group-infer.mjs"
+    },
     "./turtle-read": {
       "types": "./dist/tools/turtle-read.d.mts",
       "default": "./dist/tools/turtle-read.mjs"

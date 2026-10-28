@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#
+# The fixtures of test/group-infer.test.mjs: each directory holds TTL files copied byte for byte from an LV2 bundle
+# installed on a Fedora 44 desk (/usr/lib64/lv2), 2026-10-28. The files are the plugins' authors', under the licence
+# each package states (below, the RPM licence tag in full; the plugin's own doap:license is in its TTL). None of these
+# files carried a licence header to keep; they are copied whole and unchanged. Ours (omx-*) carry our own header.
+# One synthetic fixture, ours: synthetic/eq8-priorities.ttl is omx-eq8.ttl with lv2:displayPriority 30, 20 and 10 on
+# its three group nodes, because no installed plugin states a group priority (its header says so).
+#
+# directory          files                       bundle                    package (Fedora 44)                                   licence
+swh-delayorama       plugin.ttl                  delayorama-swh.lv2        lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
+swh-phasers          plugin.ttl                  phasers-swh.lv2           lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
+swh-triplepara       plugin.ttl                  triple_para-swh.lv2       lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
+swh-gate             plugin.ttl                  gate-swh.lv2              lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
+calf-compressor      Compressor.ttl              calf.lv2                  lv2-calf-plugins-0.90.9-3                             GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
+calf-xover4band      XOver4Band.ttl              calf.lv2                  lv2-calf-plugins-0.90.9-3                             GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
+calf-multichorus     MultiChorus.ttl             calf.lv2                  lv2-calf-plugins-0.90.9-3                             GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
+x42-fil4             fil4.ttl                    fil4.lv2                  lv2-x42-plugins-0.21.0-0.3.20250512                   GPL-2.0-or-later AND ISC
+x42-darc             darc.ttl                    darc.lv2                  lv2-x42-plugins-0.21.0-0.3.20250512                   GPL-2.0-or-later AND ISC
+x42-fat1             fat1.ttl                    fat1.lv2                  lv2-x42-plugins-0.21.0-0.3.20250512                   GPL-2.0-or-later AND ISC
+x42-matrixmixer      matrixmixer.ttl             matrixmixer.lv2           lv2-x42-plugins-0.21.0-0.3.20250512                   GPL-2.0-or-later AND ISC
+caps-autofilter      AutoFilter.ttl modgui.ttl   mod-caps-AutoFilter.lv2   caps-lv2-0.9.26.250844a-1                             GPL-2.0-or-later
+caps-eq4p            Eq4p.ttl modgui.ttl         mod-caps-Eq4p.lv2         caps-lv2-0.9.26.250844a-1                             GPL-2.0-or-later
+zam-gate             ZamGate_dsp.ttl             ZamGate.lv2               lv2-zam-plugins-4.4-7                                 GPL-2.0-or-later AND ISC
+mda-rezfilter        RezFilter.ttl               mda.lv2                   lv2-mdala-plugins-1.2.12-1                            GPL-3.0-or-later AND LicenseRef-Callaway-BSD
+mda-jx10             JX10.ttl                    mda.lv2                   lv2-mdala-plugins-1.2.12-1                            GPL-3.0-or-later AND LicenseRef-Callaway-BSD
+lsp-graph-eq-x16     graph_equalizer_x16_stereo.ttl  lsp-plugins.lv2  lsp-plugins-lv2-1.2.29-1                    LGPL-3.0-or-later AND Zlib
+juced-drumsynth      drumsynth-lv2.ttl           drumsynth.lv2             DISTRHO-Ports-1.1.0-4                                 GPL-2.0-or-later
+ams-advenv           advenv.ttl                  ams.lv2                   ams-lv2-1.2.2-3                                       GPL-2.0-or-later
+lsp-crossover-mono   crossover_mono.ttl          lsp-plugins.lv2           lsp-plugins-lv2-1.2.29-1                              LGPL-3.0-or-later AND Zlib
+omx-comp             omx-comp.ttl modgui.ttl     omx-comp.lv2              omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
+omx-eq8              omx-eq8.ttl                 omx-eq8.lv2               omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
+synthetic            eq8-priorities.ttl          (synthetic, from omx-eq8.lv2)  omx-plugins-lv2-0.15.1-1                 GPL-3.0-or-later (ours)

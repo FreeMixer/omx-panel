@@ -1,0 +1,1001 @@
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ui:    <http://lv2plug.in/ns/extensions/ui#> .
+@prefix urid:  <http://lv2plug.in/ns/ext/urid#> .
+@prefix param: <http://lv2plug.in/ns/ext/parameters#> .
+@prefix pg:    <http://lv2plug.in/ns/ext/port-groups#> .
+@prefix pprop: <http://lv2plug.in/ns/ext/port-props#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rsz:   <http://lv2plug.in/ns/ext/resize-port#> .
+@prefix kx:    <http://kxstudio.sf.net/ns/lv2ext/external-ui#> .
+
+@prefix matrixmixer: <http://gareus.org/oss/lv2/matrixmixer#i8o8> .
+
+<http://gareus.org/rgareus#me>
+	a foaf:Person ;
+	foaf:name "Robin Gareus" ;
+	foaf:mbox <mailto:robin@gareus.org> ;
+	foaf:homepage <http://gareus.org/> .
+
+<http://gareus.org/oss/lv2/matrixmixer#i8o8>
+	a lv2:Plugin, doap:Project, lv2:UtilityPlugin;
+	doap:license <http://usefulinc.com/doap/licenses/gpl>;
+	doap:maintainer <http://gareus.org/rgareus#me>;
+	doap:name "Matrix Mixer 8x8";
+	lv2:microVersion 0 ;lv2:minorVersion 1038 ;
+	ui:ui matrixmixer:ui_gl ;
+	lv2:optionalFeature lv2:hardRTCapable;
+	
+
+
+lv2:port [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 0 ;
+    lv2:symbol "in1" ;
+    lv2:name "Audio Input 1" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 1 ;
+    lv2:symbol "in2" ;
+    lv2:name "Audio Input 2" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 2 ;
+    lv2:symbol "in3" ;
+    lv2:name "Audio Input 3" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 3 ;
+    lv2:symbol "in4" ;
+    lv2:name "Audio Input 4" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 4 ;
+    lv2:symbol "in5" ;
+    lv2:name "Audio Input 5" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 5 ;
+    lv2:symbol "in6" ;
+    lv2:name "Audio Input 6" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 6 ;
+    lv2:symbol "in7" ;
+    lv2:name "Audio Input 7" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:InputPort ;
+    lv2:index 7 ;
+    lv2:symbol "in8" ;
+    lv2:name "Audio Input 8" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 8 ;
+    lv2:symbol "out1" ;
+    lv2:name "Audio Output 1" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 9 ;
+    lv2:symbol "out2" ;
+    lv2:name "Audio Output 2" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 10 ;
+    lv2:symbol "out3" ;
+    lv2:name "Audio Output 3" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 11 ;
+    lv2:symbol "out4" ;
+    lv2:name "Audio Output 4" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 12 ;
+    lv2:symbol "out5" ;
+    lv2:name "Audio Output 5" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 13 ;
+    lv2:symbol "out6" ;
+    lv2:name "Audio Output 6" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 14 ;
+    lv2:symbol "out7" ;
+    lv2:name "Audio Output 7" ;
+  ] , [
+    a lv2:AudioPort ,
+      lv2:OutputPort ;
+    lv2:index 15 ;
+    lv2:symbol "out8" ;
+    lv2:name "Audio Output 8" ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 16 ;
+    lv2:symbol "mix_1_1" ;
+    lv2:name "Mix 1 1" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 17 ;
+    lv2:symbol "mix_1_2" ;
+    lv2:name "Mix 1 2" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 18 ;
+    lv2:symbol "mix_1_3" ;
+    lv2:name "Mix 1 3" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 19 ;
+    lv2:symbol "mix_1_4" ;
+    lv2:name "Mix 1 4" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 20 ;
+    lv2:symbol "mix_1_5" ;
+    lv2:name "Mix 1 5" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 21 ;
+    lv2:symbol "mix_1_6" ;
+    lv2:name "Mix 1 6" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 22 ;
+    lv2:symbol "mix_1_7" ;
+    lv2:name "Mix 1 7" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 23 ;
+    lv2:symbol "mix_1_8" ;
+    lv2:name "Mix 1 8" ;
+    pg:group matrixmixer:g1;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 24 ;
+    lv2:symbol "mix_2_1" ;
+    lv2:name "Mix 2 1" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 25 ;
+    lv2:symbol "mix_2_2" ;
+    lv2:name "Mix 2 2" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 26 ;
+    lv2:symbol "mix_2_3" ;
+    lv2:name "Mix 2 3" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 27 ;
+    lv2:symbol "mix_2_4" ;
+    lv2:name "Mix 2 4" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 28 ;
+    lv2:symbol "mix_2_5" ;
+    lv2:name "Mix 2 5" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 29 ;
+    lv2:symbol "mix_2_6" ;
+    lv2:name "Mix 2 6" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 30 ;
+    lv2:symbol "mix_2_7" ;
+    lv2:name "Mix 2 7" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 31 ;
+    lv2:symbol "mix_2_8" ;
+    lv2:name "Mix 2 8" ;
+    pg:group matrixmixer:g2;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 32 ;
+    lv2:symbol "mix_3_1" ;
+    lv2:name "Mix 3 1" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 33 ;
+    lv2:symbol "mix_3_2" ;
+    lv2:name "Mix 3 2" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 34 ;
+    lv2:symbol "mix_3_3" ;
+    lv2:name "Mix 3 3" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 35 ;
+    lv2:symbol "mix_3_4" ;
+    lv2:name "Mix 3 4" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 36 ;
+    lv2:symbol "mix_3_5" ;
+    lv2:name "Mix 3 5" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 37 ;
+    lv2:symbol "mix_3_6" ;
+    lv2:name "Mix 3 6" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 38 ;
+    lv2:symbol "mix_3_7" ;
+    lv2:name "Mix 3 7" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 39 ;
+    lv2:symbol "mix_3_8" ;
+    lv2:name "Mix 3 8" ;
+    pg:group matrixmixer:g3;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 40 ;
+    lv2:symbol "mix_4_1" ;
+    lv2:name "Mix 4 1" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 41 ;
+    lv2:symbol "mix_4_2" ;
+    lv2:name "Mix 4 2" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 42 ;
+    lv2:symbol "mix_4_3" ;
+    lv2:name "Mix 4 3" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 43 ;
+    lv2:symbol "mix_4_4" ;
+    lv2:name "Mix 4 4" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 44 ;
+    lv2:symbol "mix_4_5" ;
+    lv2:name "Mix 4 5" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 45 ;
+    lv2:symbol "mix_4_6" ;
+    lv2:name "Mix 4 6" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 46 ;
+    lv2:symbol "mix_4_7" ;
+    lv2:name "Mix 4 7" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 47 ;
+    lv2:symbol "mix_4_8" ;
+    lv2:name "Mix 4 8" ;
+    pg:group matrixmixer:g4;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 48 ;
+    lv2:symbol "mix_5_1" ;
+    lv2:name "Mix 5 1" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 49 ;
+    lv2:symbol "mix_5_2" ;
+    lv2:name "Mix 5 2" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 50 ;
+    lv2:symbol "mix_5_3" ;
+    lv2:name "Mix 5 3" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 51 ;
+    lv2:symbol "mix_5_4" ;
+    lv2:name "Mix 5 4" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 52 ;
+    lv2:symbol "mix_5_5" ;
+    lv2:name "Mix 5 5" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 53 ;
+    lv2:symbol "mix_5_6" ;
+    lv2:name "Mix 5 6" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 54 ;
+    lv2:symbol "mix_5_7" ;
+    lv2:name "Mix 5 7" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 55 ;
+    lv2:symbol "mix_5_8" ;
+    lv2:name "Mix 5 8" ;
+    pg:group matrixmixer:g5;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 56 ;
+    lv2:symbol "mix_6_1" ;
+    lv2:name "Mix 6 1" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 57 ;
+    lv2:symbol "mix_6_2" ;
+    lv2:name "Mix 6 2" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 58 ;
+    lv2:symbol "mix_6_3" ;
+    lv2:name "Mix 6 3" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 59 ;
+    lv2:symbol "mix_6_4" ;
+    lv2:name "Mix 6 4" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 60 ;
+    lv2:symbol "mix_6_5" ;
+    lv2:name "Mix 6 5" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 61 ;
+    lv2:symbol "mix_6_6" ;
+    lv2:name "Mix 6 6" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 62 ;
+    lv2:symbol "mix_6_7" ;
+    lv2:name "Mix 6 7" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 63 ;
+    lv2:symbol "mix_6_8" ;
+    lv2:name "Mix 6 8" ;
+    pg:group matrixmixer:g6;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 64 ;
+    lv2:symbol "mix_7_1" ;
+    lv2:name "Mix 7 1" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 65 ;
+    lv2:symbol "mix_7_2" ;
+    lv2:name "Mix 7 2" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 66 ;
+    lv2:symbol "mix_7_3" ;
+    lv2:name "Mix 7 3" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 67 ;
+    lv2:symbol "mix_7_4" ;
+    lv2:name "Mix 7 4" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 68 ;
+    lv2:symbol "mix_7_5" ;
+    lv2:name "Mix 7 5" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 69 ;
+    lv2:symbol "mix_7_6" ;
+    lv2:name "Mix 7 6" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 70 ;
+    lv2:symbol "mix_7_7" ;
+    lv2:name "Mix 7 7" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 71 ;
+    lv2:symbol "mix_7_8" ;
+    lv2:name "Mix 7 8" ;
+    pg:group matrixmixer:g7;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 72 ;
+    lv2:symbol "mix_8_1" ;
+    lv2:name "Mix 8 1" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 73 ;
+    lv2:symbol "mix_8_2" ;
+    lv2:name "Mix 8 2" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 74 ;
+    lv2:symbol "mix_8_3" ;
+    lv2:name "Mix 8 3" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 75 ;
+    lv2:symbol "mix_8_4" ;
+    lv2:name "Mix 8 4" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 76 ;
+    lv2:symbol "mix_8_5" ;
+    lv2:name "Mix 8 5" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 77 ;
+    lv2:symbol "mix_8_6" ;
+    lv2:name "Mix 8 6" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 78 ;
+    lv2:symbol "mix_8_7" ;
+    lv2:name "Mix 8 7" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  0.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+  ] , [
+    a lv2:ControlPort ,
+      lv2:InputPort ;
+    lv2:index 79 ;
+    lv2:symbol "mix_8_8" ;
+    lv2:name "Mix 8 8" ;
+    pg:group matrixmixer:g8;
+    lv2:minimum -6.0;
+    lv2:maximum  6.0;
+    lv2:default  1.0;
+    lv2:scalePoint [ rdfs:label "invert"; rdf:value -1.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "off"; rdf:value 0.0 ; ] ;
+    lv2:scalePoint [ rdfs:label "on"; rdf:value 1.0 ; ] ;
+]; .
+
+matrixmixer:g1
+ a param:ControlGroup ;
+ lv2:name "Source 1" ;
+ lv2:symbol "InGrp1" .
+matrixmixer:g2
+ a param:ControlGroup ;
+ lv2:name "Source 2" ;
+ lv2:symbol "InGrp2" .
+matrixmixer:g3
+ a param:ControlGroup ;
+ lv2:name "Source 3" ;
+ lv2:symbol "InGrp3" .
+matrixmixer:g4
+ a param:ControlGroup ;
+ lv2:name "Source 4" ;
+ lv2:symbol "InGrp4" .
+matrixmixer:g5
+ a param:ControlGroup ;
+ lv2:name "Source 5" ;
+ lv2:symbol "InGrp5" .
+matrixmixer:g6
+ a param:ControlGroup ;
+ lv2:name "Source 6" ;
+ lv2:symbol "InGrp6" .
+matrixmixer:g7
+ a param:ControlGroup ;
+ lv2:name "Source 7" ;
+ lv2:symbol "InGrp7" .
+matrixmixer:g8
+ a param:ControlGroup ;
+ lv2:name "Source 8" ;
+ lv2:symbol "InGrp8" .
+
+matrixmixer:ui_gl
+	a ui:X11UI ;
+	lv2:requiredFeature ui:idleInterface; lv2:extensionData ui:idleInterface;
+  .

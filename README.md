@@ -18,6 +18,9 @@ the plugin's own declaration, in the omx look, vintage or modern.
   The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync` makes it run after each
   `plugin-qualify-sync` (a drop-in on that unit queues it when a scan finishes, only if enabled). `omx-modgui-sync --check` says whether MOD-UI reads the folder. A plugin that cannot get a GUI never
   fails the run; `omx-modgui-sync(1)` has the directories, the exit status and the summary.
+- The group inference: `tools/group-infer.mjs` finds the port groups an LV2 plugin lacks from what it states (its own
+  partial groups, designations, name and symbol prefixes, units, index runs, its MOD GUI), or says it cannot with
+  confidence and leaves the plugin as it is ([docs/group-inference.md](docs/group-inference.md)).
 - The skin package: its schema, `omx-panel validate`, and its facts as a module (`src/skin-package.ts`: the
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
   ([docs/skin-package.md](docs/skin-package.md)).
