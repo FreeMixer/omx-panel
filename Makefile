@@ -56,9 +56,13 @@ install: build
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
 	install -m 0644 man/omx-modgui-sync.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0644 man/omx-complement-sync.1 $(DESTDIR)$(MANDIR)/man1/
 	install -m 0755 bin/omx-modgui-sync $(DESTDIR)$(BINDIR)/
+	install -m 0755 bin/omx-complement-sync $(DESTDIR)$(BINDIR)/
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(SYSCONFDIR)/omx
 	install -m 0644 systemd/omx-modgui-sync.service $(DESTDIR)$(UNITDIR)/
+	install -m 0644 systemd/omx-complement-sync.service $(DESTDIR)$(UNITDIR)/
 	install -d $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d
 	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
+	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-complement-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
 	install -m 0644 etc/omx/modgui-sync.conf $(DESTDIR)$(SYSCONFDIR)/omx/

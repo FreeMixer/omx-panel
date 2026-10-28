@@ -1,0 +1,103 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#******************************************************************************
+# Give the port groups omx-panel infers to every installed LV2 plugin that
+# lacks them, so the Zynthian touchscreen (jalv, through lilv) shows a screen
+# per section instead of screens of four in port order.
+#
+#   omx-complement-sync [--dry-run] [--verbose]
+#   omx-complement-sync --check
+#
+# For each installed bundle holding a plugin whose groups `omx-panel complement` infers with confidence (lane G2 of
+# plugin-hostd#218, docs/lv2-complement.md), it writes a bundle in MODGUI_DIR (omx-complement-<bundle>.lv2) that
+# restates the installed bundle's TTL, adds the groups, and raises each plugin's lv2:microVersion by one, so lilv
+# loads it in place of the installed one. The installed bundle is never touched; deleting ours restores it. Nothing is
+# written for a plugin that carries its own groups, fits one screen, or has no confident grouping.
+#
+# A bundle whose marker (.omx-complement-sync) names the same installed files is left as it is. A bundle of that name
+# without our marker is never written. One the restatement cannot carry (TTL the reader cannot parse, a version at
+# lilv's ceiling, a plugin declared twice) is refused and named in the summary; it never fails the run. The run fails
+# only when it cannot start (omx-panel missing, MODGUI_DIR not writable).
+#
+# Where it looks and writes: the same as omx-modgui-sync, from the same /etc/omx/modgui-sync.conf:
+#   LV2_PATH         the LV2 search list   $LV2_PATH, else plugin-hostd's default, as plugin-hostd and plugin-qualify
+#                                          read it: /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
+#   MODGUI_DIR       the bundles           /usr/local/lib/lv2 for root, ~/.lv2 for a user; it must be on the
+#                                          LV2_PATH the plugin hosts read (on Zynthian it is: zynthian_envars.sh)
+#   STATE_DIR        work files            /var/lib/omx/modgui-sync  (user: $XDG_DATA_HOME/omx/modgui-sync)
+#******************************************************************************
+
+if [ "$(id -u)" = 0 ]; then
+	base=/var/lib/omx
+	default_modgui=/usr/local/lib/lv2
+else
+	base=${XDG_DATA_HOME:-$HOME/.local/share}/omx
+	default_modgui=$HOME/.lv2
+fi
+MODGUI_DIR=${MODGUI_DIR:-$default_modgui}
+# Our work files. Not under MODGUI_DIR: lilv reads every bundle there.
+STATE_DIR=${STATE_DIR:-$base/modgui-sync}
+
+# The search list, by the rule plugin-hostd and plugin-qualify share
+if [ -n "$LV2_PATH" ]; then
+	lv2_source='$LV2_PATH'
+else
+	LV2_PATH=/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
+	lv2_source="plugin-hostd's default"
+fi
+export LV2_PATH
+
+dry_run=
+verbose=
+check=0
+for arg in "$@"; do
+	case "$arg" in
+		--dry-run) dry_run=--dry-run ;;
+		--verbose) verbose=--verbose ;;
+		--check) check=1 ;;
+		*) echo "Usage: omx-complement-sync [--dry-run] [--verbose] | --check" >&2; exit 2 ;;
+	esac
+done
+
+# What this run would read and write, and whether the programs that load the bundles read the folder too
+if [ "$check" = 1 ]; then
+	echo "LV2 search list (from $lv2_source):"
+	echo "$LV2_PATH" | tr ':' '\n' | sed 's/^/  /'
+	case ":$LV2_PATH:" in
+		*":$MODGUI_DIR:"*) echo "Complement bundles go to $MODGUI_DIR: it is on that list" ;;
+		*) echo "Complement bundles go to $MODGUI_DIR: it is NOT on that list; add it to LV2_PATH or set MODGUI_DIR to a folder on it" ;;
+	esac
+	for unit in mod-host mod-ui; do
+		command -v systemctl >/dev/null && systemctl cat "$unit.service" >/dev/null 2>&1 || continue
+		theirs=$(systemctl show -p Environment --value "$unit.service" | tr ' ' '\n' | sed -n 's/^LV2_PATH=//p')
+		if [ -z "$theirs" ]; then
+			echo "$unit: its unit sets no LV2_PATH; its own default applies, which this check cannot read"
+		else
+			case ":$theirs:" in
+				*":$MODGUI_DIR:"*) echo "$unit: reads LV2_PATH and $MODGUI_DIR is on it" ;;
+				*) echo "$unit: reads LV2_PATH and $MODGUI_DIR is NOT on it; it loads the installed bundles until it is" ;;
+			esac
+		fi
+	done
+	exit 0
+fi
+
+command -v omx-panel >/dev/null || { echo "omx-complement-sync: omx-panel is not installed" >&2; exit 1; }
+
+# lilv loads these bundles from its LV2_PATH only (its default when unset)
+case ":$LV2_PATH:" in
+	*":$MODGUI_DIR:"*) ;;
+	*) echo "omx-complement-sync: note: $MODGUI_DIR is not on LV2_PATH; lilv loads these bundles once it is" >&2 ;;
+esac
+
+if [ -z "$dry_run" ]; then
+	mkdir -p "$MODGUI_DIR" "$STATE_DIR" || { echo "omx-complement-sync: cannot create $MODGUI_DIR or $STATE_DIR" >&2; exit 1; }
+fi
+
+# shellcheck disable=SC2086 # the flags are one word each, or none
+omx-panel complement --out "$MODGUI_DIR" --state "$STATE_DIR" --lv2-path "$LV2_PATH" \
+	--log-prefix omx-complement-sync $dry_run $verbose
+status=$?
+[ "$status" = 0 ] || exit 1
+exit 0

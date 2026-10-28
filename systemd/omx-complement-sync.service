@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+[Unit]
+Description=Port groups from omx-panel for LV2 plugins that lack them
+# After plugin-qualify's sync, which follows every plugin installed, upgraded or removed
+After=local-fs.target plugin-qualify-sync.service
+ConditionPathExists=/usr/bin/omx-panel
+
+[Service]
+# Not enabled by the package: `systemctl enable omx-complement-sync` turns it on. Enabled, it runs at boot and each
+# time plugin-qualify-sync finishes (plugin-qualify-sync.service.d/omx-complement-sync.conf queues it from
+# ExecStartPost), beside omx-modgui-sync. The directories are omx-modgui-sync's, set in /etc/omx/modgui-sync.conf.
+Type=oneshot
+EnvironmentFile=-/etc/omx/modgui-sync.conf
+ExecStart=/usr/bin/omx-complement-sync
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=100%
+MemoryMax=1G
+TasksMax=64
+RestrictRealtime=yes
+
+[Install]
+WantedBy=multi-user.target
