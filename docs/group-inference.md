@@ -47,7 +47,10 @@ The rules place the **placeable controls**: control input ports, not marked `not
 Groups are ordered by their first control's `lv2:index`, the order the plugin's author chose and the touchscreen shows
 today. `displayPriority` (higher is shown first): when every group the plugin states itself carries an
 `lv2:displayPriority`, those keep theirs and the generated groups follow below the lowest of them, in port order;
-otherwise every group counts down from the number of groups, in port order, so the first group is shown first.
+otherwise every group counts down from the number of groups, in port order, so the first group is shown first. A
+generated group under a plugin's own priorities therefore shows after all of the plugin's groups, even when its
+controls come first in port order: the plugin's stated order is its author's word, and ours is only inferred, so ours
+never outranks it.
 
 ## The rules, in this order
 
@@ -72,8 +75,8 @@ title).
      1"), else the pass's, counted from 1 when a symbol counts from 0. Its word is the first word every name of the
      group starts with ("Band 1 gain" -> "Band 1"), else a section word among its controls' names or symbols
      (`SECTION_WORDS`: band, section, channel, ch, osc, oscillator, voice, step, tap, stage, lfo, env, envelope,
-     part, layer, op, operator; so "Frequency 1", "Gain 1", "Section 1" are "Section 1"), else "Group". A stem is numbered only when its whole
-     pattern is: every control whose word after the stem starts with a digit lands in a numbered group, or the pass
+     part, layer, op, operator; so "Frequency 1", "Gain 1", "Section 1" are "Section 1"), else "Group". A stem is
+     numbered only when its whole pattern is: every control whose word after the stem starts with a digit lands in a numbered group, or the pass
      places none of that stem's controls ("Band gain 16" ... "Band gain 1K" is left to the next pass). And the numbers
      must be one numbering: the pattern is the number set most stems carry; a stem with it, or with it less its last
      number (the last band lacking a control), belongs; a stem numbered inside it but fewer is another thing (mixtri's
