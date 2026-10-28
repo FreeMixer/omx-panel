@@ -27,6 +27,7 @@ import {
   pluginTriples,
   readInstalledBundle,
   renderBundle,
+  summary,
   sync,
 } from '../dist/tools/lv2-complement.mjs';
 import { parseTurtle } from '../dist/tools/turtle-read.mjs';
@@ -274,7 +275,9 @@ describe('the marker, and a second run', () => {
     assert.equal(run(lv2, out).counts.written, 1, 'and back');
     assert.equal(treeHash(out), first, 'the same rules over the same files write the same bytes');
     writeFileSync(join(dir, 'plugin.ttl'), `${readFileSync(join(dir, 'plugin.ttl'), 'utf8')}\n# upgraded\n`);
-    assert.equal(run(lv2, out).counts.written, 1, 'a changed installed file rewrites');
+    const upgraded = run(lv2, out);
+    assert.deepEqual([upgraded.counts.written, upgraded.counts.replaced], [1, 1], 'a changed installed file rewrites');
+    assert.match(upgraded.lines.join('\n'), new RegExp(`^replaced .*${outName(dir)} for .* \\(the installed files changed\\)`, 'm'));
   });
 
   it('a bundle of our name without our marker is never written', () => {
@@ -296,6 +299,95 @@ describe('the marker, and a second run', () => {
     assert.equal(r.counts.written, 1);
     assert.match(r.lines.join('\n'), new RegExp(`would write .*${outName(dir)}`));
     assert.ok(!existsSync(join(root, 'out', outName(dir))));
+  });
+});
+
+describe('a bundle of ours no longer wanted is removed, and only ours', () => {
+  /** A bundle of ours for `dir`, as an earlier run would have left it: the marker naming it, its content hash, a file. */
+  const leftBehind = (out, dir, { hash = readInstalledBundle(dir)?.hash ?? 'gone' } = {}) => {
+    const b = join(out, outName(dir));
+    mkdirSync(b, { recursive: true });
+    writeFileSync(join(b, 'manifest.ttl'), '# an earlier complement\n');
+    writeFileSync(join(b, MARKER), `${dir}\nwriter an earlier writer\nsource-sha256 ${hash}\n`);
+    return b;
+  };
+
+  it('its installed bundle is gone (the package removed): removed, the line naming it and why', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const { dir } = installed(lv2, 'triple_para-swh', ['swh-triplepara']);
+    assert.equal(run(lv2, out).counts.written, 1);
+    rmSync(dir, { recursive: true });
+    const r = run(lv2, out);
+    assert.equal(r.counts.removed, 1, r.lines.join('\n'));
+    assert.match(r.lines.join('\n'), new RegExp(`^removed .*${outName(dir)}: its installed bundle .*triple_para-swh\\.lv2 is gone`, 'm'));
+    assert.ok(!existsSync(join(out, outName(dir))));
+    assert.match(summary(r), /, 1 removed; /);
+  });
+
+  it('its installed bundle changed into one the writer refuses: removed, not left to replace the new one', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const { dir } = installed(lv2, 'mda', ['mda-rezfilter']);
+    assert.equal(run(lv2, out).counts.written, 1);
+    writeFileSync(join(dir, 'RezFilter.ttl'), readFileSync(join(dir, 'RezFilter.ttl'), 'utf8').replace('lv2:microVersion 0 ;', 'lv2:microVersion "beta" ;'));
+    const r = run(lv2, out);
+    assert.deepEqual([r.counts.refused, r.counts.removed, r.counts.written], [1, 1, 0], r.lines.join('\n'));
+    assert.match(r.lines.join('\n'), /^removed .*omx-complement-mda\.lv2: .*mda\.lv2: it changed, and it is refused now \(version-unreadable: /m);
+    assert.ok(!existsSync(join(out, outName(dir))));
+  });
+
+  it('its plugins no longer come out grouped on the current rules (same installed files): removed, and why', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const { dir } = installed(lv2, 'omx-eq8', ['omx-eq8']);
+    const b = leftBehind(out, dir);
+    const r = run(lv2, out);
+    assert.equal(r.counts.removed, 1, r.lines.join('\n'));
+    assert.match(r.lines.join('\n'), new RegExp(`^removed ${b}: ${dir}: none of its plugins comes out grouped on the current rules$`, 'm'));
+    assert.ok(!existsSync(b));
+  });
+
+  it('nothing without the marker is removed: an unmarked directory of our name, a marked one of another name, a link to a marked one', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    mkdirSync(out, { recursive: true });
+    const { dir } = installed(lv2, 'omx-eq8', ['omx-eq8']);
+    const unmarked = join(out, 'omx-complement-someone.lv2');
+    mkdirSync(unmarked);
+    writeFileSync(join(unmarked, 'manifest.ttl'), '# someone else\'s\n');
+    const otherName = join(out, 'someone-else.lv2');
+    mkdirSync(otherName);
+    writeFileSync(join(otherName, MARKER), `${dir}\n`);
+    const elsewhere = leftBehind(join(root, 'elsewhere'), dir);
+    symlinkSync(elsewhere, join(out, 'omx-complement-linked.lv2'));
+    const before = treeHash(out);
+    const r = run(lv2, out);
+    assert.equal(r.counts.removed, 0, r.lines.join('\n'));
+    assert.equal(treeHash(out), before);
+    assert.ok(existsSync(join(elsewhere, MARKER)));
+  });
+
+  it('--dry-run says what it would remove and removes nothing; --only removes only what was written for the bundles named', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const eq8 = installed(lv2, 'omx-eq8', ['omx-eq8']).dir;
+    const comp = installed(lv2, 'omx-comp', ['omx-comp']).dir;
+    const b8 = leftBehind(out, eq8);
+    const bc = leftBehind(out, comp);
+    const dry = run(lv2, out, { dryRun: true });
+    assert.equal(dry.counts.removed, 2);
+    assert.match(dry.lines.join('\n'), new RegExp(`^would remove ${b8}: `, 'm'));
+    assert.match(summary(dry, true), /, 2 would be removed; /);
+    assert.ok(existsSync(b8) && existsSync(bc));
+    const one = run(lv2, out, { only: [comp] });
+    assert.equal(one.counts.removed, 1);
+    assert.ok(existsSync(b8) && !existsSync(bc));
   });
 });
 
@@ -422,6 +514,32 @@ print(json.dumps(out))
     for (const u of uris) assert.equal(restored[u].bundle, pathToFileURL(`${dir}/`).href);
     assert.deepEqual(restored, before);
   });
+
+  it('a stale bundle is removed by the sync: lilv loads the installed one again (changed), or lists the plugin no more (gone)', { skip: noLilv }, () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    const out = join(root, 'out');
+    const path = `${out}:${lv2}`;
+    const mda = installed(lv2, 'mda', ['mda-rezfilter']);
+    const swh = installed(lv2, 'triple_para-swh', ['swh-triplepara']);
+    const [rez] = mda.uris;
+    const [para] = swh.uris;
+    const original = lilvRead(path, [rez])[rez];
+    assert.equal(run(lv2, out).counts.written, 2);
+    assert.equal(lilvRead(path, [rez])[rez].bundle, pathToFileURL(`${join(out, outName(mda.dir))}/`).href);
+    // an upgrade the writer refuses (lilv reads the version "beta" as 0): until the sync, ours (2.1) still wins
+    writeFileSync(join(mda.dir, 'RezFilter.ttl'), readFileSync(join(mda.dir, 'RezFilter.ttl'), 'utf8').replace('lv2:microVersion 0 ;', 'lv2:microVersion "beta" ;'));
+    assert.equal(lilvRead(path, [rez])[rez].version, '2.1', 'the stale bundle replaces the upgraded one');
+    // the package removed: ours still declares the plugin
+    rmSync(swh.dir, { recursive: true });
+    assert.ok(lilvRead(path, []).all.includes(para), 'the stale bundle keeps a removed plugin listed');
+    const r = run(lv2, out);
+    assert.equal(r.counts.removed, 2, r.lines.join('\n'));
+    const after = lilvRead(path, [rez]);
+    assert.equal(after[rez].bundle, pathToFileURL(`${mda.dir}/`).href, 'the installed bundle loads again');
+    assert.deepEqual(after[rez].groups, original.groups, 'with the groups it states itself, none of ours');
+    assert.ok(!after.all.includes(para), 'the removed plugin is gone from lilv');
+  });
 });
 
 describe('omx-complement-sync, the installed-side entry', () => {
@@ -453,6 +571,34 @@ describe('omx-complement-sync, the installed-side entry', () => {
     assert.ok(existsSync(join(r.out, outName(dir), MARKER)));
     const again = r.run();
     assert.match(again.stdout, /^omx-complement-sync: 0 written, 1 up to date, 0 refused/m);
+  });
+
+  it('--check exits 3 naming each stale or out-of-date bundle of ours, 0 when there is none; it changes nothing', () => {
+    const r = rig();
+    const { dir } = installed(r.lv2, 'triple_para-swh', ['swh-triplepara']);
+    const missing = r.run(['--check']);
+    assert.equal(missing.status, 0, 'a bundle not written yet is not stale');
+    assert.match(missing.stdout, /^omx-complement-sync: missing .*omx-complement-triple_para-swh\.lv2 for /m);
+    assert.ok(!existsSync(r.out) || readdirSync(r.out).length === 0);
+    assert.equal(r.run().status, 0);
+    const clean = r.run(['--check']);
+    assert.equal(clean.status, 0, clean.stdout);
+    assert.match(clean.stdout, /^omx-complement-sync: no bundle of ours is stale$/m);
+    writeFileSync(join(dir, 'plugin.ttl'), `${readFileSync(join(dir, 'plugin.ttl'), 'utf8')}\n# upgraded\n`);
+    const outOfDate = r.run(['--check']);
+    assert.equal(outOfDate.status, 3, outOfDate.stdout);
+    assert.match(outOfDate.stdout, /^omx-complement-sync: out of date .*omx-complement-triple_para-swh\.lv2: the installed files changed; the sync writes it again$/m);
+    rmSync(dir, { recursive: true });
+    const before = treeHash(r.out);
+    const stale = r.run(['--check']);
+    assert.equal(stale.status, 3, stale.stdout);
+    assert.match(stale.stdout, /^omx-complement-sync: stale .*omx-complement-triple_para-swh\.lv2: its installed bundle .* is gone, or no longer on the search list; the sync removes it$/m);
+    assert.match(stale.stdout, /^omx-complement-sync: 1 bundle\(s\) of ours stale or out of date: 1 to remove, 0 to write again$/m);
+    assert.equal(treeHash(r.out), before, '--check removes nothing');
+    const sync = r.run();
+    assert.equal(sync.status, 0);
+    assert.match(sync.stdout, /^omx-complement-sync: removed .*omx-complement-triple_para-swh\.lv2: /m);
+    assert.equal(r.run(['--check']).status, 0);
   });
 
   it('--check names the search list and whether MODGUI_DIR is on it; a bad flag is a usage error', () => {

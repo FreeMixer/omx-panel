@@ -9,14 +9,19 @@
 #   omx-complement-sync [--dry-run] [--verbose]
 #   omx-complement-sync --check
 #
+# --check writes nothing: it reports the search list, whether MODGUI_DIR is on it, and each bundle of ours that is
+# stale (a sync removes it) or out of date (a sync writes it again); exit 3 when there is one.
+#
 # For each installed bundle holding a plugin whose groups `omx-panel complement` infers with confidence (lane G2 of
 # plugin-hostd#218, docs/lv2-complement.md), it writes a bundle in MODGUI_DIR (omx-complement-<bundle>.lv2) that
 # restates the installed bundle's TTL, adds the groups, and raises each plugin's lv2:microVersion by one, so lilv
 # loads it in place of the installed one. The installed bundle is never touched; deleting ours restores it. Nothing is
 # written for a plugin that carries its own groups, fits one screen, or has no confident grouping.
 #
-# A bundle whose marker (.omx-complement-sync) names the same installed files is left as it is. A bundle of that name
-# without our marker is never written. One the restatement cannot carry (TTL the reader cannot parse, a version at
+# A bundle whose marker (.omx-complement-sync) names the same installed files is left as it is; one whose installed
+# files or rules changed is written again. A bundle of ours no longer wanted (its installed bundle gone, changed into
+# one that is refused, or needing no groups now) is removed, the line naming it and why: lilv loads the installed
+# bundle again. A bundle without our marker is never written or removed. One the restatement cannot carry (TTL the reader cannot parse, a version at
 # lilv's ceiling, a plugin declared twice) is refused and named in the summary; it never fails the run. The run fails
 # only when it cannot start (omx-panel missing, MODGUI_DIR not writable).
 #
@@ -80,7 +85,15 @@ if [ "$check" = 1 ]; then
 			esac
 		fi
 	done
-	exit 0
+	# The bundles of ours a sync would remove or write again: exit 3 when there is one
+	command -v omx-panel >/dev/null || { echo "omx-complement-sync: omx-panel is not installed" >&2; exit 1; }
+	omx-panel complement --out "$MODGUI_DIR" --state "$STATE_DIR" --lv2-path "$LV2_PATH" --log-prefix omx-complement-sync --check
+	status=$?
+	case "$status" in
+		0) exit 0 ;;
+		3) exit 3 ;;
+		*) exit 1 ;;
+	esac
 fi
 
 command -v omx-panel >/dev/null || { echo "omx-complement-sync: omx-panel is not installed" >&2; exit 1; }
