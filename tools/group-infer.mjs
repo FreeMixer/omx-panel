@@ -409,7 +409,12 @@ function trailingNumber(state, rule, tokensOf) {
   repeated = oneNumbering(repeated, stemKey);
   if (repeated.length < 2) return;
   const labels = numberedLabels(repeated, tokensOf === TOKENS.symbol);
-  for (const [n, ms] of repeated) place(state, rule, { key: labels.get(n), name: labels.get(n) }, ms.map((m) => m.p));
+  const used = new Set(state.groups.map((g) => g.name));
+  for (const [n, ms] of repeated) {
+    // a label an earlier group already holds would need a " 2": the pass places nothing for that class instead
+    if (used.has(labels.get(n))) continue;
+    place(state, rule, { key: labels.get(n), name: labels.get(n) }, ms.map((m) => m.p));
+  }
 }
 
 /**
@@ -436,11 +441,20 @@ function numberedLabels(repeated, bySymbol) {
     const firsts = ms.map((m) => nameTokens(m.p.name)[0] ?? '');
     const first = firsts[0] && !isNumber(firsts[0]) && firsts.every((w) => w.toLowerCase() === firsts[0].toLowerCase()) ? firsts[0] : undefined;
     const stems = ms.flatMap((m) => [m.stem, nameTokens(m.p.name).slice(0, -1), symbolTokens(m.p.symbol).slice(0, -1)]);
-    const section = stems.find((st) => st.length === 1 && SECTION_WORDS.has(st[0].toLowerCase()));
-    const word = first ? capitalize(first) : section ? capitalize(section[0]) : 'Group';
+    const section = stems.find((st) => st.length === 1 && SECTION_WORDS.has(st[0].toLowerCase()))?.[0] ?? namedSection(ms);
+    const word = first ? capitalize(first) : section ? capitalize(section) : 'Group';
     labels.set(n, `${word} ${number}`);
   });
   return labels;
+}
+
+/**
+ * A section word more than half the names of a numbered group hold anywhere ("Solo band 1", "Mute band 1", "Band gain
+ * 1" beside "Phase invert 1" and "Hue 1": "Band"), the first in SECTION_WORDS order.
+ */
+function namedSection(ms) {
+  const words = ms.map((m) => new Set(nameTokens(m.p.name).map((w) => w.toLowerCase())));
+  return [...SECTION_WORDS].find((w) => words.filter((set) => set.has(w)).length * 2 > ms.length);
 }
 
 /**
