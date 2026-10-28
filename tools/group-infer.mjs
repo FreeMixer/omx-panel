@@ -146,7 +146,7 @@ const UNIT_NAMES = {
 
 /** Rule 3: a word that names a numbered section; "Section 1" names the group of every control numbered 1. */
 // Only words that name a section and never a parameter: "Delay 1" or "Filter 1" may be one control of section 1.
-const SECTION_WORDS = new Set([
+export const SECTION_WORDS = new Set([
   'band', 'section', 'channel', 'ch', 'osc', 'oscillator', 'voice', 'step', 'tap', 'stage', 'lfo', 'env', 'envelope',
   'part', 'layer', 'op', 'operator',
 ]);
