@@ -20,6 +20,7 @@ override_dh_auto_install:
 	# the vendored modules' lint and VCS dotfiles are theirs, not the package's: lintian refuses .eslintrc.yml
 	find debian/omx-panel/usr/share/omx-panel -path '*/node_modules/*' -name '.*' -type f -delete
 
-# the sync unit is installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` is the choice
+# the sync units are installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` (and
+# omx-complement-sync) is the choice
 override_dh_installsystemd:
 	dh_installsystemd --no-enable --no-start
