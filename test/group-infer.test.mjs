@@ -9,7 +9,7 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readBundle } from '../dist/tools/modgui-import.mjs';
@@ -17,6 +17,7 @@ import {
   HOST_DESIGNATIONS,
   MAX_GROUPS,
   RULES,
+  SECTION_WORDS,
   inferGroups,
   lv2Symbol,
   placeableControls,
@@ -356,6 +357,13 @@ describe('the inputs', () => {
 
   it('a plugin without a MOD GUI reads as null, the test omx-modgui-sync makes', () => {
     assert.equal(load('calf-compressor').modgui, null);
+  });
+
+  it('docs/group-inference.md lists SECTION_WORDS as the module holds them', () => {
+    const doc = readFileSync(join(PKG, 'docs/group-inference.md'), 'utf8');
+    const m = doc.match(/\(`SECTION_WORDS`: ([^)]*)\)/);
+    assert.ok(m, 'the doc names SECTION_WORDS and its words');
+    assert.deepEqual(m[1].split(/,\s*/).map((w) => w.trim()), [...SECTION_WORDS]);
   });
 
   it('lv2Symbol makes a valid symbol of any text', () => {
