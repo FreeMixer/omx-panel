@@ -266,6 +266,28 @@ describe('each rule, on real plugins', () => {
     ]);
   });
 
+  it('3: one parameter repeated across sections is no section: DrumSynth is refused, with no transposed group', () => {
+    const v = infer('juced-drumsynth');
+    assert.equal(v.outcome, 'no-confident-grouping');
+    assert.equal(v.reason, 'too-many-groups');
+    const groups = v.attempt.groups;
+    assert.ok(!groups.some((g) => /^Group \d/.test(g.name)), 'no numbered group of envelope points across voices');
+    const stripped = (s) => s.replace(/_\d+$/, '');
+    for (const g of groups.filter((x) => x.rule === 3)) {
+      assert.ok(new Set(g.ports.map(stripped)).size > 1, `${g.name} is not one parameter repeated: ${g.ports.join(' ')}`);
+    }
+  });
+
+  it('3: a repeated parameter with a number in its stem is a section (a matrix row: mix_0_0, mix_0_1)', () => {
+    const ports = [];
+    for (const r of [0, 1]) for (const c of [0, 1, 2]) ports.push({ symbol: `mix_${r}_${c}`, name: `Mix ${r} ${c}` });
+    for (const s of ['tune', 'tune_2', 'tune_3']) ports.push({ symbol: s, name: s });
+    const v = inferGroups({ uri: 'urn:t', ports: ports.map((p, i) => ({ ...p, index: i, control: true, input: true })) });
+    const groups = v.groups ?? v.attempt.groups;
+    assert.deepEqual(groups.filter((g) => g.rule === 3).map((g) => g.name), ['Mix 0', 'Mix 1']);
+    assert.ok(!groups.some((g) => g.rule === 3 && g.ports.includes('tune')), 'tune, tune_2, tune_3 form no rule-3 group');
+  });
+
   it('3: a stem numbered inside the pattern but fewer is another thing numbered, left to later passes', () => {
     const ports = [];
     for (const b of [1, 2, 3]) ports.push({ symbol: `gain${b}`, name: `Gain ${b}` }, { symbol: `pan${b}`, name: `Pan ${b}` });

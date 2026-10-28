@@ -449,7 +449,7 @@ function numberedLabels(repeated, bySymbol) {
  * band lacking one control), is part of the pattern; a stem whose numbers all fall inside it but are fewer is another
  * thing numbered (mixtri's two triggers) and is left to the later passes; a stem with a number outside the pattern
  * is an unrelated numbering (AMS advenv: attack stages 1-4, release stages 1-3) and the pass places nothing. Then
- * every class must hold the same stems, at most one class lacking one of them.
+ * every class must hold the same stems, each once, at most one class lacking one of them.
  */
 const sig = (set) => [...set].sort((a, b) => a - b).join(',');
 
@@ -487,6 +487,9 @@ function oneNumbering(repeated, stemKey) {
     .filter(([, ms]) => ms.length >= MIN_GROUP_SIZE);
   let short = 0;
   for (const [, ms] of kept) {
+    // two controls of one stem in one numbered group are one parameter repeated across sections (DrumSynth's voices
+    // each name their envelope points "O-Env-T1"): the numbers are not the sections
+    if (new Set(ms.map(stemKey)).size < ms.length) return [];
     const missing = keep.size - new Set(ms.map(stemKey)).size;
     if (missing > 1 || (missing === 1 && ++short > 1)) return [];
   }
@@ -525,6 +528,7 @@ function leadingWord(state, rule, tokensOf) {
     if (keys.size === 1 && only !== null) groupKey.set(only, groupKey.has(only) ? null : g);
   }
   for (const [key, c] of classes) {
+    if (transposed(state, c.ports, tokensOf)) continue;
     const into = groupKey.get(key);
     if (into) {
       place(state, rule, {}, c.ports, into);
@@ -534,6 +538,24 @@ function leadingWord(state, rule, tokensOf) {
     const name = c.words.map(capitalize).join(' ');
     place(state, rule, { key: name, name }, c.ports);
   }
+}
+
+/**
+ * Controls that differ only by a trailing number (`tuning`, `tuning_2`, `tuning_3`) are one parameter repeated across
+ * sections, not a section: grouping them would lay the plugin out transposed, one screen per parameter. Unless what
+ * they share holds a number itself, which names the section, and no control is that stem alone.
+ */
+function transposed(state, ports, tokensOf) {
+  const words = (p) => tokensOf(p).map((w) => w.toLowerCase());
+  const stems = ports.map((p) => {
+    const t = words(p);
+    return (t.length > 1 && isNumber(t[t.length - 1]) ? t.slice(0, -1) : t).join(' ');
+  });
+  if (ports.length < MIN_GROUP_SIZE || new Set(stems).size !== 1) return false;
+  // a stem that holds a number is itself a section (mixtri's `mix_0_0`, `mix_0_1`: row 0 of a matrix), unless a
+  // control of exactly that stem exists, the first copy of a repeated one (DrumSynth's `freq1`, `freq1_2`, ...)
+  if (!stems[0].split(' ').some(isNumber)) return true;
+  return state.controls.some((p) => words(p).join(' ') === stems[0]);
 }
 
 /** 4: a shared units:unit. */
