@@ -62,7 +62,7 @@ the CLAP search list is CLAP_PATH, then ~/.clap, then /usr/lib/clap
 KEY=value lines for the variables above, read by the unit
 .TP
 .I omx-modgui-sync.service
-runs the sync once; installed but not enabled (systemctl enable omx-modgui-sync). Enabled, it runs at boot and each time plugin-qualify-sync starts, after that sync has finished.
+runs the sync once; installed but not enabled (systemctl enable omx-modgui-sync). Enabled, it runs at boot and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-modgui-sync.conf, queues it from ExecStartPost when the unit is enabled). If a scan finishes while a GUI run is still running, that start is a no-op until the next scan.
 .SH EXIT STATUS
 .TP
 .B 0
