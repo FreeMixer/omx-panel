@@ -190,6 +190,7 @@ EOF
 }
 
 generated=0 fresh=0 own_gui=0 no_descriptor=0 no_controls=0 nothing_to_draw=0 removed=0 failed=0
+skipped_triggers=
 declare -A wanted
 
 say() { echo "omx-modgui-sync: $*"; }
@@ -262,6 +263,10 @@ generate() {
 		rm -rf "$tmp"
 		return
 	fi
+	# omx-panel leaves a trigger control off the face and names it on stderr: the summary line names it too
+	local trig
+	trig=$(sed -n "s/^modgui: skipped trigger control '\(.*\)'\$/\1/p" "$tmp/stderr" | paste -sd, -)
+	[ -z "$trig" ] || skipped_triggers="${skipped_triggers:+$skipped_triggers; }$name: $trig"
 	{
 		echo "# Written by omx-modgui-sync for a plugin that ships no MOD GUI."
 		echo "# The plugin itself lives in its own bundle; this one adds its GUI."
@@ -312,8 +317,9 @@ for marker in "$MODGUI_DIR"/*.lv2/"$MARKER"; do
 	removed=$((removed + 1))
 done
 
+trig_note=${skipped_triggers:+", and left trigger controls off the face ($skipped_triggers)"}
 say "$generated written, $fresh up to date, $own_gui ship their own, $no_descriptor without a descriptor," \
-	"$no_controls without controls, $nothing_to_draw with nothing to draw, $removed removed, $failed could not be drawn"
+	"$no_controls without controls, $nothing_to_draw with nothing to draw, $removed removed, $failed could not be drawn$trig_note"
 if [ $((generated + removed)) -gt 0 ] && [ "$dry_run" = 0 ]; then
 	say "MOD-UI shows the change the next time it starts"
 fi

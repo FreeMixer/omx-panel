@@ -7,7 +7,8 @@
 // descriptor's groups; the look resolves to look.json.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -135,4 +136,37 @@ test('a control name holding a line break, a return or a tab writes Turtle with 
   assert.ok(ttl.includes('lv2:name "Fb Tone\\nLo<>Hi\\rmid\\tend \\"q\\" \\\\"'), ttl);
   // The same name in the icon template stays one HTML attribute and one text node.
   assert.ok(files.get('modgui/icon-omx-delay.html').toString('utf8').includes('Fb Tone'));
+});
+
+test('a trigger control beside a normal one is left off the face and reported: the normal one is drawn (the ZLFO shape)', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.controls.push({ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' });
+  const panel = read('omx-delay.panel.json');
+  panel.sections[0].controls.push('cv_trigger');
+  const r = resolvePanel(d, { panel, stem: 'omx-delay' });
+  assert.deepEqual(r.skipped, ['cv_trigger']);
+  assert.ok(!r.sections.flatMap((s) => s.controls).some((c) => c.symbol === 'cv_trigger'));
+  assert.ok(r.sections[0].controls.length > 0);
+  const ttl = new Map(gen(d, panel)).get('modgui.ttl').toString();
+  assert.doesNotMatch(ttl, /cv_trigger/);
+  // with no declared panel the layout lists it and the generator still draws the rest
+  const auto = resolvePanel(d, { stem: 'omx-delay' });
+  assert.deepEqual(auto.skipped, ['cv_trigger']);
+  assert.ok(auto.sections.flatMap((s) => s.controls).length > 0);
+  // the CLI says so on stderr and exits 0
+  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  writeFileSync(join(dir, 'p.json'), JSON.stringify(panel));
+  const run = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stderr, /^modgui: skipped trigger control 'cv_trigger'\n$/);
+});
+
+test('a descriptor whose only control is a trigger has nothing to draw: exit 3', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.controls = [{ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' }];
+  assert.throws(() => resolvePanel(d, { stem: 'omx-delay' }), (err) => err instanceof NothingToDraw);
+  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  assert.equal(cli('--descriptor', join(dir, 'd.json'), '--out', join(dir, 'x.lv2')).status, 3);
 });
