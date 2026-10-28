@@ -46,7 +46,9 @@ export const SCREEN_SIZE = 4;
 
 /**
  * The smallest group the rules may make. A group of one is a screen with one control: worse than port order,
- * which at least fills the screen. The plugin's OWN groups (rule 1) are exempt: what the plugin states is kept.
+ * which at least fills the screen. Every rule consults it before it makes a group, so no generated group is ever
+ * under it and the confidence check does not test it again. The plugin's OWN groups (rule 1) are kept whatever their
+ * size: what the plugin states is kept.
  */
 export const MIN_GROUP_SIZE = 2;
 
@@ -216,8 +218,6 @@ export function inferGroups(plugin, modgui = null, options = {}) {
   const refuse = (reason, detail) => ({ outcome: 'no-confident-grouping', reason, detail, attempt });
 
   if (unplaced.length > MAX_UNPLACED) return refuse('unplaced-controls', `${unplaced.length} control(s) in no group: ${unplaced.join(', ')}`);
-  const lone = groups.find((g) => g.rule !== 1 && g.ports.length < MIN_GROUP_SIZE);
-  if (lone) return refuse('group-of-one', `group ${lone.symbol} holds ${lone.ports.length}`);
   if (groups.length < MIN_GROUPS) return refuse('too-few-groups', `${groups.length} group(s)`);
   if (groups.length > MAX_GROUPS) return refuse('too-many-groups', `${groups.length} groups, at most ${MAX_GROUPS}`);
   const byIndex = controls.filter((p) => state.placedBy.get(p.symbol) === 5).length;
