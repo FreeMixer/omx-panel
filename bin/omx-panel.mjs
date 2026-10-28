@@ -10,6 +10,9 @@
  *                                                        serialisation, or its pages of eight)
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
+ *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose]
+ *                                                        tools/lv2-complement.mjs: a replacing LV2 bundle with the inferred
+ *                                                        port groups, for each installed bundle that needs one
  *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
  *                                                        directories, the meanings, the LV2 unit table, the param-contract
@@ -33,6 +36,7 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages]\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--check]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
+  + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose]\n'
   + '       omx-panel look [--check]\n'
   + '       omx-panel vocabulary [<package>/<name>]...\n'
   + '       omx-panel descriptors --installed\n';
@@ -133,6 +137,7 @@ if (command === 'validate') validate(args);
 else if (command === 'layout') await layout(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
+else if (command === 'complement') tool('lv2-complement.mjs');
 else if (command === 'look') tool('look.mjs');
 else if (command === 'vocabulary') await vocabulary(args);
 else if (command === 'descriptors') await descriptors(args);

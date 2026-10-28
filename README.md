@@ -21,6 +21,11 @@ the plugin's own declaration, in the omx look, vintage or modern.
 - The group inference: `tools/group-infer.mjs` finds the port groups an LV2 plugin lacks from what it states (its own
   partial groups, designations, name and symbol prefixes, units, index runs, its MOD GUI), or says it cannot with
   confidence and leaves the plugin as it is ([docs/group-inference.md](docs/group-inference.md)).
+- The complement: `omx-complement-sync` (`omx-panel complement`) carries those groups to lilv, for jalv on the Zynthian
+  touchscreen: for an installed bundle with a plugin to group it writes, beside omx-modgui-sync's GUIs, a bundle that
+  restates the installed TTL, adds the groups and raises `lv2:microVersion` by one, so lilv loads it in place of the
+  installed one. The installed files are never touched; a marker makes a second run write nothing, and deleting the
+  bundle restores the plugin as installed ([docs/lv2-complement.md](docs/lv2-complement.md), `omx-complement-sync(1)`).
 - The skin package: its schema, `omx-panel validate`, and its facts as a module (`src/skin-package.ts`: the
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
   ([docs/skin-package.md](docs/skin-package.md)).

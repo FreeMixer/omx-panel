@@ -46,6 +46,10 @@
       "types": "./dist/tools/group-infer.d.mts",
       "default": "./dist/tools/group-infer.mjs"
     },
+    "./lv2-complement": {
+      "types": "./dist/tools/lv2-complement.d.mts",
+      "default": "./dist/tools/lv2-complement.mjs"
+    },
     "./turtle-read": {
       "types": "./dist/tools/turtle-read.d.mts",
       "default": "./dist/tools/turtle-read.mjs"

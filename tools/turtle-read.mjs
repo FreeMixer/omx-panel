@@ -75,7 +75,13 @@ export function parseTurtle(text, base) {
   const take = () => toks[i++] ?? fail('unexpected end of file');
   const isPunct = (ch) => peek()?.kind === 'punct' && peek().m[0] === ch;
   const expect = (ch) => (isPunct(ch) ? i++ : fail(`expected '${ch}'`));
-  const resolve = (rel) => new URL(unescape(rel), baseIri).href;
+  // An absolute IRI is the IRI as written (Turtle, RFC 3987; serd and so lilv keep it): only a relative reference is
+  // resolved against the base. URL's parser would rewrite an absolute one (a lower-cased host, a trailing '/' after a
+  // bare authority), which names a different plugin: https://www.ElephantDSP.com/plugins/Room_Reverb is one.
+  const resolve = (rel) => {
+    const iri = unescape(rel);
+    return /^[A-Za-z][A-Za-z0-9+.-]*:/.test(iri) ? iri : new URL(iri, baseIri).href;
+  };
   const newBlank = () => ({ t: 'bnode', v: `b${blank++}` });
 
   function pname(tok) {
