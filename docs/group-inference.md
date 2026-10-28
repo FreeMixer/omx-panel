@@ -59,11 +59,16 @@ title).
    Envelope (attack, release and hold are Dynamics in a plugin that also designates a threshold or a ratio);
    threshold and ratio Dynamics; cutoff frequency and resonance a Filter; waveform, pulse width, frequency and
    amplitude an Oscillator; gain, wet, dry and wet/dry an Output.
-3. **A shared name or symbol prefix**, by name first, then by symbol:
+3. **A shared name or symbol prefix**, in four passes (`PREFIX_PASSES`): the symbol's trailing number, the name's
+   trailing number, the name's leading word, the symbol's leading word. The symbol's number comes first because a
+   symbol numbers a band the same way on every control (`xs_9`, `g_9`) where a name may print its frequency
+   ("Band gain 1K", "31.5") and number nothing:
    - a shared trailing number, when it is the only number in the name and the plugin repeats it (at least two numbers,
      each on at least two controls): one group per number. "Frequency 1", "Gain 1", "Section 1" are the group
-     "Section 1"; the group is named after a section word among its controls (band, section, channel, osc, voice,
-     step, tap, stage, lfo, env, part, layer, op), else "Group 1";
+     "Section 1"; the group is named after a section word among its controls' names or symbols (band, section, channel,
+     osc, voice, step, tap, stage, lfo, env, part, layer, op), else "Group 1". A stem is numbered only when its whole
+     pattern is: every control whose word after the stem starts with a digit lands in a numbered group, or the pass
+     places none of that stem's controls ("Band gain 16" ... "Band gain 1K" is left to the next pass);
    - a shared leading word ("Highpass Frequency", "Highpass Resonance"), or the first two when the second is a number
      and more follows ("Band 1 Freq", `b1_freq`); a control whose whole name is that word joins it ("Highpass").
      When every control of an earlier group shares the key, the controls join that group rather than cut the
@@ -76,7 +81,8 @@ title).
    own; it fills the gaps between groups the plugin's words found.
 6. **The plugin's own MOD GUI layout**: the controls its face shows are "Main", the ones it leaves off "More".
 
-The order is part of the contract: `inferGroups(plugin, modgui, { rules })` takes another order for tests only.
+The order is part of the contract: `inferGroups(plugin, modgui, { rules, prefixPasses })` takes another order of the
+rules, or of rule 3's passes, for tests only.
 
 ## Confident
 
@@ -103,4 +109,4 @@ their own complete groups (all 19 of omx-plugins among them), 84 are grouped, an
 plugin alone over a guess; loosening `MAX_UNPLACED` is the one change that would group most of the rest.
 
 The tests (`test/group-infer.test.mjs`) run the rules over TTL copied from installed plugins: swh, Calf, x42, CAPS,
-ZamAudio, MDA and our own (`test/fixtures/lv2-groups`, provenance and licences in its `SOURCES`).
+ZamAudio, MDA, LSP and our own (`test/fixtures/lv2-groups`, provenance and licences in its `SOURCES`).

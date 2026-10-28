@@ -21,5 +21,6 @@ caps-eq4p            Eq4p.ttl modgui.ttl         mod-caps-Eq4p.lv2         caps-
 zam-gate             ZamGate_dsp.ttl             ZamGate.lv2               lv2-zam-plugins-4.4-7                                 GPL-2.0-or-later AND ISC
 mda-rezfilter        RezFilter.ttl               mda.lv2                   lv2-mdala-plugins-1.2.12-1                            GPL-3.0-or-later
 mda-jx10             JX10.ttl                    mda.lv2                   lv2-mdala-plugins-1.2.12-1                            GPL-3.0-or-later
+lsp-graph-eq-x16     graph_equalizer_x16_stereo.ttl  lsp-plugins.lv2  lsp-plugins-lv2-1.2.29-1                    LGPL-3.0-or-later AND Zlib
 omx-comp             omx-comp.ttl modgui.ttl     omx-comp.lv2              omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
 omx-eq8              omx-eq8.ttl                 omx-eq8.lv2               omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
