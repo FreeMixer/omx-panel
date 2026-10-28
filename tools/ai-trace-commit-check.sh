@@ -1,5 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 # ai-trace-commit-check.sh: fail when a commit message carries an AI-attribution line.
 #
 #   ai-trace-commit-check.sh <range>          every commit in the range (e.g. origin/main..HEAD)
