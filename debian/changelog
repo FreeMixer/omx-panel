@@ -1,3 +1,24 @@
+omx-panel (0.5.0) unstable; urgency=medium
+
+  * A CLAP control whose id is a number is keyed p<id>, so two parameters of
+    one name no longer stop the layout; the published keys of scanned CLAP
+    plugins change (#27).
+  * omx-panel modgui adds rdfs:seeAlso <modgui.ttl> to the bundle's
+    manifest.ttl when the manifest exists and lacks it, and --check refuses
+    a manifest without it (#28).
+  * A choice control without values is refused by code
+    (MODGUI_CHOICE_NO_VALUES) naming the control (#30).
+  * A descriptor with no control to lay out is refused by code and the
+    refusal says why (#31, the omx-panel half).
+  * A trigger control is left off the MOD GUI face and named on stderr; the
+    rest is drawn (#47).
+  * omx-modgui-sync.service no longer carries WantedBy=plugin-qualify-
+    sync.service: a drop-in on plugin-qualify-sync.service starts it after
+    each scan when it is enabled, so a scan that begins while a GUI run is
+    queued still gets its GUI run (#61).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 28 Oct 2026 11:00:00 +0000
+
 omx-panel (0.4.3) unstable; urgency=medium
 
   * A control name holding a line break, a return or a tab no longer writes
