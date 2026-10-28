@@ -122,3 +122,17 @@ test('a descriptor whose controls are all hidden has nothing to draw: a typed er
   assert.ok(d.controls.length > 0 && d.controls.every((c) => c.hidden), 'the fixture has controls, all hidden');
   assert.throws(() => resolvePanel(d, { stem: 'hidden-only' }), (err) => err instanceof NothingToDraw && err.code === 'MODGUI_NOTHING_TO_DRAW');
 });
+
+test('a control name holding a line break, a return or a tab writes Turtle with no raw break inside a string', () => {
+  const d = read('omx-delay.descriptor.json');
+  const name = 'Fb Tone\nLo<>Hi\rmid\tend "q" \\';
+  d.controls.find((c) => c.symbol === 'fxDelayTime').name = name;
+  const files = new Map(gen(d));
+  const ttl = files.get('modgui.ttl').toString('utf8');
+  // A Turtle short string ("...") may not hold a raw line feed or carriage return: with every well-formed
+  // string taken out, no quote may be left over (a string cut by a line end leaves one).
+  assert.doesNotMatch(ttl.replace(/"(?:[^"\\\n\r]|\\.)*"/g, ''), /"/);
+  assert.ok(ttl.includes('lv2:name "Fb Tone\\nLo<>Hi\\rmid\\tend \\"q\\" \\\\"'), ttl);
+  // The same name in the icon template stays one HTML attribute and one text node.
+  assert.ok(files.get('modgui/icon-omx-delay.html').toString('utf8').includes('Fb Tone'));
+});
