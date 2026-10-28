@@ -7,12 +7,13 @@
 // descriptor's groups; the look resolves to look.json.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { emitLook, TOKENS_CSS, LOOK_JSON } from '../tools/look.mjs';
-import { generateModgui, NothingToDraw, resolvePanel } from '../tools/modgui-gen.mjs';
+import { ChoiceNoValues, generateModgui, NothingToDraw, resolvePanel } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
@@ -135,4 +136,24 @@ test('a control name holding a line break, a return or a tab writes Turtle with 
   assert.ok(ttl.includes('lv2:name "Fb Tone\\nLo<>Hi\\rmid\\tend \\"q\\" \\\\"'), ttl);
   // The same name in the icon template stays one HTML attribute and one text node.
   assert.ok(files.get('modgui/icon-omx-delay.html').toString('utf8').includes('Fb Tone'));
+});
+
+test('a choice with ids and labels and no values is refused by code, naming the control, not a TypeError', () => {
+  const d = read('omx-delay.descriptor.json');
+  const choice = { symbol: 'mod_source', id: 'mod_source', name: 'Mod source', kind: 'choice', ids: ['a', 'b', 'c'], labels: ['A', 'B', 'C'], default: 'a' };
+  d.controls.push(choice);
+  const panel = read('omx-delay.panel.json');
+  panel.sections[0].controls.push('mod_source');
+  assert.throws(() => gen(d, panel), (err) => err instanceof ChoiceNoValues && err.code === 'MODGUI_CHOICE_NO_VALUES' && /'mod_source'/.test(err.message) && /values/.test(err.message));
+  // the same choice with values is drawn
+  choice.values = [0, 1, 2];
+  assert.doesNotThrow(() => gen(d, panel));
+  // the CLI prints it as one line, no stack
+  delete choice.values;
+  const dir = mkdtempSync(join(tmpdir(), 'mg30-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  writeFileSync(join(dir, 'p.json'), JSON.stringify(panel));
+  const r = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /^MODGUI_CHOICE_NO_VALUES: .*'mod_source'.*\n$/);
 });
