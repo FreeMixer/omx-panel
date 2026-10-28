@@ -59,4 +59,6 @@ install: build
 	install -m 0755 bin/omx-modgui-sync $(DESTDIR)$(BINDIR)/
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(SYSCONFDIR)/omx
 	install -m 0644 systemd/omx-modgui-sync.service $(DESTDIR)$(UNITDIR)/
+	install -d $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d
+	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
 	install -m 0644 etc/omx/modgui-sync.conf $(DESTDIR)$(SYSCONFDIR)/omx/
