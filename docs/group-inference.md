@@ -6,7 +6,7 @@ Most installed LV2 plugins declare no port groups, so a consumer that draws scre
 touchscreen cuts each group into screens of four) shows them as screens of four in port order.
 `tools/group-infer.mjs` (`@openmixer/omx-panel/group-infer`) infers the groups such a plugin lacks from what it
 already states, or says it cannot with confidence. It is the rule set of plugin-hostd#218 (lane G1): a pure
-function, no file written. The bundle that carries the result to lilv is the next lane's (G2).
+function, no file written. The bundle that carries the result to lilv is [lv2-complement.md](lv2-complement.md)'s (G2).
 
 ```js
 import { readBundle } from '@openmixer/omx-panel/modgui-import';
