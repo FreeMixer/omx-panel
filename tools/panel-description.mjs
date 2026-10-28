@@ -155,8 +155,12 @@ const keyOfText = (s) => {
   return /^[a-z]/.test(k) ? k : `s_${k}`;
 };
 
-/** The key a layout names a control by: its symbol, else an LV2 control's id (its port symbol), else its name. */
-export const keyOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : c.name);
+/**
+ * The key a layout names a control by: its symbol, else an LV2 control's id (its port symbol), else a CLAP
+ * control's numeric id as `p<id>` (the id is the one thing a CLAP plugin keeps unique and stable, and a bare
+ * number is not in the key grammar), else its name.
+ */
+export const keyOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : Number.isInteger(c.id) ? `p${c.id}` : c.name);
 
 /** The ports a layout carries: the audio inputs and outputs with their channels, the side-chain, the notes in. */
 function portsOf(ports = []) {
