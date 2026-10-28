@@ -23,7 +23,7 @@ A bundle whose marker file .omx-complement-sync names the same installed bundle,
 .PP
 A bundle of ours no longer wanted is removed, one line naming it and why: its installed bundle is gone (the package was removed) or no longer on the search list, changed into one that is refused or declares no plugin, or none of its plugins comes out grouped on the current rules. lilv then loads the installed bundle again. Only a directory named omx-complement-*.lv2 holding the marker is ever removed; a directory without the marker, of another name, or a symbolic link is left alone.
 .PP
-A bundle the restatement cannot carry is refused, named with its reason, and never fails the run: TTL the reader cannot parse, a version that is not an integer or is at lilv's ceiling, more than one version or binary for a plugin, a plugin declared in more than one installed bundle, a dynamic manifest, a data file outside the bundle, a generated group node whose IRI the bundle already states or that two of its plugins would share (group-iri-collision).
+A bundle the restatement cannot carry is refused, named with its reason, and never fails the run: TTL the reader cannot parse, a version that is not an integer or is at lilv's ceiling, more than one version or binary for a plugin, a plugin declared in more than one installed bundle, a dynamic manifest, a data file outside the bundle, a generated group node whose IRI the bundle already states or that two of its plugins would share (group-iri-collision), two installed bundles whose complements would have the same name, both refused (out-name-collision).
 .SH OPTIONS
 .TP
 .B --dry-run
