@@ -17,7 +17,7 @@ A second bundle that only adds `pg:group` to a plugin cannot work: a plugin's po
 that states them, so another file has nothing to attach a group to. What lilv does offer is its duplicate rule: a
 bundle that declares a plugin already loaded **replaces** it when its `lv2:minorVersion`/`lv2:microVersion` is newer,
 and is dropped when it is equal or older (lilv `world.c`, `lilv_world_load_bundle`; the order of the search list does
-not matter, it is a comparison). lilv reads a version only when both values are stated, with `atoi`; otherwise it is
+not change which bundle wins, it is a comparison; it changes what the load costs, [below](#the-search-order-the-same-result-not-the-same-cost)). lilv reads a version only when both values are stated, with `atoi`; otherwise it is
 0.0.
 
 lilv drops the **whole** old bundle when one of its plugins is replaced ("Dropping old bundle"): replacing MDA's
@@ -150,6 +150,21 @@ omx-modgui-sync a drop-in that sets that `LV2_PATH`; `omx-complement-sync.servic
 reads the plugins Zynthian loads. `omx-complement-sync --check` says whether `MODGUI_DIR` is on the search list. A
 complemented plugin's MOD GUI from omx-modgui-sync still applies: that bundle declares no plugin, only GUI statements
 about the plugin URI, which lilv merges whatever bundle the plugin itself comes from.
+
+## The search order: the same result, not the same cost
+
+Whether `MODGUI_DIR` comes before or after the installed folders on `LV2_PATH`, lilv ends with the same plugins, ours
+in place of the installed ones (the version comparison decides, not the order). What the order changes is the work:
+ours first, lilv meets the installed bundle second, finds it older and ignores it; ours last, it loads the installed
+bundle, then meets ours, replaces every plugin of it, drops the old bundle and prints a line for each replacement.
+
+Measured by the G2 review on the Fedora 44 desk with 979 plugins installed and the 37 bundles written (2026-10-28), not
+on a Zynthian: `lv2ls` takes 0.01 s over the installed folders alone, 0.03 s with ours first, and 0.37 s with ours
+last, when lilv also prints 1398 replace lines. Zynthian's `zynthian_envars*.sh` puts `/usr/local/lib/lv2` after the
+system folders, so on the touchscreen ours comes last: the costly order. Every program that builds a lilv world pays it
+at start (zynthian-ui, each jalv it spawns, mod-host, mod-ui). Lane G4 measures it on the Pi, where the figure that
+matters is what it adds to jalv's start and to zynthian-ui's plugin scan. Nothing here changes the search order: it is
+Zynthian's (and each distribution's) to set, and the result is the same either way.
 
 ## Measured
 
