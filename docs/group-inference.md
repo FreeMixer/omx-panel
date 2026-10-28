@@ -85,6 +85,12 @@ title).
      at most one group lacking one;
    - a shared leading word ("Highpass Frequency", "Highpass Resonance"), or the first two when the second is a number
      and more follows ("Band 1 Freq", `b1_freq`); a control whose whole name is that word joins it ("Highpass").
+     Controls that differ only by a trailing number (`tuning`, `tuning_2`, `tuning_3`) are one parameter repeated
+     across sections, not a section, and this pass places nothing for them (grouping them would lay the plugin out
+     transposed, one screen per parameter), unless what they share holds a number itself (`mix_0_0`, `mix_0_1`: row 0
+     of a matrix) and no control is that stem alone (DrumSynth's `freq1` is the first
+     copy of `freq1_2`, `freq1_3`). Likewise a numbered group may hold each stem once: two "O-Env-T1" in group 1
+     (DrumSynth's voices) mean the numbers are not the sections.
      When every control of an earlier group shares the key, the controls join that group rather than cut the
      section in two ("VCF Freq" and "VCF Reso", rule 2's Filter, take "VCF Env"); a key two earlier groups share
      joins neither.
@@ -118,8 +124,8 @@ Otherwise the verdict names the first condition that failed: `unplaced-controls`
 ## Measured
 
 Over the 979 plugins installed on a Fedora 44 desk (2026-10-28): 333 fit one screen, 98 have no controls, 40 carry
-their own complete groups (all 19 of omx-plugins among them), 85 are grouped, and 423 have no confident grouping
-(400 with controls left in no group, 21 mostly by index, 2 with more than 32 groups). The thresholds favour leaving a
+their own complete groups (all 19 of omx-plugins among them), 84 are grouped, and 424 have no confident grouping
+(402 with controls left in no group, 19 mostly by index, 3 with more than 32 groups). The thresholds favour leaving a
 plugin alone over a guess; loosening `MAX_UNPLACED` is the one change that would group most of the rest.
 
 The tests (`test/group-infer.test.mjs`) run the rules over TTL copied from installed plugins: swh, Calf, x42, CAPS,
