@@ -214,7 +214,14 @@ esac
 test('the unit runs after plugin-qualify-sync once enabled, under limits, and there is no apt hook', () => {
   const unit = readFileSync(join(ROOT, 'systemd/omx-modgui-sync.service'), 'utf8');
   assert.match(unit, /^After=.*\bplugin-qualify-sync\.service\b/m, 'it waits for the sync that writes its descriptors');
-  assert.match(unit, /^WantedBy=.*\bplugin-qualify-sync\.service\b/m, 'enabled, it starts with that sync');
+  assert.doesNotMatch(unit, /^WantedBy=.*\bplugin-qualify-sync\.service\b/m, 'a Wants resolved at the sync\'s start loses the run when two scans overlap (#61)');
+  assert.match(unit, /^WantedBy=multi-user\.target$/m);
+  const dropin = readFileSync(join(ROOT, 'systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf'), 'utf8');
+  const post = dropin.match(/^ExecStartPost=-.*$/m)?.[0];
+  assert.ok(post, 'the drop-in queues the GUI sync after each scan, its failure ignored');
+  assert.ok(post.indexOf('systemctl is-enabled -q omx-modgui-sync.service') >= 0 && post.indexOf('is-enabled') < post.indexOf('systemctl start --no-block omx-modgui-sync.service'), 'it asks is-enabled before it starts');
+  assert.match(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /plugin-qualify-sync\.service\.d\/omx-modgui-sync\.conf/, 'make install ships the drop-in');
+  assert.match(readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8'), /plugin-qualify-sync\.service\.d\/omx-modgui-sync\.conf/, 'the rpm lists it');
   for (const limit of ['CPUQuota=', 'MemoryMax=', 'TasksMax=', 'IOSchedulingClass=idle', 'RestrictRealtime=yes', 'Nice=19']) assert.ok(unit.includes(limit), limit);
   assert.doesNotMatch(unit, /^WantedBy=.*\bdefault\.target\b/m);
   assert.equal(existsSync(join(ROOT, 'etc/apt')), false, 'the Debian-only apt hook is gone: the sync follows the standard triggers');

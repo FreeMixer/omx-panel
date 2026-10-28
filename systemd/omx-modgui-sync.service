@@ -8,8 +8,8 @@ ConditionPathExists=/usr/bin/omx-panel
 
 [Service]
 # Not enabled by the package: `systemctl enable omx-modgui-sync` turns it on. Enabled, it runs at boot and each time
-# plugin-qualify-sync starts (WantedBy below), after that sync finishes, so a plugin installed, upgraded or removed
-# is followed by its GUI. The first run scans every plugin without a MOD GUI; later runs only check. The
+# plugin-qualify-sync finishes (plugin-qualify-sync.service.d/omx-modgui-sync.conf queues it from ExecStartPost),
+# so a plugin installed, upgraded or removed is followed by its GUI. The first run scans every plugin without a MOD GUI; later runs only check. The
 # directories are set in /etc/omx/modgui-sync.conf.
 Type=oneshot
 EnvironmentFile=-/etc/omx/modgui-sync.conf
@@ -22,4 +22,4 @@ TasksMax=64
 RestrictRealtime=yes
 
 [Install]
-WantedBy=multi-user.target plugin-qualify-sync.service
+WantedBy=multi-user.target
