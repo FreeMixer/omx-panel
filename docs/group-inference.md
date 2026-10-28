@@ -105,7 +105,7 @@ with its reason:
 | `MAX_UNPLACED` | 0 | place every placeable control | an unplaced control falls into the consumer's catch-all ("Params") beside ours, a layout nobody inferred |
 | `MIN_GROUP_SIZE` | 2 | (not checked: no rule creates a group under it; the plugin's own groups are kept whatever their size) | a screen with one control is worse than port order |
 | `MIN_GROUPS` | 2 | have at least two groups | one group is the plugin as it is, with a title |
-| `MAX_GROUPS` | 32 | have at most 32 groups | the widest plugin grouped by band we know needs 32 (a 32-band equaliser); beyond, the rules are slicing something that is not a set of sections |
+| `MAX_GROUPS` | 32 | have at most 32 groups | a ceiling, not a need: 32 screens of sections is already more than an operator pages through. A 32-band equaliser with its input and output groups does not fit (LSP's x32 needs 36) and is refused; wider, the rules are more likely slicing a sequencer or a matrix |
 | `MAX_INDEX_RUN_SHARE` | 0.5 | place at most half its controls by rule 5 | when index runs are most of the plugin, the grouping is port order cut at arbitrary points |
 | `SCREEN_SIZE` | 4 | (not asked: four controls or fewer is nothing to do) | one touchscreen screen holds four |
 
