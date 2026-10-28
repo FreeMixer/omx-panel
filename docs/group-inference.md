@@ -118,8 +118,8 @@ Otherwise the verdict names the first condition that failed: `unplaced-controls`
 ## Measured
 
 Over the 979 plugins installed on a Fedora 44 desk (2026-10-28): 333 fit one screen, 98 have no controls, 40 carry
-their own complete groups (all 19 of omx-plugins among them), 84 are grouped, and 424 have no confident grouping
-(400 with controls left in no group, 21 mostly by index, 3 with more than 32 groups). The thresholds favour leaving a
+their own complete groups (all 19 of omx-plugins among them), 85 are grouped, and 423 have no confident grouping
+(400 with controls left in no group, 21 mostly by index, 2 with more than 32 groups). The thresholds favour leaving a
 plugin alone over a guess; loosening `MAX_UNPLACED` is the one change that would group most of the rest.
 
 The tests (`test/group-infer.test.mjs`) run the rules over TTL copied from installed plugins: swh, Calf, x42, CAPS,
