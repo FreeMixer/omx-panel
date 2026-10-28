@@ -27,7 +27,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOOK_JSON, LOOK_TOKENS } from './look.mjs';
-import { panelLayout } from './panel-description.mjs';
+import { keyOf, panelLayout } from './panel-description.mjs';
 import { canvas, disc, encodePng, rgbOf, roundRect, segment } from './raster.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
@@ -162,7 +162,7 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
     controls: s.controls.map((symbol) => {
       if (seen.has(symbol)) throw new Error(`modgui-gen: '${symbol}' is in two sections`);
       seen.add(symbol);
-      const c = controls.find((x) => (x.symbol ?? x.id) === symbol);
+      const c = controls.find((x) => keyOf(x) === symbol);
       if (!c) throw new Error(`modgui-gen: panel names '${symbol}', which '${stem}' has no control for`);
       if (c.readonly) {
         if (panel.widgets?.[symbol] !== undefined) throw new Error(`modgui-gen: '${symbol}' is a readout and takes no widget`);
