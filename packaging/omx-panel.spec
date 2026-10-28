@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.4.1
+Version: 0.4.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -77,6 +77,15 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.2-1
+- omx-modgui-sync reads the LV2 search list as plugin-hostd and plugin-qualify
+  do ($LV2_PATH, else plugin-hostd's default), writes its bundles to
+  /usr/local/lib/lv2 (~/.lv2 for a user; the folder may hold plugins too, and the
+  bundles are named omx-modgui-<name>.lv2), and has --check: it says whether
+  mod-host and mod-ui read the folder, and lists the CLAP search list (#44).
+- The unit runs after plugin-qualify-sync once enabled, under CPU, memory and
+  task limits. The Debian-only apt hook is gone.
+
 * Tue Oct 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.1-1
 - The DEB builds on Debian bookworm again: python3-lilv is no build dependency
   (bookworm has none); the omx-modgui-sync tests skip without it. The RPM is
