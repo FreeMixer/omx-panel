@@ -23,10 +23,12 @@
  * descriptors state no unknown, and the layout with no declared panel finds the declared family and roles) loads
  * their declarations, so it stays in omx-plugins.
  */
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
+import { NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
 import { contractUnits } from '../tools/vocabulary.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -134,6 +136,17 @@ effect.instrument = undefined;
 check('arm: the same controls on an effect make a filter', panelLayout(effect).family, 'filter');
 const delay = panelLayout(fixture('authored-omx-delay'));
 check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', ''], ['tone', 0, 'tone', ''], ['mix', 0, 'mix', '']]]);
+
+// a descriptor with no control to lay out is refused by code and says why, not laid out as nothing (#31)
+const refusal = (d) => { try { panelLayout(d, { where: 'sq8l.json' }); return 'laid out'; } catch (e) { return e instanceof NoControls ? `${e.code}: ${e.message}` : `other: ${e.message}`; } };
+const sq8l = descriptor([], { programs: Array.from({ length: 512 }, (_, i) => ({ index: i, name: `Program ${i}` })) });
+check('a descriptor with programs and no controls is refused by code, naming the programs', refusal(sq8l), 'PANEL_NO_CONTROLS: sq8l.json: no control to lay out (the descriptor states no controls); its 512 programs are not drawn, a program list is not a control');
+check('arm: no controls and no programs is refused too, without the programs clause', refusal(descriptor([])), 'PANEL_NO_CONTROLS: sq8l.json: no control to lay out (the descriptor states no controls)');
+check('arm: controls that are all hidden are refused by code', refusal(descriptor([{ ...travel('dB'), hidden: true }])), 'PANEL_NO_CONTROLS: sq8l.json: no control to lay out (its 1 controls are all hidden)');
+const dir = mkdtempSync(join(tmpdir(), 'pl31-'));
+writeFileSync(join(dir, 'sq8l.json'), JSON.stringify(sq8l));
+const cli = spawnSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), '..', 'bin/omx-panel.mjs'), 'layout', '--descriptor', join(dir, 'sq8l.json'), '--pages'], { encoding: 'utf8' });
+check('omx-panel layout --pages on it exits 1 with the code on one line and nothing on stdout', [cli.status, cli.stdout, cli.stderr.split('\n').length, cli.stderr.startsWith('omx-panel: PANEL_NO_CONTROLS: ')], [1, '', 2, true]);
 
 console.log(`panel-layout: ${n - bad}/${n} pass`);
 process.exit(bad ? 1 : 0);

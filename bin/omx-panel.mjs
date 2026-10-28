@@ -84,7 +84,7 @@ async function layout(argv) {
     const panel = opt('--panel') ? JSON.parse(readFileSync(opt('--panel'), 'utf8')) : undefined;
     x = panelLayout(descriptor, { panel, ns: opt('--ns'), where: file });
   } catch (err) {
-    process.stderr.write(`omx-panel: ${err.message}\n`);
+    process.stderr.write(`omx-panel: ${err.code ? `${err.code}: ` : ''}${err.message}\n`);
     process.exit(1);
   }
   if (argv.includes('--canonical')) process.stdout.write(panelCanonical(x));
