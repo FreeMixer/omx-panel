@@ -81,7 +81,9 @@ function readoutRange(c) {
 const choicesOf = (p) => p.points;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const ttlStr = (s) => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+const TTL_ESCAPES = { '\\': '\\\\', '"': '\\"', '\n': '\\n', '\r': '\\r', '\t': '\\t' };
+/** A Turtle short string: backslash, quote and the line breaks and tab it may not hold raw are escaped. */
+const ttlStr = (s) => `"${String(s).replace(/[\\"\n\r\t]/g, (ch) => TTL_ESCAPES[ch])}"`;
 
 /**
  * The widget a declared parameter takes when its panel names none: a toggle is a switch; a parameter with
