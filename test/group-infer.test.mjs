@@ -202,13 +202,32 @@ describe('each rule, on real plugins', () => {
     const { plugin, modgui } = load('lsp-graph-eq-x16');
     const v = inferGroups(plugin, modgui);
     assertWellFormed(v, plugin);
-    const bands = Array.from({ length: 16 }, (_, b) => `Group ${b} [3] xs_${b} xm_${b} xe_${b} g_${b}`);
+    // the symbols count from 0 and the names print frequencies: the label counts from 1, the word is the names' "Band"
+    const bands = Array.from({ length: 16 }, (_, b) => `Band ${b + 1} [3] xs_${b} xm_${b} xe_${b} g_${b}`);
     assert.deepEqual(shape(v.groups), [
       'Input [3] g_in ife_l ife_r',
       'Output [3] g_out ofe_l ofe_r bal',
       'More [5] mode slope react shift zoom',
       'Return [3] rfe_l rfe_r',
       ...bands,
+    ]);
+  });
+
+  it('3: the names give the label when they number the same groups, 1-based over 0-based symbols (swh 4 x 4 pole)', () => {
+    const v = infer('swh-phasers', 'http://plugin.org.uk/swh-plugins/fourByFourPole');
+    assert.deepEqual(shape(v.groups), ['Group 1 [3] f0 fb0', 'Group 2 [3] f1 fb1', 'Group 3 [3] f2 fb2', 'Group 4 [3] f3 fb3']);
+  });
+
+  it('3: the names\' first word and number label the band ("Band 1 gain" -> "Band 1", swh triplePara)', () => {
+    const { plugin } = load('swh-triplepara');
+    const v = inferGroups(plugin, null);
+    assertWellFormed(v, plugin);
+    assert.deepEqual(shape(v.groups), [
+      'Low [3] gain_L fc_L bw_L',
+      'Band 1 [3] gain_1 fc_1 bw_1',
+      'Band 2 [3] gain_2 fc_2 bw_2',
+      'Band 3 [3] gain_3 fc_3 bw_3',
+      'High [3] gain_H fc_H bw_H',
     ]);
   });
 
@@ -383,7 +402,7 @@ describe('the inputs', () => {
 
   it('docs/group-inference.md lists SECTION_WORDS as the module holds them', () => {
     const doc = readFileSync(join(PKG, 'docs/group-inference.md'), 'utf8');
-    const m = doc.match(/\(`SECTION_WORDS`: ([^)]*)\)/);
+    const m = doc.match(/\(`SECTION_WORDS`: ([^);]*)[);]/);
     assert.ok(m, 'the doc names SECTION_WORDS and its words');
     assert.deepEqual(m[1].split(/,\s*/).map((w) => w.trim()), [...SECTION_WORDS]);
   });

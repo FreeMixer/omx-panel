@@ -67,10 +67,12 @@ title).
    symbol numbers a band the same way on every control (`xs_9`, `g_9`) where a name may print its frequency
    ("Band gain 1K", "31.5") and number nothing:
    - a shared trailing number, when it is the only number in the name and the plugin repeats it (at least two numbers,
-     each on at least two controls): one group per number. "Frequency 1", "Gain 1", "Section 1" are the group
-     "Section 1"; the group is named after a section word among its controls' names or symbols (`SECTION_WORDS`: band,
-     section, channel, ch, osc, oscillator, voice, step, tap, stage, lfo, env, envelope, part, layer, op, operator),
-     else "Group 1". A stem is numbered only when its whole
+     each on at least two controls): one group per number. The label's number is the names' own when the
+     names number the same controls into the same groups (swh's `f0`, `fb0` are "Frequency 1", "Feedback 1": "Group
+     1"), else the pass's, counted from 1 when a symbol counts from 0. Its word is the first word every name of the
+     group starts with ("Band 1 gain" -> "Band 1"), else a section word among its controls' names or symbols
+     (`SECTION_WORDS`: band, section, channel, ch, osc, oscillator, voice, step, tap, stage, lfo, env, envelope,
+     part, layer, op, operator; so "Frequency 1", "Gain 1", "Section 1" are "Section 1"), else "Group". A stem is numbered only when its whole
      pattern is: every control whose word after the stem starts with a digit lands in a numbered group, or the pass
      places none of that stem's controls ("Band gain 16" ... "Band gain 1K" is left to the next pass). And the numbers
      must be one numbering: the pattern is the number set most stems carry; a stem with it, or with it less its last
