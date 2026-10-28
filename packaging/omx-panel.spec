@@ -66,12 +66,16 @@ make test
 %doc README.md docs/
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
+%{_bindir}/omx-complement-sync
 %{_mandir}/man1/omx-panel.1*
 %{_mandir}/man1/omx-modgui-sync.1*
-# installed, never enabled: no preset names it; `systemctl enable omx-modgui-sync` is the choice
+%{_mandir}/man1/omx-complement-sync.1*
+# installed, never enabled: no preset names them; `systemctl enable omx-modgui-sync` (omx-complement-sync) is the choice
 %{_unitdir}/omx-modgui-sync.service
+%{_unitdir}/omx-complement-sync.service
 %dir %{_unitdir}/plugin-qualify-sync.service.d/
 %{_unitdir}/plugin-qualify-sync.service.d/omx-modgui-sync.conf
+%{_unitdir}/plugin-qualify-sync.service.d/omx-complement-sync.conf
 %dir %{_sysconfdir}/omx/
 %config(noreplace) %{_sysconfdir}/omx/modgui-sync.conf
 %{_datadir}/omx-panel/
