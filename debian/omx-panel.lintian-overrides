@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# omx-modgui-sync.service is WantedBy=plugin-qualify-sync.service on purpose: `systemctl enable omx-modgui-sync`
+# (an opt-in the package never makes) links it under that unit, so the GUI sync starts after every plugin scan and a
+# plugin installed, upgraded or removed is followed by its GUI. No other target gives that order.
+omx-panel: systemd-service-file-refers-to-unusual-wantedby-target plugin-qualify-sync.service [usr/lib/systemd/system/omx-modgui-sync.service]
