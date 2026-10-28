@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.4.3
+Version: 0.5.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -79,6 +79,24 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.5.0-1
+- A CLAP control whose id is a number is keyed p<id>, so two parameters of
+  one name no longer stop the layout; the published keys of scanned CLAP
+  plugins change (#27).
+- omx-panel modgui adds rdfs:seeAlso <modgui.ttl> to the bundle's
+  manifest.ttl when the manifest exists and lacks it, and --check refuses a
+  manifest without it (#28).
+- A choice control without values is refused by code
+  (MODGUI_CHOICE_NO_VALUES) naming the control (#30).
+- A descriptor with no control to lay out is refused by code and the refusal
+  says why (#31, the omx-panel half).
+- A trigger control is left off the MOD GUI face and named on stderr; the
+  rest is drawn (#47).
+- omx-modgui-sync.service no longer carries WantedBy=plugin-qualify-
+  sync.service: a drop-in on plugin-qualify-sync.service starts it after
+  each scan when it is enabled, so a scan that begins while a GUI run is
+  queued still gets its GUI run (#61).
+
 * Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.3-1
 - A control name holding a line break, a return or a tab no longer writes invalid
   Turtle: lilv refused the whole bundle (#51). The DEB of 0.4.2 was not
