@@ -45,7 +45,9 @@ The rules place the **placeable controls**: control input ports, not marked `not
   guessed layout. `attempt` is what the rules found, for a diagnosis only.
 
 Groups are ordered by their first control's `lv2:index`, the order the plugin's author chose and the touchscreen shows
-today; `displayPriority` counts down from the number of groups, so the first group is shown first.
+today. `displayPriority` (higher is shown first): when every group the plugin states itself carries an
+`lv2:displayPriority`, those keep theirs and the generated groups follow below the lowest of them, in port order;
+otherwise every group counts down from the number of groups, in port order, so the first group is shown first.
 
 ## The rules, in this order
 
@@ -53,7 +55,8 @@ Each rule sees only the controls no earlier rule placed, and never moves a contr
 never makes a group of fewer than two controls, nor one holding every control (that is the plugin as it is, with a
 title).
 
-1. **The plugin's own `pg:group` assignments**, partial or whole. The plugin's node, symbol, name and priority are kept;
+1. **The plugin's own `pg:group` assignments**, partial or whole. The plugin's node, symbol and name are kept, and its
+   priority as above;
    a node with no `lv2:symbol` gets one from its IRI.
 2. **`lv2:designation`**, through the LV2 parameters vocabulary: attack, decay, sustain, release, hold and delay are an
    Envelope (attack, release and hold are Dynamics in a plugin that also designates a threshold or a ratio);
