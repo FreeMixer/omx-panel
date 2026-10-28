@@ -46,11 +46,11 @@ function rig() {
   const r = { dir, lv2: join(dir, 'lv2'), out: join(dir, 'modgui'), state: join(dir, 'state'), desc: join(dir, 'desc'), bin: join(dir, 'bin') };
   for (const d of [r.lv2, r.out, r.desc, r.bin]) mkdirSync(d, { recursive: true });
   symlinkSync(join(ROOT, 'dist/bin/omx-panel.mjs'), join(r.bin, 'omx-panel'));
-  r.run = (args = ['--no-scan'], lv2path = `${r.lv2}:${r.out}`) =>
-    spawnSync(SYNC, args, {
-      encoding: 'utf8',
-      env: { ...process.env, PATH: `${r.bin}:${process.env.PATH}`, LV2_PATH: lv2path, MODGUI_DIR: r.out, STATE_DIR: r.state, DESCRIPTOR_DIRS: r.desc },
-    });
+  r.run = (args = ['--no-scan'], lv2path = `${r.lv2}:${r.out}`, extra = {}) => {
+    const env = { ...process.env, PATH: `${r.bin}:${process.env.PATH}`, LV2_PATH: lv2path, MODGUI_DIR: r.out, STATE_DIR: r.state, DESCRIPTOR_DIRS: r.desc, ...extra };
+    if (lv2path === null) delete env.LV2_PATH; // null: the variable is not set
+    return spawnSync(SYNC, args, { encoding: 'utf8', env });
+  };
   r.bundles = () => readdirSync(r.out).filter((n) => n.endsWith('.lv2'));
   return r;
 }
@@ -104,12 +104,12 @@ test('a bundle without our marker is left alone, and one of ours goes with its p
   descriptor(r.desc, 'testgain.json', 'urn:test:gain', 'scanned-lv2-compressor.json', (d) => {
     d.controls = d.controls.filter((c) => c.id === 'makeup');
   });
-  mkdirSync(join(r.out, 'testgain.lv2'));
-  writeFileSync(join(r.out, 'testgain.lv2', 'theirs.txt'), 'not ours');
+  mkdirSync(join(r.out, 'omx-modgui-testgain.lv2'));
+  writeFileSync(join(r.out, 'omx-modgui-testgain.lv2', 'theirs.txt'), 'not ours');
   const blocked = r.run();
-  assert.match(blocked.stdout, /skip urn:test:gain: .*testgain\.lv2 is not ours/);
-  assert.deepEqual(readdirSync(join(r.out, 'testgain.lv2')), ['theirs.txt']);
-  rmSync(join(r.out, 'testgain.lv2'), { recursive: true });
+  assert.match(blocked.stdout, /skip urn:test:gain: .*omx-modgui-testgain\.lv2 is not ours/);
+  assert.deepEqual(readdirSync(join(r.out, 'omx-modgui-testgain.lv2')), ['theirs.txt']);
+  rmSync(join(r.out, 'omx-modgui-testgain.lv2'), { recursive: true });
   assert.equal(r.run().status, 0);
   assert.equal(r.bundles().length, 1);
   rmSync(join(r.lv2, 'testgain.lv2'), { recursive: true });
@@ -135,4 +135,63 @@ test('--dry-run writes nothing', { skip }, () => {
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /would write .*testgain\.lv2 for urn:test:gain/);
   assert.deepEqual(r.bundles(), []);
+});
+
+test('the bundles may share a folder with plugins: a plugin there still gets a GUI, under a name of its own', { skip }, () => {
+  const r = rig();
+  bundle(r.out, 'testgain', 'urn:test:gain', 'Test Gain'); // a hand-installed plugin in the folder the GUIs go to
+  descriptor(r.desc, 'testgain.json', 'urn:test:gain', 'scanned-lv2-compressor.json', (d) => {
+    d.controls = d.controls.filter((c) => c.id === 'makeup');
+  });
+  const run = r.run(['--no-scan'], r.out);
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.match(run.stdout, /wrote .*omx-modgui-testgain\.lv2 for urn:test:gain/);
+  assert.deepEqual(readdirSync(join(r.out, 'testgain.lv2')).sort(), ['manifest.ttl', 'testgain.so'.replace('.so', '.ttl')].sort());
+  const again = r.run(['--no-scan'], r.out);
+  assert.match(again.stdout, /0 written, 1 up to date/, 'our own bundle is not mistaken for the plugin shipping a GUI');
+  assert.equal(r.bundles().filter((n) => n.startsWith('omx-modgui-')).length, 1);
+});
+
+test('--check without LV2_PATH reads the search list plugin-hostd and plugin-qualify read, and says where the GUIs go', () => {
+  const r = rig();
+  const run = r.run(['--check'], null);
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /^LV2 search list \(from plugin-hostd's default\):$/m);
+  assert.match(run.stdout, /^ {2}\/usr\/lib64\/lv2\n {2}\/usr\/lib\/lv2\n {2}\/usr\/local\/lib\/lv2$/m);
+  assert.match(run.stdout, /modgui: it is NOT on that list/);
+});
+
+test('--check lists the CLAP search list, CLAP_PATH first, then the specification\'s', () => {
+  const r = rig();
+  const run = r.run(['--check'], '/x', { CLAP_PATH: '/opt/clap-a:/opt/clap-b', HOME: '/home/nobody' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /CLAP search list .*:\n {2}\/opt\/clap-a\n {2}\/opt\/clap-b\n {2}\/home\/nobody\/\.clap\n {2}\/usr\/lib\/clap$/m);
+});
+
+test('--check reads the LV2_PATH the units of the programs that show the GUIs run with, and names the one that lacks the folder', () => {
+  const r = rig();
+  const fake = (theirs) => {
+    writeFileSync(join(r.bin, 'systemctl'), `#!/bin/sh
+case "$1" in
+  cat) [ "$2" = mod-ui.service ] ;;
+  show) echo "HOME=/root LV2_PATH=${theirs}" ;;
+esac
+`, { mode: 0o755 });
+  };
+  fake('/usr/lib/lv2');
+  const missing = r.run(['--check'], r.lv2);
+  assert.match(missing.stdout, /^mod-ui: reads LV2_PATH and .*modgui is NOT on it; it will not show these GUIs until it is$/m);
+  assert.doesNotMatch(missing.stdout, /^mod-host:/m, 'a unit that does not exist is not reported');
+  fake(`/usr/lib/lv2:${r.out}`);
+  assert.match(r.run(['--check'], r.lv2).stdout, /^mod-ui: reads LV2_PATH and .*modgui is on it$/m);
+});
+
+test('the unit runs after plugin-qualify-sync once enabled, under limits, and there is no apt hook', () => {
+  const unit = readFileSync(join(ROOT, 'systemd/omx-modgui-sync.service'), 'utf8');
+  assert.match(unit, /^After=.*\bplugin-qualify-sync\.service\b/m, 'it waits for the sync that writes its descriptors');
+  assert.match(unit, /^WantedBy=.*\bplugin-qualify-sync\.service\b/m, 'enabled, it starts with that sync');
+  for (const limit of ['CPUQuota=', 'MemoryMax=', 'TasksMax=', 'IOSchedulingClass=idle', 'RestrictRealtime=yes', 'Nice=19']) assert.ok(unit.includes(limit), limit);
+  assert.doesNotMatch(unit, /^WantedBy=.*\bdefault\.target\b/m);
+  assert.equal(existsSync(join(ROOT, 'etc/apt')), false, 'the Debian-only apt hook is gone: the sync follows the standard triggers');
+  assert.doesNotMatch(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /apt/);
 });
