@@ -10,7 +10,7 @@
  *                                                        serialisation, or its pages of eight)
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
- *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose]
+ *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
  *                                                        tools/lv2-complement.mjs: a replacing LV2 bundle with the inferred
  *                                                        port groups, for each installed bundle that needs one
  *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
@@ -36,7 +36,7 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages]\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--check]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
-  + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose]\n'
+  + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
   + '       omx-panel look [--check]\n'
   + '       omx-panel vocabulary [<package>/<name>]...\n'
   + '       omx-panel descriptors --installed\n';

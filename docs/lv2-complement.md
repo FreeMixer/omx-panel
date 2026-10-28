@@ -7,7 +7,7 @@
 the programs that read plugins through lilv, the Zynthian touchscreen's jalv first: plugin-hostd#218, lane G2.
 
 ```
-omx-panel complement --out <dir> [--lv2-path <a:b:...>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run] [--verbose]
+omx-panel complement --out <dir> [--lv2-path <a:b:...>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
 omx-complement-sync [--dry-run] [--verbose] | --check
 ```
 
@@ -64,8 +64,9 @@ For an installed bundle `<dir>/<name>.lv2` holding at least one plugin whose ver
 
   The first three lines decide: a bundle whose marker names the same installed bundle, writer and content hash is up
   to date and is not written again (a second run writes nothing, byte for byte the same tree). A changed installed
-  file (an upgrade) or a changed rule rewrites it. A directory of our name **without** the marker is never written.
-  Deleting the bundle is the whole removal; lilv loads the installed bundle again.
+  file (an upgrade) or a changed rule rewrites it (`replaced …`, the line saying which changed). A directory of our
+  name **without** the marker is never written. Deleting the bundle is the whole removal; lilv loads the installed
+  bundle again.
 
 `lv2:displayPriority` is what zynthian-ui reads on a group node (`zyngine/zynthian_lv2.py`). It is not in the LV2
 vocabulary (the port-props extension defines `pprops:displayPriority`, for a port), so `sord_validate` reports it as an
@@ -87,15 +88,50 @@ not give on the installed files.
     two installed bundles: lilv picks between them by version, and the restatement cannot say which it replaces),
     `port-symbol-ambiguous` (two ports of one symbol);
   - `dynamic-manifest`, `data-outside-bundle` (a plugin's `rdfs:seeAlso` outside its bundle), `ports-split-across-files`.
-- A bundle of ours no longer wanted (its installed bundle is gone or needs no groups now) is named `stale` and left in
-  place: removing it is lane G3's.
+## What is removed
+
+A bundle of ours left in place past its time does harm: its bumped version keeps winning, so it would hide an upgraded
+plugin behind the old restatement, or keep a removed one listed with a library that is gone. So each run, after
+writing, removes every bundle of ours it did not find up to date or write again, as omx-modgui-sync removes its GUIs,
+one line each naming the bundle and why (`removed <bundle>: <installed bundle>: <reason>`):
+
+- its installed bundle is gone, or no longer on the search list (the package was removed);
+- its installed bundle changed (the content hash in the marker no longer matches) into one the writer refuses (the
+  reason is the refusal's), or that declares no plugin;
+- none of the installed bundle's plugins comes out `grouped` on the current rules (the rules changed, or the upgrade
+  brought the plugin's own groups).
+
+An installed bundle that changed and still has a plugin to group is written again, which replaces ours whole. Ours is
+a directory named `omx-complement-*.lv2` that holds the marker, and only that is ever removed: a directory without the
+marker, one of another name, or a symbolic link to a marked directory is left alone. With `--only`, only the bundles
+written for the bundles named are considered. Once ours is deleted lilv loads the installed bundle again (the test
+proves it through python3-lilv, and `lv2info` shows it, below).
+
+`--dry-run` prints `would remove …` for each and removes nothing. `--check` writes and removes nothing and names each
+bundle of ours that is `stale` (the sync removes it) or `out of date` (the sync writes it again; a bundle not written
+yet is named `missing` and is not stale); it exits 3 when there is one, 0 when there is none, 1 when it cannot run, 2
+on usage.
 
 ## Where it runs, and whether lilv sees it
 
 `omx-complement-sync` (`bin/`) is omx-modgui-sync's twin and runs beside it: the same shell shape calling omx-panel,
 the same `/etc/omx/modgui-sync.conf`, the same directories, the same opt-in unit (`omx-complement-sync.service`,
 installed and never enabled) queued by the same drop-in on `plugin-qualify-sync.service` after each scan, the same
-`--dry-run` and `--check`. It writes its bundles where omx-modgui-sync writes its GUIs: `MODGUI_DIR`, by default
+`--dry-run` and `--check`.
+
+What triggers a run, once the unit is enabled: plugin-qualify's package triggers (rpm `%transfiletriggerin` and
+`%transfiletriggerpostun`, dpkg `interest-noawait`) on `/usr/lib/lv2`, `/usr/lib64/lv2` and `/usr/local/lib/lv2` fire
+once per package transaction that installs, upgrades or removes a file there, and start `plugin-qualify-sync.service`;
+its path unit does the same for a change in those folders (and the ones `qualify.conf` adds) outside a package
+manager; its timer runs it after boot. When that scan finishes, the drop-in
+(`plugin-qualify-sync.service.d/omx-complement-sync.conf`) queues `omx-complement-sync.service` from `ExecStartPost`,
+so a removal or an upgrade is followed by the removal or the rewrite of our bundle within the scan's minute of quiet
+plus its run. Two limits: `ExecStartPost` runs only when the scan exits 0 (plugin-qualify-sync exits 0 whatever its
+verdicts and 2 when it cannot run, and then this waits for the next scan); and in a transaction without systemd (an
+image build, a chroot) the trigger runs the scan directly, with no unit and no drop-in, so the complement follows at the
+next boot (the unit is `WantedBy=multi-user.target`). Our own writes and removals in `/usr/local/lib/lv2` are changes
+the path unit sees too: they queue one more scan, after which the complement finds everything up to date and changes
+nothing. It writes its bundles where omx-modgui-sync writes its GUIs: `MODGUI_DIR`, by default
 `/usr/local/lib/lv2` for root (`~/.lv2` for a user); its work files go under `STATE_DIR` (`/var/lib/omx/modgui-sync`),
 outside the LV2 path, and each bundle is moved in whole.
 
@@ -114,7 +150,12 @@ a confident grouping (G1's figures); 37 bundles written, holding 466 plugins (84
 (LSP's restated bundle is 22 MB, its installed TTL 16.9 MB). With the bundles on `LV2_PATH`, `lv2ls` lists the same 979
 plugins whatever the order of the search list; `lv2info` and python3-lilv load each complemented plugin from ours, at
 the bumped version, with its groups, and instantiate it from the installed library; deleting a bundle loads the
-installed one again. The tests (`test/lv2-complement.test.mjs`) build installed-shaped bundles from G1's fixtures
+installed one again. The removal, with `lv2info` over a scratch `LV2_PATH` (ours first, a copy of the installed
+`triple_para-swh.lv2` second): a copy upgraded into one the writer refuses (`lv2:microVersion "beta"`) still loads ours
+at 0.1 until the sync, which names it `stale` under `--check` (exit 3) and then removes it ("it changed, and it is
+refused now (version-unreadable …)"), after which `lv2info` loads the installed copy with no groups; with the copy
+deleted (the package removed) `lv2ls` still lists the plugin from ours, its binary gone, until the sync removes ours
+("its installed bundle … is gone") and the plugin is no longer listed. The tests (`test/lv2-complement.test.mjs`) build installed-shaped bundles from G1's fixtures
 (`test/fixtures/lv2-groups`) and prove each of these points, the lilv ones through python3-lilv when it is installed.
 
 ## Open for review

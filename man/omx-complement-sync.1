@@ -19,19 +19,21 @@ The installed bundle is never touched. Deleting the written bundle is the whole 
 .PP
 Nothing is written for a bundle none of whose plugins needs groups: a plugin that carries its own, fits one screen of four, or has no confident grouping is left exactly as it is.
 .PP
-A bundle whose marker file .omx-complement-sync names the same installed bundle, the same content hash and the same writer is left as it is. A bundle of that name without the marker is never written. A marked bundle no longer wanted is named as stale and left in place.
+A bundle whose marker file .omx-complement-sync names the same installed bundle, the same content hash and the same writer is left as it is; one whose installed files or rules changed is written again. A bundle of that name without the marker is never written.
+.PP
+A bundle of ours no longer wanted is removed, one line naming it and why: its installed bundle is gone (the package was removed) or no longer on the search list, changed into one that is refused or declares no plugin, or none of its plugins comes out grouped on the current rules. lilv then loads the installed bundle again. Only a directory named omx-complement-*.lv2 holding the marker is ever removed; a directory without the marker, of another name, or a symbolic link is left alone.
 .PP
 A bundle the restatement cannot carry is refused, named with its reason, and never fails the run: TTL the reader cannot parse, a version that is not an integer or is at lilv's ceiling, more than one version or binary for a plugin, a plugin declared in more than one installed bundle, a dynamic manifest, a data file outside the bundle.
 .SH OPTIONS
 .TP
 .B --dry-run
-say what would be written, and change nothing
+say what would be written and removed, and change nothing
 .TP
 .B --verbose
 also print each plugin's verdict: grouped (with its groups), nothing to do or no confident grouping (with the reason)
 .TP
 .B --check
-change nothing and report: the LV2 search list and where it came from, whether MODGUI_DIR is on it, and whether the LV2_PATH that the mod-host and mod-ui units run with holds MODGUI_DIR
+change nothing and report: the LV2 search list and where it came from, whether MODGUI_DIR is on it, whether the LV2_PATH that the mod-host and mod-ui units run with holds MODGUI_DIR, and each bundle of ours that is stale (a sync removes it) or out of date (a sync writes it again); a bundle not written yet is named missing and is not stale
 .SH ENVIRONMENT
 .TP
 .B LV2_PATH
@@ -48,17 +50,20 @@ the work files, omx-modgui-sync's (default /var/lib/omx/modgui-sync; $XDG_DATA_H
 KEY=value lines for the variables above, read by the unit, shared with omx-modgui-sync
 .TP
 .I omx-complement-sync.service
-runs the sync once; installed but not enabled (systemctl enable omx-complement-sync). Enabled, it runs at boot and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-complement-sync.conf, queues it from ExecStartPost when the unit is enabled).
+runs the sync once; installed but not enabled (systemctl enable omx-complement-sync). Enabled, it runs at boot and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-complement-sync.conf, queues it from ExecStartPost when the unit is enabled); plugin-qualify's package triggers start that scan once per package transaction in the standard LV2 folders, so an install, upgrade or removal is followed by this run.
 .SH EXIT STATUS
 .TP
 .B 0
-the run finished, whatever it refused; or --check reported
+the run finished, whatever it refused or removed; or --check found no bundle of ours stale or out of date
 .TP
 .B 1
-the run could not start
+the run could not start (omx-panel missing, MODGUI_DIR not writable); or --check could not read the bundles
 .TP
 .B 2
 usage error
+.TP
+.B 3
+--check only: at least one bundle of ours is stale (a sync removes it) or out of date (a sync writes it again), each named on its own line
 .SH SEE ALSO
 .BR omx-modgui-sync (1),
 .BR omx-panel (1)
