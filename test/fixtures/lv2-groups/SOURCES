@@ -5,8 +5,8 @@
 # installed on a Fedora 44 desk (/usr/lib64/lv2), 2026-10-28. The files are the plugins' authors', under the licence
 # each package states (below, the RPM licence tag in full; the plugin's own doap:license is in its TTL). None of these
 # files carried a licence header to keep; they are copied whole and unchanged. Ours (omx-*) carry our own header.
-# One edit, ours: omx-eq8.ttl's three group nodes gain lv2:displayPriority 30, 20 and 10, because no installed plugin
-# states a group priority and the rules must be shown keeping one.
+# One synthetic fixture, ours: synthetic/eq8-priorities.ttl is omx-eq8.ttl with lv2:displayPriority 30, 20 and 10 on
+# its three group nodes, because no installed plugin states a group priority (its header says so).
 #
 # directory          files                       bundle                    package (Fedora 44)                                   licence
 swh-delayorama       plugin.ttl                  delayorama-swh.lv2        lv2-swh-plugins-1.0.15-25.20150723.5098e09git         GPL-3.0-only
@@ -29,3 +29,4 @@ lsp-graph-eq-x16     graph_equalizer_x16_stereo.ttl  lsp-plugins.lv2  lsp-plugin
 ams-advenv           advenv.ttl                  ams.lv2                   ams-lv2-1.2.2-3                                       GPL-2.0-or-later
 omx-comp             omx-comp.ttl modgui.ttl     omx-comp.lv2              omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
 omx-eq8              omx-eq8.ttl                 omx-eq8.lv2               omx-plugins-lv2-0.15.1-1                              GPL-3.0-or-later (ours)
+synthetic            eq8-priorities.ttl          (synthetic, from omx-eq8.lv2)  omx-plugins-lv2-0.15.1-1                 GPL-3.0-or-later (ours)

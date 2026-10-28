@@ -72,6 +72,11 @@ describe('a plugin that already carries its groups is nothing to do', () => {
     assert.ok(HOST_DESIGNATIONS.has(outside[0].designation));
   });
 
+  const eq8 = join(INSTALLED, 'omx-eq8.lv2/omx-eq8.ttl');
+  it('the omx-eq8 fixture is the installed file byte for byte', { skip: !existsSync(eq8) && 'omx-plugins is not installed here' }, () => {
+    assert.ok(readFileSync(join(FIXTURES, 'omx-eq8/omx-eq8.ttl')).equals(readFileSync(eq8)));
+  });
+
   it('a third party\'s complete groups (x42 matrixmixer)', () => {
     assert.deepEqual(infer('x42-matrixmixer'), { outcome: 'nothing-to-do', reason: 'own-groups-complete' });
   });
@@ -117,9 +122,9 @@ describe('each rule, on real plugins', () => {
     ]);
   });
 
-  it('1: own groups that state lv2:displayPriority keep it; generated groups follow below the lowest (omx-eq8)', () => {
-    // no installed plugin states a group priority: the omx-eq8 fixture copy adds 30, 20 and 10 (SOURCES)
-    const { plugin } = load('omx-eq8');
+  it('1: own groups that state lv2:displayPriority keep it; generated groups follow below the lowest (eq8, synthetic)', () => {
+    // no installed plugin states a group priority: synthetic/eq8-priorities.ttl is omx-eq8 with 30, 20 and 10 added
+    const { plugin } = load('synthetic');
     assert.deepEqual(inferGroups(plugin, null), { outcome: 'nothing-to-do', reason: 'own-groups-complete' });
     const hpfLost = { ...plugin, ports: plugin.ports.map((p) => (p.group === 'urn:openmixer:eq8#hpf' ? { ...p, group: undefined } : p)) };
     const v = inferGroups(hpfLost, null);
@@ -127,8 +132,8 @@ describe('each rule, on real plugins', () => {
     assert.deepEqual(v.groups.map((g) => [g.name, g.rule, g.displayPriority]), [['HPF', 3, 9], ['LPF', 1, 10], ['Bands', 1, 30]]);
   });
 
-  it('1: when one own group states no priority, every group counts down in port order (omx-eq8, bands unstated)', () => {
-    const { plugin } = load('omx-eq8');
+  it('1: when one own group states no priority, every group counts down in port order (eq8, bands unstated)', () => {
+    const { plugin } = load('synthetic');
     const groups = { ...plugin.groups, 'urn:openmixer:eq8#bands': { ...plugin.groups['urn:openmixer:eq8#bands'], displayPriority: undefined } };
     const ports = plugin.ports.map((p) => (p.group === 'urn:openmixer:eq8#hpf' ? { ...p, group: undefined } : p));
     const v = inferGroups({ ...plugin, ports, groups }, null);
