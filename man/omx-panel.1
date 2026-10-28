@@ -11,6 +11,10 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .B omx-panel
 .B vocabulary
 .RI [ package / name ]...
+.br
+.B omx-panel
+.B descriptors
+.B \-\-installed
 .SH DESCRIPTION
 .B omx-panel validate
 reads each skin given, a
@@ -26,6 +30,10 @@ given. A line starts with
 .B ok
 or, for a source that is not installed,
 .BR FAIL .
+.PP
+.B omx-panel descriptors \-\-installed
+prints the path of each installed plugin descriptor, one per line, found under every contract directory
+whatever contract major is installed.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -36,6 +44,10 @@ at least one skin is not valid; a source is not installed
 .TP
 .B 2
 usage error, or a file could not be read
+.TP
+.B 3
+.B modgui
+has nothing to draw: the descriptor has no visible control (a synth whose parameters are not LV2 ports). Not a fault; a sweep records a skip.
 .SH ENVIRONMENT
 .TP
 .B OMX_CONTRACT_PATH
@@ -48,9 +60,6 @@ an omx-contract.schema.json read in place of the installed one
 .TP
 .B PLUGIN_HOSTD_TABLES
 a directory holding lv2.json, read in place of plugin-hostd's installed one
-.TP
-.B OMX_PARAM_CONTRACT_H
-an omx_param_contract.h read in place of the installed one
 .SH FILES
 .TP
 .I /usr/share/omx-panel/schema/skin-package.schema.json
