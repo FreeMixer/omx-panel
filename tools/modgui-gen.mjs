@@ -27,7 +27,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOOK_JSON, LOOK_TOKENS } from './look.mjs';
-import { panelLayout } from './panel-description.mjs';
+import { keyOf, panelLayout } from './panel-description.mjs';
 import { canvas, disc, encodePng, rgbOf, roundRect, segment } from './raster.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
@@ -51,6 +51,12 @@ export const GEOMETRY = Object.freeze({
   radius: 10, sectionRadius: 6, filmFrames: 65, thumbScale: 0.5,
 });
 
+/** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
+ * the descriptor's to say, an index is not it, so the generator refuses and names the control. */
+export class ChoiceNoValues extends Error {
+  code = 'MODGUI_CHOICE_NO_VALUES';
+}
+
 /**
  * A descriptor control as the travel this generator draws: `{ kind, min, max, def, points? }`, `kind` `toggle`
  * (0..1), `integer` (a choice, or a travel of step 1) or none (a continuous travel); a choice's `points` are its
@@ -61,6 +67,7 @@ export function travelOf(c) {
   if (c.readonly) return undefined;
   if (c.kind === 'toggle') return { kind: 'toggle', min: 0, max: 1, def: c.default ? 1 : 0 };
   if (c.kind === 'choice') {
+    if (!Array.isArray(c.values)) throw new ChoiceNoValues(`modgui-gen: choice control '${c.symbol ?? c.id ?? c.name}' states no \`values\`; the descriptor must say the value the plugin reads for each of its ids`);
     const points = c.values.map((value, k) => ({ value, label: c.labels?.[k] ?? c.ids[k] }));
     const at = c.ids.indexOf(c.default);
     return { kind: 'integer', min: points[0].value, max: points[points.length - 1].value, def: at >= 0 ? c.values[at] : c.default, points };
@@ -163,7 +170,7 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
     }).map((symbol) => {
       if (seen.has(symbol)) throw new Error(`modgui-gen: '${symbol}' is in two sections`);
       seen.add(symbol);
-      const c = controls.find((x) => (x.symbol ?? x.id) === symbol);
+      const c = controls.find((x) => keyOf(x) === symbol);
       if (!c) throw new Error(`modgui-gen: panel names '${symbol}', which '${stem}' has no control for`);
       if (c.readonly) {
         if (panel.widgets?.[symbol] !== undefined) throw new Error(`modgui-gen: '${symbol}' is a readout and takes no widget`);
@@ -478,7 +485,7 @@ function walk(dir, base) {
     e.isDirectory() ? walk(join(dir, e.name), base) : [relative(base, join(dir, e.name))]).sort();
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
@@ -507,6 +514,10 @@ export function main(argv) {
   try {
     made = generateModgui(descriptor, { panel, stem, source }, look);
   } catch (err) {
+    if (err.code === 'MODGUI_CHOICE_NO_VALUES') {
+      console.error(`${err.code}: ${err.message}`);
+      process.exit(1);
+    }
     if (err.code !== 'MODGUI_NOTHING_TO_DRAW') throw err;
     console.error(err.message);
     process.exit(3);
