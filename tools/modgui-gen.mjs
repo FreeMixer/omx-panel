@@ -490,6 +490,17 @@ function walk(dir, base) {
     e.isDirectory() ? walk(join(dir, e.name), base) : [relative(base, join(dir, e.name))]).sort();
 }
 
+const SEE_ALSO = 'http://www.w3.org/2000/01/rdf-schema#seeAlso';
+
+/** Whether a bundle manifest points a lilv host at modgui.ttl (`rdfs:seeAlso <modgui.ttl>`, any spelling of the predicate). */
+export const manifestSeesModgui = (text) => /(?:rdfs:seeAlso|rdf-schema#seeAlso>)[^.;]*<modgui\.ttl>/.test(text);
+
+/** The manifest with `<uri> rdfs:seeAlso <modgui.ttl>` added, or unchanged when it already has it. */
+export function withModguiSeeAlso(text, uri) {
+  if (manifestSeesModgui(text)) return text;
+  return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
+}
+
 const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
@@ -515,6 +526,7 @@ export function main(argv) {
   let stale = 0;
   const dir = resolve(out);
   const shown = (p) => relative(process.cwd(), join(dir, p));
+  const manifest = join(dir, 'manifest.ttl');
   let made;
   try {
     made = generateModgui(descriptor, { panel, stem, source }, look);
@@ -541,6 +553,10 @@ export function main(argv) {
         stale++;
       }
     }
+    if (existsSync(manifest) && !manifestSeesModgui(readFileSync(manifest, 'utf8'))) {
+      console.error(`modgui: MANIFEST ${shown('manifest.ttl')} has no rdfs:seeAlso <${MODGUI_TTL}>, so a lilv host never reads the MOD GUI (run \`node tools/modgui-gen.mjs\`)`);
+      stale++;
+    }
     const want = new Set(made.map(([p]) => p));
     for (const p of walk(join(dir, MODGUI_DIR), dir)) {
       if (!want.has(p)) {
@@ -554,6 +570,15 @@ export function main(argv) {
       mkdirSync(dirname(join(dir, p)), { recursive: true });
       writeFileSync(join(dir, p), bytes);
       console.log(`modgui: wrote ${shown(p)}`);
+    }
+    // a lilv host reads modgui.ttl only if the bundle manifest points at it; with no manifest nothing is created
+    if (existsSync(manifest)) {
+      const text = readFileSync(manifest, 'utf8');
+      const next = withModguiSeeAlso(text, resolvePanel(descriptor, { panel, stem }).uri);
+      if (next !== text) {
+        writeFileSync(manifest, next);
+        console.log(`modgui: added rdfs:seeAlso <${MODGUI_TTL}> to ${shown('manifest.ttl')}`);
+      }
     }
   }
   if (check) {
