@@ -167,6 +167,39 @@ test('a bundle manifest gets rdfs:seeAlso <modgui.ttl> once; --check refuses one
   assert.equal(readFileSync(manifest, 'utf8'), said);
 });
 
+test('a trigger control beside a normal one is left off the face and reported: the normal one is drawn (the ZLFO shape)', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.controls.push({ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' });
+  const panel = read('omx-delay.panel.json');
+  panel.sections[0].controls.push('cv_trigger');
+  const r = resolvePanel(d, { panel, stem: 'omx-delay' });
+  assert.deepEqual(r.skipped, ['cv_trigger']);
+  assert.ok(!r.sections.flatMap((s) => s.controls).some((c) => c.symbol === 'cv_trigger'));
+  assert.ok(r.sections[0].controls.length > 0);
+  const ttl = new Map(gen(d, panel)).get('modgui.ttl').toString();
+  assert.doesNotMatch(ttl, /cv_trigger/);
+  // with no declared panel the layout lists it and the generator still draws the rest
+  const auto = resolvePanel(d, { stem: 'omx-delay' });
+  assert.deepEqual(auto.skipped, ['cv_trigger']);
+  assert.ok(auto.sections.flatMap((s) => s.controls).length > 0);
+  // the CLI says so on stderr and exits 0
+  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  writeFileSync(join(dir, 'p.json'), JSON.stringify(panel));
+  const run = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stderr, /^modgui: skipped trigger control 'cv_trigger'\n$/);
+});
+
+test('a descriptor whose only control is a trigger has nothing to draw: exit 3', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.controls = [{ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' }];
+  assert.throws(() => resolvePanel(d, { stem: 'omx-delay' }), (err) => err instanceof NothingToDraw);
+  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
+  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
+  assert.equal(cli('--descriptor', join(dir, 'd.json'), '--out', join(dir, 'x.lv2')).status, 3);
+});
+
 test('a choice with ids and labels and no values is refused by code, naming the control, not a TypeError', () => {
   const d = read('omx-delay.descriptor.json');
   const choice = { symbol: 'mod_source', id: 'mod_source', name: 'Mod source', kind: 'choice', ids: ['a', 'b', 'c'], labels: ['A', 'B', 'C'], default: 'a' };
