@@ -16,7 +16,7 @@ the plugin's own declaration, in the omx look, vintage or modern.
 - The sync: `omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, into
   `/usr/local/lib/lv2` (`~/.lv2` for a user), one bundle per plugin, never touching a bundle that is not its own.
   The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync` makes it run after each
-  `plugin-qualify-sync`. `omx-modgui-sync --check` says whether MOD-UI reads the folder. A plugin that cannot get a GUI never
+  `plugin-qualify-sync` (a drop-in on that unit queues it when a scan finishes, only if enabled). `omx-modgui-sync --check` says whether MOD-UI reads the folder. A plugin that cannot get a GUI never
   fails the run; `omx-modgui-sync(1)` has the directories, the exit status and the summary.
 - The skin package: its schema, `omx-panel validate`, and its facts as a module (`src/skin-package.ts`: the
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
