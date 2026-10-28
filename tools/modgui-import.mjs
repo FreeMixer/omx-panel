@@ -47,7 +47,7 @@ const key = (term) => `${term.t}:${term.v}`;
 const show = (term) => (term.t === 'iri' ? `<${term.v}>` : term.t === 'lit' ? JSON.stringify(term.v) : `_:${term.v}`);
 
 /** Every `*.ttl` at the bundle's root, parsed; each triple carries the file it was read from. */
-function readBundle(dir) {
+export function readBundle(dir) {
   const triples = [];
   for (const f of readdirSync(dir).filter((n) => n.endsWith('.ttl')).sort()) {
     const path = join(dir, f);
