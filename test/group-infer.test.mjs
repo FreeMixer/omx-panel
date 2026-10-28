@@ -116,6 +116,24 @@ describe('each rule, on real plugins', () => {
     ]);
   });
 
+  it('1: own groups that state lv2:displayPriority keep it; generated groups follow below the lowest (omx-eq8)', () => {
+    // no installed plugin states a group priority: the omx-eq8 fixture copy adds 30, 20 and 10 (SOURCES)
+    const { plugin } = load('omx-eq8');
+    assert.deepEqual(inferGroups(plugin, null), { outcome: 'nothing-to-do', reason: 'own-groups-complete' });
+    const hpfLost = { ...plugin, ports: plugin.ports.map((p) => (p.group === 'urn:openmixer:eq8#hpf' ? { ...p, group: undefined } : p)) };
+    const v = inferGroups(hpfLost, null);
+    assert.equal(v.outcome, 'grouped');
+    assert.deepEqual(v.groups.map((g) => [g.name, g.rule, g.displayPriority]), [['HPF', 3, 9], ['LPF', 1, 10], ['Bands', 1, 30]]);
+  });
+
+  it('1: when one own group states no priority, every group counts down in port order (omx-eq8, bands unstated)', () => {
+    const { plugin } = load('omx-eq8');
+    const groups = { ...plugin.groups, 'urn:openmixer:eq8#bands': { ...plugin.groups['urn:openmixer:eq8#bands'], displayPriority: undefined } };
+    const ports = plugin.ports.map((p) => (p.group === 'urn:openmixer:eq8#hpf' ? { ...p, group: undefined } : p));
+    const v = inferGroups({ ...plugin, ports, groups }, null);
+    assert.deepEqual(v.groups.map((g) => [g.name, g.displayPriority]), [['HPF', 3], ['LPF', 2], ['Bands', 1]]);
+  });
+
   it('2: lv2:designation groups the filter; rule 3 does not take those two back (mda JX10)', () => {
     const v = infer('mda-jx10');
     // glide shares nothing with any other control: the plugin is left as it is

@@ -204,7 +204,7 @@ export function inferGroups(plugin, modgui = null, options = {}) {
     prefixPasses: options.prefixPasses,
     /** @type {Map<string, number>} symbol -> the rule that placed it */
     placedBy: new Map(),
-    /** @type {{ key: string, name: string, ports: Port[], rule: number, node?: string, own?: OwnGroup }[]} */
+    /** @type {{ key: string, name: string, ports: Port[], rule: number, node?: string, own?: OwnGroup, stated?: OwnGroup }[]} */
     groups: [],
   };
   for (const rule of options.rules ?? RULES) rule.run(state, rule.n);
@@ -231,8 +231,8 @@ const indexOf = (state, symbol) => state.controls.find((p) => p.symbol === symbo
 const unplacedOf = (state) => state.controls.filter((p) => !state.placedBy.has(p.symbol));
 
 /** Place `ports` in a new group (or in `into`, an existing one). */
-function place(state, rule, { key, name, node, own }, ports, into) {
-  const g = into ?? { key, name, ports: [], rule, node, own };
+function place(state, rule, { key, name, node, own, stated }, ports, into) {
+  const g = into ?? { key, name, ports: [], rule, node, own, stated };
   for (const p of ports) {
     g.ports.push(p);
     state.placedBy.set(p.symbol, rule);
@@ -244,11 +244,20 @@ function place(state, rule, { key, name, node, own }, ports, into) {
 /** A class of controls that would be every control is no grouping at all. */
 const isEverything = (state, ports) => ports.length >= state.controls.length;
 
-/** The groups as the verdict states them: symbols unique, ports by index, display priority in port order. */
+/**
+ * The groups as the verdict states them: symbols unique, ports by index, groups in port order. Display priority:
+ * when every group the plugin states itself carries an lv2:displayPriority, those keep theirs and the generated ones
+ * follow below the lowest, in port order; otherwise all count down from the number of groups, in port order.
+ */
 function finish(state) {
   const ordered = state.groups
     .map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => a.index - b.index) }))
     .sort((a, b) => (a.ports[0]?.index ?? Infinity) - (b.ports[0]?.index ?? Infinity));
+  const ownPriority = (g) => (g.rule === 1 ? g.stated?.displayPriority : undefined);
+  const own = ordered.filter((g) => g.rule === 1);
+  const keepOwn = own.length > 0 && own.every((g) => Number.isInteger(ownPriority(g)));
+  let next = keepOwn ? Math.min(...own.map(ownPriority)) - 1 : ordered.length;
+  const priorities = ordered.map((g) => (keepOwn && g.rule === 1 ? ownPriority(g) : next--));
   const taken = new Set();
   const names = new Set();
   return ordered.map((g, i) => {
@@ -259,7 +268,7 @@ function finish(state) {
     for (let k = 2; names.has(name); k++) name = `${g.name} ${k}`;
     names.add(name);
     /** @type {Group} */
-    const out = { symbol, name, displayPriority: ordered.length - i, ports: g.ports.map((p) => p.symbol), rule: g.rule };
+    const out = { symbol, name, displayPriority: priorities[i], ports: g.ports.map((p) => p.symbol), rule: g.rule };
     if (g.node !== undefined) out.node = g.node;
     return out;
   });
@@ -290,7 +299,7 @@ function ruleOwnGroups(state, rule) {
     const info = own[node] ?? {};
     const tail = node.replace(/[/#]+$/, '').split(/[/#:]/).pop() ?? 'group';
     const symbol = info.symbol ?? lv2Symbol(tail);
-    place(state, rule, { key: symbol, name: info.name ?? humanize(symbol), node, own: info.symbol ? info : undefined }, ports);
+    place(state, rule, { key: symbol, name: info.name ?? humanize(symbol), node, own: info.symbol ? info : undefined, stated: info }, ports);
   }
 }
 
