@@ -153,13 +153,26 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
   const plugin = descriptor.plugin ?? {};
   const uri = plugin.format === 'lv2' ? plugin.id : plugin.uri;
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
-  const panel = panelOf(descriptor, declared);
+  let panel;
+  try {
+    panel = panelOf(descriptor, declared);
+  } catch (err) {
+    throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
+  }
   const controls = descriptor.controls ?? [];
   const seen = new Set();
+  // A trigger is momentary and how MOD-UI wires a momentary port is not verified: it is left off the face and reported.
+  const skipped = [];
+  const isTrigger = (symbol) => controls.find((x) => (x.symbol ?? x.id) === symbol)?.kind === 'trigger';
   const sections = panel.sections.map((s) => ({
     key: s.key,
     label: s.label,
-    controls: s.controls.map((symbol) => {
+    controls: s.controls.filter((symbol) => {
+      if (!isTrigger(symbol)) return true;
+      seen.add(symbol);
+      skipped.push(symbol);
+      return false;
+    }).map((symbol) => {
       if (seen.has(symbol)) throw new Error(`modgui-gen: '${symbol}' is in two sections`);
       seen.add(symbol);
       const c = controls.find((x) => keyOf(x) === symbol);
@@ -173,10 +186,10 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
       const widget = widgetFor(panel, symbol, q);
       return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, ...(widget === 'selector' ? { options: optionsOf(q) } : {}) };
     }),
-  }));
+  })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
-  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections };
+  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, skipped };
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
@@ -488,7 +501,7 @@ export function withModguiSeeAlso(text, uri) {
   return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control)';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
@@ -526,6 +539,7 @@ export function main(argv) {
     console.error(err.message);
     process.exit(3);
   }
+  for (const symbol of resolvePanel(descriptor, { panel, stem }).skipped) console.error(`modgui: skipped trigger control '${symbol}'`);
   if (toStdout) {
     for (const [p, bytes] of made) {
       if (p.endsWith('.png')) process.stdout.write(`# ${shown(p)}: ${bytes.length} bytes, sha256 ${createHash('sha256').update(bytes).digest('hex')}\n`);
