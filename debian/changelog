@@ -1,3 +1,14 @@
+omx-panel (0.4.3) unstable; urgency=medium
+
+  * A control name holding a line break, a return or a tab no longer writes
+    invalid Turtle: lilv refused the whole bundle (#51).
+  * The DEB of 0.4.2 was not published (lintian refused the unit's WantedBy
+    plugin-qualify-sync.service); it is overridden with its reason, and this is
+    the first DEB with omx-modgui-sync's search rule and a unit that follows
+    plugin-qualify-sync.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 28 Oct 2026 10:00:00 +0000
+
 omx-panel (0.4.2) unstable; urgency=medium
 
   * omx-modgui-sync reads the LV2 search list as plugin-hostd and plugin-qualify
