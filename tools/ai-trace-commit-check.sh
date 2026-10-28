@@ -58,7 +58,7 @@ def selftest():
         "session-trailer": f"Fix x\n\n{CL}-Session: https://{cl}.ai/code/session_01\n",
         "generated-footer": f"Fix x\n\n\U0001F916 {GEN} with [{CL} Code](https://{cl}.com/{cl}-code)\n",
         "session-url": f"Fix x\n\nsee https://{cl}.ai/code/session_9\n",
-        # the shapes the omx-dsp#155 review saw pass (openmixer-ops#152)
+        # the shapes the omx-dsp#155 review saw pass
         "assisted-by": f"Fix x\n\nAssisted-by: {CL}\n",
         "made-with": f"Fix x\n\nMade with {CL} Code\n",
         "generated-with-claude": f"Fix x\n\n{GEN} with {CL}\n",
