@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.4.2
+Version: 0.4.3
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -77,6 +77,12 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.3-1
+- A control name holding a line break, a return or a tab no longer writes invalid
+  Turtle: lilv refused the whole bundle (#51). The DEB of 0.4.2 was not
+  published (lintian refused the unit's WantedBy); this is the first DEB with
+  omx-modgui-sync's new search rule and the unit that follows plugin-qualify-sync.
+
 * Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.4.2-1
 - omx-modgui-sync reads the LV2 search list as plugin-hostd and plugin-qualify
   do ($LV2_PATH, else plugin-hostd's default), writes its bundles to
