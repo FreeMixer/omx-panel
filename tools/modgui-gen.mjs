@@ -136,7 +136,12 @@ export class NothingToDraw extends Error {
  * groups and meanings (tools/panel-description.mjs). */
 export function panelOf(descriptor, declared) {
   if (declared) return declared;
-  const x = panelLayout(descriptor);
+  let x;
+  try {
+    x = panelLayout(descriptor);
+  } catch (err) {
+    throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(err.message) : err;
+  }
   return { family: x.family, sections: x.sections.map((s, i) => ({ key: s.key, label: s.label, controls: x.controls.filter((c) => c.section === i).map((c) => c.symbol) })) };
 }
 
