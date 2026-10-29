@@ -87,6 +87,60 @@ export function segment(c, ax, ay, bx, by, hw, rgb) {
   fillShape(c, [Math.min(ax, bx) - hw, Math.min(ay, by) - hw, Math.max(ax, bx) + hw, Math.max(ay, by) + hw], inside, rgb);
 }
 
+// ------------------------------------------------------------------------------------- text
+
+/** The width in px of `text` set in `font` at `px` (advances only: no kerning, no hinting). */
+export function textWidth(font, text, px) {
+  let w = 0;
+  for (const ch of text) w += snap((font.glyph(ch).advance * px) / font.unitsPerEm);
+  return w;
+}
+
+/** `text` cut to fit `maxW` px, with ".." for what was dropped; whole when it fits. */
+export function fitText(font, text, px, maxW) {
+  if (textWidth(font, text, px) <= maxW) return text;
+  const chars = [...text];
+  while (chars.length > 1 && textWidth(font, `${chars.join('')}..`, px) > maxW) chars.pop();
+  return `${chars.join('')}..`;
+}
+
+/**
+ * `text` in `font` at `px`, its baseline at `y` and its left edge (`align` 'left'), centre ('centre') or right
+ * ('right') at `x`. Each glyph is the font's outline scaled to px, its points snapped to 1/16 px, filled by
+ * the non-zero rule with the same SS×SS sampling as the shapes, so the coverage is the shape's own.
+ */
+export function drawText(c, font, text, x, y, px, rgb, align = 'left') {
+  const w = textWidth(font, text, px);
+  let pen = snap(align === 'centre' ? x - w / 2 : align === 'right' ? x - w : x);
+  const k = px / font.unitsPerEm;
+  for (const ch of text) {
+    const g = font.glyph(ch);
+    const polys = g.polys.map((poly) => poly.map(([gx, gy]) => [snap(pen + gx * k), snap(y - gy * k)]));
+    const edges = [];
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const poly of polys) {
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i], b = poly[(i + 1) % poly.length];
+        x0 = Math.min(x0, a[0]); x1 = Math.max(x1, a[0]); y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[1]);
+        if (a[1] !== b[1]) edges.push([a[0], a[1], b[0], b[1]]);
+      }
+    }
+    if (edges.length) {
+      const inside = (px_, py) => {
+        let wn = 0;
+        for (const [ax, ay, bx, by] of edges) {
+          if ((ay <= py) === (by <= py)) continue;
+          const cross = (bx - ax) * (py - ay) - (px_ - ax) * (by - ay);
+          if (ay <= py ? cross > 0 : cross < 0) wn += ay <= py ? 1 : -1;
+        }
+        return wn !== 0;
+      };
+      fillShape(c, [x0, y0, x1, y1], inside, rgb);
+    }
+    pen += snap(g.advance * k);
+  }
+}
+
 // ------------------------------------------------------------------------------- PNG + deflate
 
 const CRC_TABLE = (() => {

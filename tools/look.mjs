@@ -22,7 +22,10 @@ export const LOOK_JSON = join(TOOLS, 'look.json');
 export const LOOK = Object.freeze({ theme: 'dark', accent: 'cyan', finish: 'aluminium', style: 'modern' });
 
 /** The tokens a renderer reads, in the order tools/look.json lists them. */
-export const LOOK_TOKENS = Object.freeze(['--surface', '--surface-2', '--surface-3', '--border-strong', '--ink', '--ink-dim', '--accent', '--font-ui']);
+export const LOOK_TOKENS = Object.freeze(['--surface', '--surface-2', '--surface-3', '--border-strong', '--ink', '--ink-dim', '--accent', '--font-ui', '--font-file']);
+
+/** The tokens that are not colours: the CSS font stack, and the font file (relative to tools/) the raster reads. */
+export const NOT_COLOURS = Object.freeze(['--font-ui', '--font-file']);
 
 /** Every rule of `css`, in order: its selectors and its declarations. Comments are dropped. */
 export function parseRules(css) {
@@ -87,7 +90,7 @@ export function emitLook(css, axes = LOOK) {
   const tokens = {};
   for (const k of LOOK_TOKENS) {
     if (!(k in all)) throw new Error(`look: tools/look/tokens.css sets no ${k}`);
-    if (k !== '--font-ui' && !/^#[0-9a-f]{6}$/.test(all[k])) throw new Error(`look: ${k} resolves to '${all[k]}', not a #rrggbb colour`);
+    if (!NOT_COLOURS.includes(k) && !/^#[0-9a-f]{6}$/.test(all[k])) throw new Error(`look: ${k} resolves to '${all[k]}', not a #rrggbb colour`);
     tokens[k] = all[k];
   }
   const look = {

@@ -14,7 +14,7 @@
  *
  * Written into the LV2 bundle `--out` names: `modgui.ttl` and `modgui/` (template, stylesheet, screenshot,
  * thumbnail, knob film strip, and the fader's when a control is one). The images are rasterised here from the
- * template's own layout (raster.mjs) — no text, each knob at its declared default, byte-deterministic.
+ * template's own layout (raster.mjs) — the plugin title, the section labels, each control's name and its default with unit, set in the look's bundled font (tools/fonts/), each knob at its declared default, byte-deterministic.
  *
  * Usage: `node tools/modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>)
  * [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]` — `--check` writes nothing and refuses a
@@ -24,11 +24,12 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LOOK_JSON, LOOK_TOKENS } from './look.mjs';
+import { parseFont } from './font.mjs';
+import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { keyOf, panelLayout } from './panel-description.mjs';
-import { canvas, disc, encodePng, rgbOf, roundRect, segment } from './raster.mjs';
+import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
 export { LOOK_JSON };
@@ -184,7 +185,7 @@ export function resolvePanel(descriptor, { panel: declared, stem }) {
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
-      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, ...(widget === 'selector' ? { options: optionsOf(q) } : {}) };
+      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
@@ -219,10 +220,12 @@ export function loadLook() {
   for (const k of LOOK_TOKENS) {
     const v = look.tokens?.[k];
     if (typeof v !== 'string' || !v) throw new Error(`modgui-gen: tools/look.json resolves no ${k}`);
-    if (k !== '--font-ui') rgbOf(v);
+    if (!NOT_COLOURS.includes(k)) rgbOf(v);
     tokens[k] = v;
   }
-  return { theme: look.theme, personality: look.personality, tokens };
+  const fontFile = resolve(TOOLS, tokens['--font-file']);
+  if (!fontFile.startsWith(`${TOOLS}${sep}`)) throw new Error(`modgui-gen: --font-file '${tokens['--font-file']}' leaves tools/`);
+  return { theme: look.theme, personality: look.personality, tokens, font: parseFont(readFileSync(fontFile)) };
 }
 
 /** The literal colours and font the face wears. */
@@ -275,16 +278,33 @@ const palette = (tok) => ({
   rim: rgbOf(tok['--border-strong']), ink: rgbOf(tok['--ink']), inkDim: rgbOf(tok['--ink-dim']), accent: rgbOf(tok['--accent']),
 });
 
+/** Text sizes and baselines, in px at scale 1: the template's 10 px small text and 14 px title. */
+const TEXT = Object.freeze({ brand: 10, brandBase: 14, title: 14, titleBase: 31, small: 10, sectionBase: 13, nameBase: 62, valueBase: 72 });
+
+/** The default a control shows, with its unit: a number to three significant figures, an option's label, On or Off. */
+export function valueText(k) {
+  if (k.widget === 'selector') return k.options.find((o) => o.value === k.def)?.label ?? `${k.def}`;
+  if (k.widget === 'switch') return k.def >= 0.5 ? 'On' : 'Off';
+  const span = Math.abs(k.max - k.min);
+  const places = Math.max(0, Math.min(3, 2 - Math.floor(Math.log10(Math.max(Math.abs(k.def), span / 10) || 1))));
+  const n = k.def.toFixed(places).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  return k.unit ? `${n} ${k.unit}` : n;
+}
+
 /** The face at `scale`, every control at its declared default. */
-export function renderFace(lay, tok, scale) {
-  const g = GEOMETRY, col = palette(tok), s = scale;
+export function renderFace(lay, look, scale) {
+  const g = GEOMETRY, tok = look.tokens, font = look.font, col = palette(tok), s = scale;
   const c = canvas(Math.round(lay.w * s), Math.round(lay.h * s));
   roundRect(c, 0, 0, lay.w * s, lay.h * s, g.radius * s, col.rim);
   roundRect(c, s, s, (lay.w - 2) * s, (lay.h - 2) * s, (g.radius - 1) * s, col.surface);
   roundRect(c, s, (g.headH - 2) * s, (lay.w - 2) * s, 2 * s, 0, col.accent);
   disc(c, (lay.w - g.pad - 10) * s, (g.headH / 2) * s, 5 * s, col.accent);
+  const headW = (lay.w - 2 * g.pad - 24) * s;
+  drawText(c, font, fitText(font, lay.brand.toUpperCase(), TEXT.brand * s, headW), g.pad * s, TEXT.brandBase * s, TEXT.brand * s, col.inkDim);
+  drawText(c, font, fitText(font, lay.name, TEXT.title * s, headW), g.pad * s, TEXT.titleBase * s, TEXT.title * s, col.ink);
   for (const sec of lay.sections) {
     roundRect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g.sectionRadius * s, col.section);
+    drawText(c, font, fitText(font, sec.label.toUpperCase(), TEXT.small * s, (sec.w - 2 * g.sectionPad) * s), (sec.x + g.sectionPad) * s, (sec.y + TEXT.sectionBase) * s, TEXT.small * s, col.inkDim);
     for (const k of sec.controls) {
       const x = sec.x + k.x, y = sec.y + k.y;
       if (k.widget === 'display') {
@@ -298,6 +318,14 @@ export function renderFace(lay, tok, scale) {
         drawFader(c, (x + g.cellW / 2) * s, (y + g.knobTop) * s, g.knob * s, travelFraction(k, k.def), col);
       } else {
         drawKnob(c, (x + g.cellW / 2) * s, (y + g.knobTop + g.knob / 2) * s, (g.knob / 2) * s, travelFraction(k, k.def), col);
+      }
+      const mid = (x + g.cellW / 2) * s, fit = (g.cellW - 4) * s;
+      drawText(c, font, fitText(font, k.name, TEXT.small * s, fit), mid, (y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
+      if (k.widget === 'selector') {
+        const shown = fitText(font, valueText(k), TEXT.small * s, (g.selectorW - 8) * s);
+        drawText(c, font, shown, mid, (y + g.selectorTop + g.selectorH / 2 + TEXT.small * 0.36) * s, TEXT.small * s, col.ink, 'centre');
+      } else if (k.widget !== 'display') {
+        drawText(c, font, fitText(font, valueText(k), TEXT.small * s, fit), mid, (y + TEXT.valueBase) * s, TEXT.small * s, col.ink, 'centre');
       }
     }
   }
@@ -470,14 +498,14 @@ ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
  * is what the banner names the files were made from. */
 export function generateModgui(descriptor, { panel: declared, stem, source }, look = loadLook()) {
   const panel = resolvePanel(descriptor, { panel: declared, stem });
-  const lay = layout(panel);
+  const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem };
   const f = files(panel.stem);
   return [
     [MODGUI_TTL, Buffer.from(emitModguiTtl(panel, source))],
     [f.template, Buffer.from(emitTemplate(panel, lay, source))],
     [f.stylesheet, Buffer.from(emitStylesheet(panel, look, source))],
-    [f.screenshot, renderFace(lay, look.tokens, 1)],
-    [f.thumbnail, renderFace(lay, look.tokens, GEOMETRY.thumbScale)],
+    [f.screenshot, renderFace(lay, look, 1)],
+    [f.thumbnail, renderFace(lay, look, GEOMETRY.thumbScale)],
     [f.film, renderFilm(look.tokens)],
     ...(draws(panel, 'fader') ? [[f.faderFilm, renderFaderFilm(look.tokens)]] : []),
   ];
