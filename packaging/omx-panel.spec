@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.7.0
+Version: 0.7.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -83,6 +83,15 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Thu Oct 29 2026 Pau Aliagas <linuxnow@gmail.com> - 0.7.1-1
+- The DEB builds again: v0.7.0 shipped without packages because the release
+  lint refused the bundled font as a duplicate of a distribution font, which
+  the package carries on purpose so the screenshot bytes are the same on every
+  host. CI now builds and lints the DEB on every pull request (#85).
+- The screenshot and thumbnail text is set in Inter, the look's own font
+  (Inter 4.1, SIL OFL 1.1, its licence beside it), in place of Liberation
+  Sans; the fixture images are regenerated (#83).
+
 * Thu Oct 29 2026 Pau Aliagas <linuxnow@gmail.com> - 0.7.0-1
 - The MOD GUI screenshot and thumbnail carry text: the plugin title, the
   section labels (one band per section, so per group of a grouped descriptor)
