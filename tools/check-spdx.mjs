@@ -28,7 +28,7 @@ export const EXEMPT = [
   [/^examples\/.*\.png$/, 'example art'],
   [/^examples\/worked-example\/.*\.(tsv|txt)$/, 'a command\'s output, kept as the command wrote it (docs/worked-example.md)'],
   [/^test\/fixtures\/lv2-groups\/(?!omx-|synthetic\/)[^/]+\/[^/]+\.ttl$/, 'a third party\'s LV2 TTL, copied byte for byte under its own licence (test/fixtures/lv2-groups/SOURCES)'],
-  [/^tools\/fonts\//, 'the bundled font and its licence (tools/fonts/LiberationSans-LICENSE.txt), the foundry\'s file byte for byte'],
+  [/^tools\/fonts\//, 'the bundled font and its licence (tools/fonts/Inter-LICENSE.txt), the foundry\'s file byte for byte'],
   [/^test\/fixtures\/.*\.png$/, 'fixture art: a MOD GUI\'s images, ours, byte for byte as the generator or the fixture bundle holds them'],
 ];
 
