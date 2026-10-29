@@ -60,6 +60,8 @@ meaning that names exactly one of the family's roles plays it; an indexed role (
 control of its meaning, in order; any other role is played by its first control, and a second is
 left unpublished, named.
 
+A `modulation` depth is a plain amount (`none`, `pc`, `coef`) or a sweep in octaves (`oct`), as a phaser's is.
+
 ## The family
 
 The family follows from the meanings, never from a guess about the plugin:
