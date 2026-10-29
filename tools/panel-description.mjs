@@ -91,7 +91,7 @@ export const ROLES = {
   eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['db', 'coef'], band_q: ['none', 'coef', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'db'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'db'], lpf_on: CHOICE, output: DB },
   filter: { cutoff: FREQ, resonance: PLAIN, filter_type: CHOICE, ...WET },
   drive: { drive: DB, tone: PLAIN, model: CHOICE, ...WET },
-  modulation: { rate: ['hz', 'bpm'], depth: PLAIN, feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },
+  modulation: { rate: ['hz', 'bpm'], depth: [...PLAIN, 'oct'], feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },
   delay: { time: T, feedback: PLAIN, tone: PLAIN, sync: CHOICE, division: CHOICE, pingpong: CHOICE, ...WET },
   reverb: { size: PLAIN, decay: T, algorithm: CHOICE, predelay: ['ms'], damping: PLAIN, width: PLAIN, low_cut: FREQ, high_cut: FREQ, ...WET },
   pitch: { shift: ['semitone12TET', 'cent'], fine: ['cent'], ...WET },
