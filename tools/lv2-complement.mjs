@@ -446,10 +446,17 @@ export function isFresh(outBundle, plan, writer = writerId()) {
   return dir === plan.bundle.dir && w === `writer ${writer}` && h === `source-sha256 ${plan.bundle.hash}`;
 }
 
-/** The name of the bundle written for an installed one. */
-export function outName(bundleDir) {
+/**
+ * The name of the bundle written for an installed one: `omx-complement-<stem>.lv2`. When `repeated` (another installed
+ * bundle would take the same name: one basename in two roots, or names that differ only in what the stem replaces),
+ * a short hash of the bundle's own path joins the stem, `omx-complement-<stem>-<hash>.lv2`: stable for that path, and
+ * different for every path.
+ */
+export function outName(bundleDir, repeated = false) {
   const stem = basename(bundleDir).replace(/\.lv2$/, '').replace(/[^A-Za-z0-9._-]+/g, '_');
-  return `${PREFIX}${stem}.lv2`;
+  if (!repeated) return `${PREFIX}${stem}.lv2`;
+  const hash = createHash('sha256').update(resolve(bundleDir)).digest('hex').slice(0, 8);
+  return `${PREFIX}${stem}-${hash}.lv2`;
 }
 
 /**
@@ -562,11 +569,13 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
       read.set(dir, e);
     }
   }
-  // Two installed bundles whose complements would have one name (the same basename in two roots, or names that
-  // differ only in what outName replaces): each would find the marker naming the other and rewrite the bundle on
-  // every run. Both are refused, whatever their verdicts, so the outcome does not flip as the rules change.
-  const byOut = new Map();
-  for (const dir of read.keys()) byOut.set(outName(dir), [...(byOut.get(outName(dir)) ?? []), dir]);
+  // Two installed bundles whose complements would take one name (the same basename in two roots, or names that
+  // differ only in what outName replaces) each get a name derived from their path, so both are written and neither
+  // finds the other's marker. A collision is our naming problem, never a defect of the plugin.
+  const plain = new Map();
+  for (const dir of read.keys()) plain.set(outName(dir), (plain.get(outName(dir)) ?? 0) + 1);
+  const nameOf = new Map();
+  for (const dir of read.keys()) nameOf.set(dir, outName(dir, plain.get(outName(dir)) > 1));
   const onlySet = new Set(only.map((d) => resolve(d)));
   // the bundles of ours this run leaves in effect: up to date, or written (in a dry run, would be written)
   const kept = new Set();
@@ -603,16 +612,11 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
       refuse(dir, plan.refusal);
       continue;
     }
-    const sharing = (byOut.get(outName(dir)) ?? []).filter((d) => d !== dir);
-    if (sharing.length > 0) {
-      refuse(dir, new Refusal('out-name-collision', `${dir} and ${sharing.join(', ')} would both be complemented as ${outName(dir)}`));
-      continue;
-    }
     if (!plan.write) {
       why.set(dir, 'none of its plugins comes out grouped on the current rules');
       continue;
     }
-    const target = join(outDir, outName(dir));
+    const target = join(outDir, nameOf.get(dir));
     const grouped = plan.plugins.filter((p) => p.verdict.outcome === 'grouped').map((p) => p.uri);
     const ours = isOurs(target);
     if (existsSync(target) && !ours) {
@@ -662,7 +666,7 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
       if (installed === undefined) reason = `its installed bundle ${source} is gone, or no longer on the search list`;
       else {
         const changed = !(installed instanceof Refusal) && marker[2] !== `source-sha256 ${installed.hash}`;
-        reason = `${source}: ${changed ? 'it changed, and ' : ''}${why.get(source) ?? `it is complemented by ${join(outDir, outName(source))} now`}`;
+        reason = `${source}: ${changed ? 'it changed, and ' : ''}${why.get(source) ?? `it is complemented by ${join(outDir, nameOf.get(source) ?? outName(source))} now`}`;
       }
       counts.removed++;
       if (check) log(`stale ${b}: ${reason}; the sync removes it`);
