@@ -1,3 +1,18 @@
+omx-panel (0.7.0) unstable; urgency=medium
+
+  * The MOD GUI screenshot and thumbnail carry text: the plugin title, the
+    section labels (one band per section, so per group of a grouped
+    descriptor) and each control's name and default with its unit. The text is
+    drawn from a font file the look names, Liberation Sans (SIL OFL 1.1, its
+    licence beside it), with no host font, so the bytes are the same on every
+    host. --check still refuses a stale image (#78).
+  * A modulation depth in octaves keeps its depth role and is published with
+    its unit, so omx-phaser's depth gets a control (omx-plugins#232).
+  * Two LV2 bundles that would share one complement name are both written,
+    under names derived from their paths, instead of both being refused (#72).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 29 Oct 2026 13:00:00 +0000
+
 omx-panel (0.6.0) unstable; urgency=medium
 
   * The LV2 complement is new: the port groups an LV2 plugin does not declare
