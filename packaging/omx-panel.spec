@@ -87,7 +87,7 @@ make test
 - The MOD GUI screenshot and thumbnail carry text: the plugin title, the
   section labels (one band per section, so per group of a grouped descriptor)
   and each control's name and default with its unit. The text is drawn from a
-  font file the look names, Liberation Sans (SIL OFL 1.1, its licence beside
+  font file the look names, Inter 4.1 (SIL OFL 1.1, its licence beside
   it), with no host font, so the bytes are the same on every host. --check
   still refuses a stale image (#78).
 - A modulation depth in octaves keeps its depth role and is published with its

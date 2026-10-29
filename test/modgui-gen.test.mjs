@@ -232,14 +232,14 @@ const pixelRow = (png, y, x0, x1) => { // the RGB of one row of a PNG this raste
 };
 
 test('the bundled font sets a known glyph: the rows of an H at 14 px are the same on every host', () => {
-  const font = parseFont(readFileSync(join(ROOT, 'tools/fonts/LiberationSans-Regular.ttf')));
+  const font = parseFont(readFileSync(join(ROOT, 'tools/fonts/Inter-Regular.ttf')));
   const c = canvas(12, 16);
   drawText(c, font, 'H', 1, 13, 14, [255, 255, 255]);
   const alpha = (y) => Array.from({ length: 12 }, (_x, x) => c.data[(y * 12 + x) * 4 + 3]);
-  assert.deepEqual(alpha(4), [0, 0, 255, 128, 0, 0, 0, 0, 64, 255, 0, 0]); // the two stems
-  assert.deepEqual(alpha(7), [0, 0, 255, 191, 128, 128, 128, 128, 159, 255, 0, 0]); // the cross bar
-  assert.deepEqual(alpha(2), new Array(12).fill(0));
-  assert.deepEqual(alpha(13), new Array(12).fill(0));
+  assert.deepEqual(alpha(4), [0, 0, 191, 128, 0, 0, 0, 0, 64, 255, 64, 0]); // the two stems
+  assert.deepEqual(alpha(7), [0, 0, 191, 223, 191, 191, 191, 191, 207, 255, 64, 0]); // the cross bar
+  assert.deepEqual(alpha(1), new Array(12).fill(0));
+  assert.deepEqual(alpha(14), new Array(12).fill(0));
 });
 
 test('the screenshot of the fixture descriptor carries its text: title, section label, control names and values', () => {
