@@ -89,6 +89,27 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # The DEB as the release builds it: built from the checkout in a Debian container of each release and linted with
+  # lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without packages (#85).
+  deb-lint:
+    name: build and lint the DEB (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [bookworm, trixie]
+    container:
+      image: debian:${{ matrix.suite }}
+    steps:
+      - name: Install the build tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ca-certificates git dpkg-dev debhelper build-essential lintian nodejs npm make
+      - uses: actions/checkout@v4
+      - name: Build the DEB and lint it
+        run: tools/deb-lint-check.sh "$PWD/out-deb"
+
   runtime-install:
     name: runtime install (${{ matrix.image }})
     needs: packages
