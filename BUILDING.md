@@ -21,7 +21,7 @@ make install PREFIX=/usr DESTDIR=…   # the built tree under share/omx-panel, t
 ```
 
 Enable the commit message check once per clone: `git config core.hooksPath .githooks`. A commit message that
-carries an AI-attribution line is refused; CI runs the same check over a pull request's commits.
+carries an attribution line is refused; CI runs the same check over a pull request's commits.
 
 ## The command
 
