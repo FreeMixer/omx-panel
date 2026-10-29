@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# The MOD GUI screenshot is drawn from this exact file (tools/fonts, SIL OFL 1.1, its licence beside it) so the bytes
+# are the same on every host; fonts-liberation's copy varies with the release, so the package carries its own (#78).
+omx-panel: duplicate-font-file also in (*) *tools/fonts/LiberationSans-Regular.ttf*
