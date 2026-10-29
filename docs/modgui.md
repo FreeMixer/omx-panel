@@ -36,8 +36,12 @@ reading live needs the bundle's own `modgui:javascript`, which this generator do
 that names a widget for a readout is refused.
 
 The images (the screenshot, the thumbnail, the knob film and the fader's when a control is one) are rasterised by
-`tools/raster.mjs` from the template's own layout, each control at its default, with no text: a fixed-code
-deflate and no zlib, so their bytes depend only on the descriptor, the panel and the look.
+`tools/raster.mjs` from the template's own layout, each control at its default. The screenshot and the thumbnail
+carry the plugin title, the section labels (one band per section, so per group of a grouped descriptor), and each
+control's name and its default with unit; the thumbnail is the screenshot at half size. The text is set from the font
+file the look names (`--font-file`, `tools/fonts/LiberationSans-Regular.ttf`, SIL OFL 1.1, licence beside it), whose
+outlines `tools/font.mjs` reads and `tools/raster.mjs` fills at the shapes' own sampling: no host font is consulted.
+A fixed-code deflate and no zlib, so their bytes depend only on the descriptor, the panel and the look.
 
 ## The look
 

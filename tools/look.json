@@ -12,6 +12,7 @@
     "--ink": "#eaf0f4",
     "--ink-dim": "#8a97a3",
     "--accent": "#28c8e6",
-    "--font-ui": "\"Inter\", \"Helvetica Neue\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    "--font-ui": "\"Inter\", \"Helvetica Neue\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+    "--font-file": "fonts/LiberationSans-Regular.ttf"
   }
 }
