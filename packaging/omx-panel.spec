@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.6.0
+Version: 0.7.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -83,6 +83,18 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Thu Oct 29 2026 Pau Aliagas <linuxnow@gmail.com> - 0.7.0-1
+- The MOD GUI screenshot and thumbnail carry text: the plugin title, the
+  section labels (one band per section, so per group of a grouped descriptor)
+  and each control's name and default with its unit. The text is drawn from a
+  font file the look names, Liberation Sans (SIL OFL 1.1, its licence beside
+  it), with no host font, so the bytes are the same on every host. --check
+  still refuses a stale image (#78).
+- A modulation depth in octaves keeps its depth role and is published with its
+  unit, so omx-phaser's depth gets a control (omx-plugins#232).
+- Two LV2 bundles that would share one complement name are both written, under
+  names derived from their paths, instead of both being refused (#72).
+
 * Wed Oct 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.6.0-1
 - The LV2 complement is new: the port groups an LV2 plugin does not declare
   are inferred from what it does declare (designations, shared name or
