@@ -533,7 +533,7 @@ describe('the degenerate cases are refused with a reason and never written', () 
     empty(join(root, 'out'));
   });
 
-  it('two installed bundles whose complements would have one name (same basename, two roots, different plugins): both refused, never rewritten in turn', () => {
+  it('two installed bundles whose complements would have one name (same basename, two roots): both written under names derived from their paths, each removed exactly', () => {
     const root = scratch();
     const lv2a = join(root, 'usr-lib-lv2');
     const lv2b = join(root, 'usr-local-lib-lv2');
@@ -541,21 +541,29 @@ describe('the degenerate cases are refused with a reason and never written', () 
     const a = installed(lv2a, 'same', ['swh-triplepara']);
     const b = installed(lv2b, 'same', ['mda-rezfilter']);
     assert.equal(outName(a.dir), outName(b.dir));
-    assert.notDeepEqual(a.uris, b.uris, 'different plugins: plugin-in-several-bundles does not see it');
+    assert.notEqual(outName(a.dir, true), outName(b.dir, true));
+    assert.equal(outName(a.dir, true), outName(a.dir, true), 'stable for one path');
+    assert.match(outName(a.dir, true), /^omx-complement-same-[0-9a-f]{8}\.lv2$/);
     const go = () => {
       const lines = [];
       const r = sync({ lv2Path: `${out}:${lv2a}:${lv2b}`, outDir: out, stateDir: join(root, 'state'), log: (l) => lines.push(l) });
       return { ...r, lines };
     };
-    // a complement written for one of them by an earlier writer: removed once both are refused
+    // a complement under the plain name, from before the second root appeared: stale, removed
     mkdirSync(join(out, outName(a.dir)), { recursive: true });
     writeFileSync(join(out, outName(a.dir), MARKER), `${a.dir}\nwriter an earlier writer\nsource-sha256 x\n`);
     const first = go();
-    assert.deepEqual([first.counts.written, first.refusals['out-name-collision'], first.counts.removed], [0, 2, 1], first.lines.join('\n'));
-    assert.match(first.lines.join('\n'), /^refused .*usr-lib-lv2\/same\.lv2: out-name-collision: .* would both be complemented as omx-complement-same\.lv2$/m);
+    assert.deepEqual([first.counts.written, first.counts.removed, Object.keys(first.refusals).length], [2, 1, 0], first.lines.join('\n'));
+    assert.deepEqual(readdirSync(out).sort(), [outName(a.dir, true), outName(b.dir, true)].sort());
+    assert.equal(readFileSync(join(out, outName(a.dir, true), MARKER), 'utf8').split('\n')[0], a.dir);
+    assert.equal(readFileSync(join(out, outName(b.dir, true), MARKER), 'utf8').split('\n')[0], b.dir);
     const second = go();
-    assert.deepEqual([second.counts.written, second.counts.replaced, second.counts.removed, second.refusals['out-name-collision']], [0, 0, 0, 2], second.lines.join('\n'));
-    assert.deepEqual(readdirSync(out), []);
+    assert.deepEqual([second.counts.written, second.counts.fresh, second.counts.removed], [0, 2, 0], second.lines.join('\n'));
+    // one of them uninstalled: only its complement goes; the other keeps its derived name, until the sync names it plainly again
+    rmSync(b.dir, { recursive: true });
+    const third = go();
+    assert.deepEqual(readdirSync(out), [outName(a.dir)], third.lines.join('\n'));
+    assert.equal(third.counts.removed, 2, 'the derived complements go: the lone bundle is named plainly again');
   });
 
   it('a dynamic manifest', () => {
@@ -588,6 +596,36 @@ print(json.dumps(out))
     assert.equal(r.status, 0, r.stderr);
     return JSON.parse(r.stdout);
   };
+
+  it('two same-basename bundles in two roots: lilv reads both groups from the complements; each is removed exactly', { skip: noLilv }, () => {
+    const root = scratch();
+    const lv2a = join(root, 'usr-lib-lv2');
+    const lv2b = join(root, 'usr-local-lib-lv2');
+    const out = join(root, 'out');
+    const path = `${out}:${lv2a}:${lv2b}`;
+    const a = installed(lv2a, 'same', ['swh-triplepara']);
+    const b = installed(lv2b, 'same', ['mda-rezfilter']);
+    const [ua] = a.uris;
+    const [ub] = b.uris;
+    const sync2 = () => sync({ lv2Path: path, outDir: out, stateDir: join(root, 'state'), log: () => {} });
+    const before = lilvRead(path, [ua, ub]);
+    assert.deepEqual([before[ua].groups, before[ub].groups], [{}, {}]);
+    assert.equal(sync2().counts.written, 2);
+    const after = lilvRead(path, [ua, ub]);
+    assert.equal(after[ua].bundle, pathToFileURL(`${join(out, outName(a.dir, true))}/`).href);
+    assert.equal(after[ub].bundle, pathToFileURL(`${join(out, outName(b.dir, true))}/`).href);
+    assert.ok(Object.keys(after[ua].groups).length > 0 && Object.keys(after[ub].groups).length > 0, 'two groups readable');
+    // the first package removed: its complement goes, the other's stays and still loads
+    rmSync(a.dir, { recursive: true });
+    assert.equal(sync2().counts.removed, 2);
+    assert.deepEqual(readdirSync(out), [outName(b.dir)]);
+    const last = lilvRead(path, [ub]);
+    assert.equal(last[ub].bundle, pathToFileURL(`${join(out, outName(b.dir))}/`).href);
+    assert.ok(Object.keys(last[ub].groups).length > 0);
+    rmSync(b.dir, { recursive: true });
+    sync2();
+    assert.deepEqual(readdirSync(out), []);
+  });
 
   it('a bundle of three plugins (Calf): ours wins with the bumped version and its groups; deleted, the installed one loads again', { skip: noLilv }, () => {
     const root = scratch();
