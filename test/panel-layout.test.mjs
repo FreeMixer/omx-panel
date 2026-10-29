@@ -90,6 +90,15 @@ const eq = descriptor([hz('frequency'), gain, q, hz('frequency'), gain, q]);
 const eqX = panelLayout(eq);
 check('an indexed role takes every band, in order', [eqX.family, rolesOf(eqX).filter(([r]) => r === 'band_gain')], ['eq', [['band_gain', 0, 'p1', 'dB'], ['band_gain', 1, 'p4', 'dB']]]);
 
+// a phaser's depth is a sweep in octaves (omx-plugins#232): the role is published with its unit
+const sweep = (unit) => ({ kind: 'travel', meaning: 'depth', travel: { min: 0, max: 6, unit, default: 4, scale: 'linear' } });
+const rate = { kind: 'travel', meaning: 'rate', travel: { min: 0.05, max: 5, unit: 'Hz', default: 0.5, scale: 'log' } };
+const phaser = { family: 'modulation', roles: { rate: 'p0', depth: 'p1' }, sections: [{ key: 'phaser', label: 'Phaser', controls: ['p0', 'p1'] }] };
+const phaserX = panelLayout(descriptor([rate, sweep('oct')]), { panel: phaser });
+check('a modulation depth in octaves is published with its unit', [rolesOf(phaserX), phaserX.unpublished], [[['rate', 0, 'p0', 'Hz'], ['depth', 0, 'p1', 'oct']], []]);
+const dB = panelLayout(descriptor([rate, sweep('dB')]), { panel: phaser });
+check('arm: a depth in dB is still named, not published', [rolesOf(dB), dB.unpublished], [[['rate', 0, 'p0', 'Hz']], [{ role: 'depth', symbol: 'p1', why: 'the depth role takes none, pc, coef, oct, not dB' }]]);
+
 // 4. the family from meanings
 check('threshold and ratio make dynamics', panelLayout(comp).family, 'dynamics');
 const gate = clone(comp);
