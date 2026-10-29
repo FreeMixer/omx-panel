@@ -10,10 +10,13 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { inflateSync } from 'node:zlib';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { emitLook, TOKENS_CSS, LOOK_JSON } from '../tools/look.mjs';
-import { ChoiceNoValues, generateModgui, NothingToDraw, resolvePanel } from '../tools/modgui-gen.mjs';
+import { parseFont } from '../tools/font.mjs';
+import { ChoiceNoValues, generateModgui, NothingToDraw, resolvePanel, valueText } from '../tools/modgui-gen.mjs';
+import { canvas, drawText } from '../tools/raster.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
@@ -218,4 +221,48 @@ test('a choice with ids and labels and no values is refused by code, naming the 
   const r = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
   assert.equal(r.status, 1);
   assert.match(r.stderr, /^MODGUI_CHOICE_NO_VALUES: .*'mod_source'.*\n$/);
+});
+
+// ---------------------------------------------------------------------------------------- text (#78)
+
+const pixelRow = (png, y, x0, x1) => { // the RGB of one row of a PNG this rasteriser wrote (8-bit RGBA, filter None)
+  const w = png.readUInt32BE(16), raw = inflateSync(Buffer.concat([...(function* () { let o = 8; while (o < png.length) { const n = png.readUInt32BE(o); if (png.toString('latin1', o + 4, o + 8) === 'IDAT') yield png.subarray(o + 8, o + 8 + n); o += 12 + n; } })()]));
+  const row = raw.subarray(y * (w * 4 + 1) + 1, (y + 1) * (w * 4 + 1));
+  return Array.from({ length: x1 - x0 }, (_x, i) => [...row.subarray((x0 + i) * 4, (x0 + i) * 4 + 3)].map((b) => b.toString(16).padStart(2, '0')).join('')).join(' ');
+};
+
+test('the bundled font sets a known glyph: the rows of an H at 14 px are the same on every host', () => {
+  const font = parseFont(readFileSync(join(ROOT, 'tools/fonts/LiberationSans-Regular.ttf')));
+  const c = canvas(12, 16);
+  drawText(c, font, 'H', 1, 13, 14, [255, 255, 255]);
+  const alpha = (y) => Array.from({ length: 12 }, (_x, x) => c.data[(y * 12 + x) * 4 + 3]);
+  assert.deepEqual(alpha(4), [0, 0, 255, 128, 0, 0, 0, 0, 64, 255, 0, 0]); // the two stems
+  assert.deepEqual(alpha(7), [0, 0, 255, 191, 128, 128, 128, 128, 159, 255, 0, 0]); // the cross bar
+  assert.deepEqual(alpha(2), new Array(12).fill(0));
+  assert.deepEqual(alpha(13), new Array(12).fill(0));
+});
+
+test('the screenshot of the fixture descriptor carries its text: title, section label, control names and values', () => {
+  const [, shot] = gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png');
+  const [, thumb] = gen().find(([p]) => p === 'modgui/thumbnail-omx-delay.png');
+  const bare = (png, y, x0, x1) => new Set(pixelRow(png, y, x0, x1).split(' ')).size;
+  assert.ok(bare(shot, 24, 16, 80) > 2, 'the title row has glyph pixels over the plain surface');
+  assert.ok(bare(shot, 129, 100, 165) > 2, 'the control name row has glyph pixels');
+  assert.ok(bare(shot, 139, 100, 165) > 2, 'the default value row has glyph pixels');
+  assert.ok(bare(thumb, 12, 8, 40) > 2, 'the thumbnail carries the title');
+  assert.equal(pixelRow(shot, 24, 16, 40), pixelRow(gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png')[1], 24, 16, 40), 'the same bytes on a second run');
+});
+
+test('a renamed plugin or a moved label moves the screenshot, so --check refuses the stale one', () => {
+  const d = read('omx-delay.descriptor.json');
+  d.plugin.name = 'omx echo';
+  const shot = (descriptor) => gen(descriptor).find(([p]) => p === 'modgui/screenshot-omx-delay.png')[1];
+  assert.ok(!shot(d).equals(shot(read('omx-delay.descriptor.json'))));
+  const r = cli('--check', ...fixtureArgs);
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test('a default is shown with its unit: 300 ms, a bare number for a unitless travel, On or Off for a switch', () => {
+  const panel = resolvePanel(read('omx-delay.descriptor.json'), { stem: 'omx-delay', panel: read('omx-delay.panel.json') });
+  assert.deepEqual(panel.sections[0].controls.map(valueText), ['Off', '300 ms', '0.3', '0.3', '0.3']);
 });
