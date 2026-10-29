@@ -232,14 +232,25 @@ const pixelRow = (png, y, x0, x1) => { // the RGB of one row of a PNG this raste
 };
 
 test('the bundled font sets a known glyph: the rows of an H at 14 px are the same on every host', () => {
-  const font = parseFont(readFileSync(join(ROOT, 'tools/fonts/LiberationSans-Regular.ttf')));
+  const font = parseFont(readFileSync(join(ROOT, 'tools/fonts/Inter-Regular.ttf')));
   const c = canvas(12, 16);
   drawText(c, font, 'H', 1, 13, 14, [255, 255, 255]);
   const alpha = (y) => Array.from({ length: 12 }, (_x, x) => c.data[(y * 12 + x) * 4 + 3]);
-  assert.deepEqual(alpha(4), [0, 0, 255, 128, 0, 0, 0, 0, 64, 255, 0, 0]); // the two stems
-  assert.deepEqual(alpha(7), [0, 0, 255, 191, 128, 128, 128, 128, 159, 255, 0, 0]); // the cross bar
-  assert.deepEqual(alpha(2), new Array(12).fill(0));
+  assert.deepEqual(alpha(4), [0, 0, 191, 128, 0, 0, 0, 0, 64, 255, 64, 0]); // the two stems
+  assert.deepEqual(alpha(7), [0, 0, 191, 223, 191, 191, 191, 191, 207, 255, 64, 0]); // the cross bar
+  assert.deepEqual(alpha(1), new Array(12).fill(0));
   assert.deepEqual(alpha(13), new Array(12).fill(0));
+});
+
+test('the look names Inter, the first family of --font-ui, as its bundled font with its licence beside it (#83)', () => {
+  const look = JSON.parse(readFileSync(join(ROOT, 'tools/look.json'), 'utf8')).tokens;
+  assert.match(look['--font-ui'], /^"Inter"/);
+  assert.equal(look['--font-file'], 'fonts/Inter-Regular.ttf');
+  assert.ok(existsSync(join(ROOT, 'tools/fonts/Inter-Regular.ttf')));
+  const licence = readFileSync(join(ROOT, 'tools/fonts/Inter-LICENSE.txt'), 'utf8');
+  assert.match(licence, /The Inter Project Authors/);
+  assert.match(licence, /SIL OPEN FONT LICENSE Version 1\.1/);
+  assert.ok(!existsSync(join(ROOT, 'tools/fonts/LiberationSans-Regular.ttf')), 'Liberation Sans is gone');
 });
 
 test('the screenshot of the fixture descriptor carries its text: title, section label, control names and values', () => {
