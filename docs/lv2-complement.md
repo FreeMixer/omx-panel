@@ -27,6 +27,18 @@ the groups go to the grouped plugins only, the others are restated unchanged.
 
 ## What is written
 
+### The name
+
+`omx-complement-<name>.lv2`, `<name>` the bundle's basename without `.lv2`, characters outside `A-Za-z0-9._-`
+replaced by `_`. When another installed bundle would take the same name (one basename in two folders of the search
+list, or basenames that differ only in the characters replaced), every bundle sharing it is named
+`omx-complement-<name>-<hash>.lv2` instead, `<hash>` the first eight hex digits of the SHA-256 of the installed
+bundle's absolute path. The hash depends on the path alone, so the name is stable between runs, and both bundles are
+written: a name of ours that collides is our naming problem, never a reason to refuse a plugin. The marker names the
+installed bundle, so the stale-bundle removal below is exact on the derived name. A bundle whose basename is alone
+keeps the plain name; when a second bundle of that basename appears (or the other goes), the plain and the derived
+names are swapped by the ordinary removal of the bundle of ours that is no longer wanted.
+
 For an installed bundle `<dir>/<name>.lv2` holding at least one plugin whose verdict is `grouped`, the bundle
 `<out>/omx-complement-<name>.lv2` holds:
 
@@ -95,12 +107,9 @@ not give on the installed files.
     `port-symbol-ambiguous` (two ports of one symbol);
   - `dynamic-manifest`, `data-outside-bundle` (a plugin's `rdfs:seeAlso` outside its bundle), `ports-split-across-files`;
   - `group-iri-collision`: a generated group node whose IRI the bundle already states, or that two grouped plugins of
-    one file would share (above);
-  - `out-name-collision`: two installed bundles whose complements would have the same name
-    (`omx-complement-<name>.lv2`: the same bundle name in two folders of the search list, or names that differ only in
-    characters the name replaces with `_`). Both are refused, whatever their verdicts: written, each run would find
-    the other's marker and rewrite it, never up to date, and every rewrite in `/usr/local/lib/lv2` would queue another
-    scan through plugin-qualify's path unit.
+    one file would share (above).
+
+A name taken by two installed bundles is never a refusal (below).
 
 ## What is removed
 
