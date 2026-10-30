@@ -6,7 +6,7 @@ Panels for audio plugins, generated from what the plugin declares. Give any LV2 
 without drawing one: a MOD GUI for MOD and Zynthian, pages for a controller, a layout for a host, all from
 the plugin's own declaration, in the omx look, vintage or modern.
 
-## What is here today
+## What is here
 
 - The layout: `tools/panel-description.mjs` lays out a panel from a plugin's descriptor (sections, controls, roles,
   the family, the pages of eight a controller shows), under the plugin's declared panel when it has one

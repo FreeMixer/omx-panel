@@ -5,7 +5,7 @@
 Most installed LV2 plugins declare no port groups, so a consumer that draws screens per group (the Zynthian
 touchscreen cuts each group into screens of four) shows them as screens of four in port order.
 `tools/group-infer.mjs` (`@openmixer/omx-panel/group-infer`) infers the groups such a plugin lacks from what it
-already states, or says it cannot with confidence. It is the rule set of plugin-hostd#218 (lane G1): a pure
+already states, or says it cannot with confidence. It is the rule set of plugin-hostd#218 (step G1): a pure
 function, no file written. The bundle that carries the result to lilv is [lv2-complement.md](lv2-complement.md)'s (G2).
 
 ```js
@@ -45,7 +45,7 @@ The rules place the **placeable controls**: control input ports, not marked `not
   guessed layout. `attempt` is what the rules found, for a diagnosis only.
 
 Groups are ordered by their first control's `lv2:index`, the order the plugin's author chose and the touchscreen shows
-today. `displayPriority` (higher is shown first): when every group the plugin states itself carries an
+without a complement. `displayPriority` (higher is shown first): when every group the plugin states itself carries an
 `lv2:displayPriority`, those keep theirs and the generated groups follow below the lowest of them, in port order;
 otherwise every group counts down from the number of groups, in port order, so the first group is shown first. A
 generated group under a plugin's own priorities therefore shows after all of the plugin's groups, even when its
@@ -116,7 +116,7 @@ with its reason:
 | `MAX_UNPLACED` | 0 | place every placeable control | an unplaced control falls into the consumer's catch-all ("Params") beside ours, a layout nobody inferred |
 | `MIN_GROUP_SIZE` | 2 | (not checked: no rule creates a group under it; the plugin's own groups are kept whatever their size) | a screen with one control is worse than port order |
 | `MIN_GROUPS` | 2 | have at least two groups | one group is the plugin as it is, with a title |
-| `MAX_GROUPS` | 32 | have at most 32 groups | a ceiling, not a need: 32 screens of sections is already more than an operator pages through. A 32-band equaliser with its input and output groups does not fit (LSP's x32 needs 36) and is refused; wider, the rules are more likely slicing a sequencer or a matrix |
+| `MAX_GROUPS` | 32 | have at most 32 groups | a ceiling, not a need: 32 screens of sections is already more than anyone pages through. A 32-band equaliser with its input and output groups does not fit (LSP's x32 needs 36) and is refused; wider, the rules are more likely slicing a sequencer or a matrix |
 | `MAX_INDEX_RUN_SHARE` | 0.5 | place at most half its controls by rule 5 | when index runs are most of the plugin, the grouping is port order cut at arbitrary points |
 | `SCREEN_SIZE` | 4 | (not asked: four controls or fewer is nothing to do) | one touchscreen screen holds four |
 
@@ -125,7 +125,7 @@ Otherwise the verdict names the first condition that failed: `unplaced-controls`
 
 ## Measured
 
-Over the 979 plugins installed on a Fedora 44 desk (2026-10-28): 333 fit one screen, 98 have no controls, 40 carry
+Over the 979 plugins installed on a Fedora 44 desk: 333 fit one screen, 98 have no controls, 40 carry
 their own complete groups (all 19 of omx-plugins among them), 84 are grouped, and 424 have no confident grouping
 (402 with controls left in no group, 19 mostly by index, 3 with more than 32 groups). The thresholds favour leaving a
 plugin alone over a guess; loosening `MAX_UNPLACED` is the one change that would group most of the rest.
