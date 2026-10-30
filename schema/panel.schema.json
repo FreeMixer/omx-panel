@@ -24,6 +24,13 @@
       ],
       "title": "Indexed role",
       "description": "The roles that repeat by index, one parameter per band: the only roles that may name a list of symbols."
+    },
+    "perPage": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 8,
+      "title": "Controls per page",
+      "description": "How many controls a page of the layout holds: 8 for the CLAP remote-controls surface and an X-Touch, 8 per bank on a C24, 4 for a Zynthian's encoders. `omx-panel layout --pages --per-page N` cuts each section into pages of at most N controls, in the section's order, keeping a declared group whole when it fits a page."
     }
   }
 }
