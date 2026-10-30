@@ -1,3 +1,13 @@
+omx-panel (0.7.2) unstable; urgency=medium
+
+  * omx-panel layout --pages --per-page N cuts each section into pages of at
+    most N controls, in the section's order, keeping a declared group that fits
+    a page whole and naming each page of a section by the controls it holds
+    ("Band: Freq - Type"); without --per-page the pages are the plain cut of
+    eight, as before. A four-encoder device gets pages of four (#93).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 30 Oct 2026 01:30:00 +0000
+
 omx-panel (0.7.1) unstable; urgency=medium
 
   * The DEB builds again: v0.7.0 shipped without packages because the release
