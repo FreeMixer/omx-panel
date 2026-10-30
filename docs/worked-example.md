@@ -311,7 +311,7 @@ each slot a CLAP parameter id). These are the pages a CLAP host shows through `c
 belongs to an LV2 bundle, so the generator refuses a CLAP descriptor by name; lsp-plugins also ships an LV2
 build, which would be scanned as `lv2:<uri>` and go the way of ZamComp.
 
-Not every lsp CLAP plugin lays out today. Filter Mono has two parameters named "Filter mode", and a CLAP
+Not every lsp CLAP plugin lays out yet. Filter Mono has two parameters named "Filter mode", and a CLAP
 control, whose id is a number, is keyed by its name:
 
 ```
@@ -341,7 +341,7 @@ The four refusals have the cause of Filter Mono's, a name two parameters share.
 ## 4. Zynthian
 
 What follows comes from Zynthian's sources (zynthian-ui `f46b018` and zynthian-sys `0774a58`, both on their
-`vangelis` branch, 2026-10-19; zynthian-plugins `648c84a`, its `master`), the omx-plugins README, and the lilv
+`vangelis` branch; zynthian-plugins `648c84a`, its `master`), the omx-plugins README, and the lilv
 runs shown. Each file and line cited is at those commits. None of it was seen on a Zynthian.
 
 ### Where Zynthian looks for LV2 bundles and their MOD GUIs
