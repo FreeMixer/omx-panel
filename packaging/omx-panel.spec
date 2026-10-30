@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.7.1
+Version: 0.7.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -83,6 +83,12 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Fri Oct 30 2026 Pau Aliagas <linuxnow@gmail.com> - 0.7.2-1
+- omx-panel layout --pages --per-page N cuts each section into pages of at most
+  N controls, in the section's order, keeping a declared group that fits a page
+  whole and naming each page of a section by the controls it holds; without
+  --per-page the pages are the plain cut of eight, as before (#93).
+
 * Thu Oct 29 2026 Pau Aliagas <linuxnow@gmail.com> - 0.7.1-1
 - The DEB builds again: v0.7.0 shipped without packages because the release
   lint refused the bundled font as a duplicate of a distribution font, which
