@@ -235,6 +235,8 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
         symbol: sym, param: c.id, section, sectionKey: sections[section].key, widget: servedWidget(standard.widget), standard,
         labelKey: labelKey(snake(sym), 'control label key'), label: label(c.label ?? c.name, `'${sym}'`), visible: null, mask: 0n,
         unit: unitOf(c), meaning: c.meaning ?? null,
+        // the group is read by the page cut only: it stays out of the JSON and the canonical form
+        ...(c.group?.length ? { [GROUP]: c.group.join(' / ') } : {}),
       };
     }),
   );
@@ -297,19 +299,45 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
 /** A channel kind whose default a contract travel states (byKind) -> the placement it is. */
 const PLACEMENT_OF_KIND = { fxReturn: 'return', main: 'master' };
 
+/** The key a control carries its declared group under, for the page cut: a symbol, so no serialisation sees it. */
+export const GROUP = Symbol('group');
+
 /** The surface's slots per page, CLAP_REMOTE_CONTROLS_COUNT. */
 export const PAGE_SIZE = 8;
 
 /** The pages of clap.remote-controls/2 by the page rule: each section's controls in order, cut into
- * pages of eight, a section of several pages numbering them; a short page's slots are null. */
-export function pagesOf(x) {
+ * pages of `perPage` (default eight, the surface's slots), a section of several pages numbering them; a
+ * short page's slots are null. With `perPage` stated, a group that fits a page is not split across two
+ * (a page ends early to keep it whole; a group wider than a page is cut), and a section of several
+ * pages names each page by the controls it holds, "Band: Freq - Q". Left out, the cut is the plain one. */
+export function pagesOf(x, { perPage } = {}) {
+  const size = perPage ?? PAGE_SIZE;
+  if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
   return x.sections.flatMap((s, section) => {
-    const ids = x.controls.filter((c) => c.section === section).map((c) => c.param);
-    const count = Math.ceil(ids.length / PAGE_SIZE);
-    return [...Array(count).keys()].map((k) => {
-      const slots = ids.slice(k * PAGE_SIZE, (k + 1) * PAGE_SIZE);
-      while (slots.length < PAGE_SIZE) slots.push(null);
-      return { section, sectionName: s.label, pageName: count > 1 ? `${s.label} ${k + 1}` : s.label, ids: slots };
+    const cs = x.controls.filter((c) => c.section === section);
+    const pages = [];
+    if (perPage === undefined) for (let k = 0; k < cs.length; k += size) pages.push(cs.slice(k, k + size));
+    else {
+      let page = [];
+      for (let i = 0; i < cs.length; ) {
+        let j = i + 1;
+        while (j < cs.length && cs[j][GROUP] === cs[i][GROUP]) j++;
+        const run = cs.slice(i, j);
+        i = j;
+        if (run.length <= size && page.length + run.length > size) { pages.push(page); page = []; }
+        for (const c of run) {
+          if (page.length === size) { pages.push(page); page = []; }
+          page.push(c);
+        }
+      }
+      if (page.length) pages.push(page);
+    }
+    return pages.map((page, k) => {
+      const ids = page.map((c) => c.param);
+      while (ids.length < size) ids.push(null);
+      const held = page.length > 1 ? `${page[0].label} - ${page[page.length - 1].label}` : page[0].label;
+      const pageName = pages.length === 1 ? s.label : perPage === undefined ? `${s.label} ${k + 1}` : `${s.label}: ${held}`;
+      return { section, sectionName: s.label, pageName, ids };
     });
   });
 }
