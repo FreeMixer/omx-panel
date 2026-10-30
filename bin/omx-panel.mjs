@@ -5,7 +5,7 @@
  * omx-panel <verb> ...
  *
  *   validate <skin.json | skin package directory>...     a skin against the schema; exit 0 valid, 1 not, 2 usage or read
- *   layout --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages]
+ *   layout --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages [--per-page N]]
  *                                                        the panel laid out from a descriptor, as JSON (or its canonical
  *                                                        serialisation, or its pages of eight)
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
@@ -33,7 +33,7 @@ process.stdout.on('error', (err) => {
 
 const TOOLS = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
-  + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages]\n'
+  + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N]]\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--check]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
   + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
@@ -92,7 +92,16 @@ async function layout(argv) {
     process.exit(1);
   }
   if (argv.includes('--canonical')) process.stdout.write(panelCanonical(x));
-  else if (argv.includes('--pages')) process.stdout.write(`${JSON.stringify(pagesOf(x), null, 2)}\n`);
+  else if (argv.includes('--pages')) {
+    const raw = opt('--per-page');
+    const perPage = raw === undefined ? undefined : /^[0-9]+$/.test(raw) ? Number(raw) : NaN;
+    try {
+      process.stdout.write(`${JSON.stringify(pagesOf(x, { perPage }), null, 2)}\n`);
+    } catch (err) {
+      process.stderr.write(`omx-panel: ${err.message}\n`);
+      process.exit(2);
+    }
+  }
   else process.stdout.write(`${JSON.stringify(x, (_k, v) => (typeof v === 'bigint' ? v.toString(16) : v), 2)}\n`);
 }
 

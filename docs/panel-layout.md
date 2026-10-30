@@ -114,6 +114,16 @@ joined with ` / `, its key the path's segments in the key grammar, joined with d
 group go to a section `controls`. A hidden control is left out. The layout also carries the ports: the
 audio inputs and outputs with their channels, whether one is a side-chain, and the note inputs.
 
+## Pages
+
+`omx-panel layout --pages` cuts each section's controls, in the section's order, into pages of eight (the
+CLAP remote-controls surface); a section of several pages numbers them (`Filter 1`, `Filter 2`). A
+surface with another number of encoders asks for it: `--pages --per-page N` (`perPage` in
+`schema/panel.schema.json`, default 8). Then a group that fits a page is not split across two (the page
+ends early), a group wider than N is cut, and a section of several pages names each page by the controls
+it holds (`Band: Freq - Q`). Every page carries N slots, a short page's last ones `null`. Left out, the
+output is the plain cut of eight, unchanged.
+
 ## Verbatim
 
 For omx-plugins' plugins the descriptor carries what the declaration did, so every generated header,
