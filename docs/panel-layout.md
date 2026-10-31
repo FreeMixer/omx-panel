@@ -124,6 +124,39 @@ ends early), a group wider than N is cut, and a section of several pages names e
 it holds (`Band: Freq - Q`). Every page carries N slots, a short page's last ones `null`. Left out, the
 output is the plain cut of eight, unchanged.
 
+## The Easy face
+
+`tools/easy.mjs` picks the handful of controls a plugin opens on; every control is one click away, on the same processor.
+`easyOf` returns their symbols, and the layout carries them as `easy`. The first that answers wins:
+
+1. **Declared**: the declared panel's `easy`, else the descriptor's. At most 8. A list that names no control of the panel, a
+   control no face can set, or one control twice is refused by name, never trimmed.
+2. **Roles**: the family's row below, each role that is mapped, at most 6. An indexed role with more members than places takes
+   them evenly spaced, both ends included, so a 31-band graphic shows its whole span.
+3. **Order**: when the roles gave fewer than 4, the first controls in layout order fill up to 4.
+
+| Family | Roles, in order |
+|---|---|
+| `gate` | `threshold`, `range`, `attack`, `release` |
+| `dynamics` | `threshold`, `ratio`, `makeup`, `mix`, `attack`, `release` |
+| `limiter` | `ceiling`, `threshold`, `release`, `output` |
+| `deesser` | `frequency`, `threshold`, `range`, `mix` |
+| `eq` | `band_gain`, `output` |
+| `filter` | `cutoff`, `resonance`, `filter_type`, `mix` |
+| `drive` | `drive`, `tone`, `model`, `mix` |
+| `modulation` | `rate`, `depth`, `feedback`, `mix` |
+| `delay` | `time`, `feedback`, `tone`, `mix` |
+| `reverb` | `size`, `decay`, `damping`, `mix` |
+| `pitch` | `shift`, `fine`, `mix` |
+
+A face can set any control that is not a reading, a trigger or a bypass. The list is a view of the panel, so it stays out of
+the canonical serialisation and the fingerprint.
+
+`omx-panel layout --pages --easy-first` puts the Easy controls first, on pages named `Easy`, `Easy 2`, with no control on two
+pages; a scanned descriptor takes the `easy` of the descriptor the plugin's package installed under the same plugin id, as a scan
+has nothing to read one from. Without the flag the pages are the page rule's. `omx-panel modgui --easy-first` draws the Easy
+controls as a MOD GUI's first section and lists them as `modgui:port`.
+
 ## Verbatim
 
 For omx-plugins' plugins the descriptor carries what the declaration did, so every generated header,

@@ -25,6 +25,14 @@
       "title": "Indexed role",
       "description": "The roles that repeat by index, one parameter per band: the only roles that may name a list of symbols."
     },
+    "easy": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": { "type": "string" },
+      "title": "Easy controls",
+      "description": "The controls the plugin opens on, in order, by symbol. Every control stays one click away. Left out, tools/easy.mjs picks them from the roles."
+    },
     "perPage": {
       "type": "integer",
       "minimum": 1,
