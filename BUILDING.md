@@ -4,7 +4,7 @@
 
 Needs Node.js 18 or newer and npm. The tools that read the plugin vocabulary need it installed: omx-contract's
 schema and contract directory (`omx-contract-data`), plugin-hostd's format tables (`plugin-hostd-contract`), the
-descriptors of omx-plugins' plugins and the param-contract unit table, `param-units.json` (both `omx-plugins-contract`,
+descriptors of omx-plugins' plugins (`omx-plugins-contract`) and the param-contract unit table, `param-contract.json` (`omx-contract-data` from 3.6.0,
 from 0.15.0). The contract directory is `$OMX_CONTRACT_PATH` (a `:`
 list, the first that holds a package wins), else omx-contract's pkg-config variable `contractdir` where
 `omx-contract-devel` installs `omx-contract.pc`, else `/usr/share/omx-contract/contract.d`; no pkg-config is needed.

@@ -11,7 +11,7 @@
  *     installed LV2 table read backwards (`<contractdir>/3/plugin-hostd/formats/lv2.json`, installed by
  *     plugin-hostd-contract; `$PLUGIN_HOSTD_TABLES`, a directory holding lv2.json, stands in), or the name of a unit
  *     in the param-contract extension's vendor block; a token is served when that extension's unit table gives it a
- *     value (`<contractdir>/3/omx-plugins/param-units.json`, installed by omx-plugins-contract);
+ *     value (`<contractdir>/3/omx-contract/param-contract.json`, installed by omx-contract-data from 3.6.0);
  *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
  *
@@ -118,17 +118,17 @@ export const lv2UnitTable = once(() => {
   return out;
 });
 
-/** The param-contract unit table: `<contractdir>/3/omx-plugins/param-units.json`, which omx-plugins-contract installs. */
+/** The param-contract unit table: `<contractdir>/3/omx-contract/param-contract.json`, which omx-contract-data installs. */
 export function paramUnitsFile() {
-  const dir = packageDir('omx-plugins');
-  const file = dir && join(dir, 'param-units.json');
+  const dir = packageDir('omx-contract');
+  const file = dir && join(dir, 'param-contract.json');
   return file && existsSync(file) ? file : undefined;
 }
 
 /** The param-contract units' values, by name in capitals without underscores (SEMITONE12TET): `Map<name, value>`. */
 export const paramUnits = once(() => {
   const file = paramUnitsFile();
-  if (!file) throw new Error('vocabulary: the param-contract unit table param-units.json is not installed: install omx-plugins-contract (>= 0.15.0)');
+  if (!file) throw new Error('vocabulary: the param-contract unit table param-contract.json is not installed: install omx-contract-data (>= 3.6.0)');
   const value = JSON.parse(readFileSync(file, 'utf8')).OMX_PARAM_CONTRACT_UNITS?.value;
   if (!value || typeof value !== 'object') throw new Error(`vocabulary: ${file} declares no OMX_PARAM_CONTRACT_UNITS value`);
   return new Map(Object.entries(value).map(([name, code]) => [name.replaceAll('_', '').toUpperCase(), code]));

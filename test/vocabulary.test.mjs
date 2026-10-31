@@ -78,7 +78,7 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
 
 test('omx-panel vocabulary reads each source where the lookup puts it, and fails on one that is missing', () => {
   const UNITS = { OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value: { none: 0, db: 13, dbu: 0x101 } } };
-  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR, 'param-units.json': UNITS } });
+  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-contract': { 'param-contract.json': UNITS }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
   const schema = join(dir, 'omx-contract.schema.json');
   writeFileSync(schema, JSON.stringify({ $defs: { meaning: { enum: ['gain', 'delay', 'unknown'] } } }));
   const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, PKG_CONFIG: NO_PKG_CONFIG };
