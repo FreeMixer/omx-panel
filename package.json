@@ -30,6 +30,14 @@
       "types": "./dist/tools/panel-description.d.mts",
       "default": "./dist/tools/panel-description.mjs"
     },
+    "./easy": {
+      "types": "./dist/tools/easy.d.mts",
+      "default": "./dist/tools/easy.mjs"
+    },
+    "./compare": {
+      "types": "./dist/tools/compare.d.mts",
+      "default": "./dist/tools/compare.mjs"
+    },
     "./vocabulary": {
       "types": "./dist/tools/vocabulary.d.mts",
       "default": "./dist/tools/vocabulary.mjs"

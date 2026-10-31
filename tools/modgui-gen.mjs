@@ -17,7 +17,7 @@
  * template's own layout (raster.mjs) — the plugin title, the section labels, each control's name and its default with unit, set in the look's bundled font (tools/fonts/), each knob at its declared default, byte-deterministic.
  *
  * Usage: `node tools/modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>)
- * [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]` — `--check` writes nothing and refuses a
+ * [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>] [--easy-first]` — `--check` writes nothing and refuses a
  * stale, missing or extra file byte for byte; `--emit-stdout` prints every text file and one digest line per
  * image, writing nothing. `--stem` names the files (the bundle's name without .lv2 by default); `--source` is what
  * the banner names as their source (the descriptor and the panel files by default).
@@ -28,7 +28,8 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseFont } from './font.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
-import { keyOf, panelLayout } from './panel-description.mjs';
+import { easyOf } from './easy.mjs';
+import { EASY_PAGE, keyOf, panelLayout } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
@@ -141,22 +142,43 @@ export class NothingToDraw extends Error {
 }
 
 /** The panel a descriptor is drawn with: the declared one, else the layout's sections and family over its
- * groups and meanings (tools/panel-description.mjs). */
-export function panelOf(descriptor, declared) {
-  if (declared) return declared;
-  const x = panelLayout(descriptor);
-  return { family: x.family, sections: x.sections.map((s, i) => ({ key: s.key, label: s.label, controls: x.controls.filter((c) => c.section === i).map((c) => c.symbol) })) };
+ * groups and meanings (tools/panel-description.mjs); with `wantEasyFirst` (--easy-first), the Easy controls first. */
+export function panelOf(descriptor, declared, wantEasyFirst = false) {
+  if (!declared) {
+    const x = panelLayout(descriptor);
+    const panel = { family: x.family, sections: x.sections.map((s, i) => ({ key: s.key, label: s.label, controls: x.controls.filter((c) => c.section === i).map((c) => c.symbol) })) };
+    return wantEasyFirst ? easyFirst(panel, x.easy) : panel;
+  }
+  if (!wantEasyFirst) return declared;
+  // A declared panel is checked by resolvePanel, each fault by its own message: a control it cannot find is simply not drawable here
+  const controlOf = (symbol) => descriptor.controls?.find((c) => keyOf(c) === symbol);
+  const roles = Object.entries(declared.roles ?? {}).flatMap(([role, syms]) => [syms].flat().map((symbol, index) => ({ role, index, symbol })));
+  const controls = declared.sections.flatMap((s) => s.controls.map((symbol) => ({ symbol })));
+  const drawable = ({ symbol }) => {
+    const c = controlOf(symbol);
+    return c !== undefined && !c.readonly && !c.hidden && c.kind !== 'trigger' && c.meaning !== 'bypass' && c.meaning !== 'enabled';
+  };
+  return easyFirst(declared, easyOf({ family: declared.family, roles, controls }, { declared: declared.easy ?? descriptor.easy, drawable, where: 'modgui-gen' }));
+}
+
+/** The Easy controls as a first section, and the rest in their sections after it, so a pedal's listed ports are the Easy ones.
+ * A panel Easy holds whole keeps its sections: there is nothing to unfold. A section Easy emptied is left out. */
+function easyFirst(panel, easy) {
+  const listed = panel.sections.flatMap((s) => s.controls);
+  if (listed.every((symbol) => easy.includes(symbol))) return panel;
+  const rest = panel.sections.map((s) => ({ ...s, controls: s.controls.filter((symbol) => !easy.includes(symbol)) })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
+  return { ...panel, sections: [{ key: 'easy', label: EASY_PAGE, controls: easy }, ...rest] };
 }
 
 /** The panel of a descriptor, resolved: each section with its controls, each control its descriptor control's
  * symbol, name and travel. `stem` names the files. */
-export function resolvePanel(descriptor, { panel: declared, stem }) {
+export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst = false }) {
   const plugin = descriptor.plugin ?? {};
   const uri = plugin.format === 'lv2' ? plugin.id : plugin.uri;
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
   let panel;
   try {
-    panel = panelOf(descriptor, declared);
+    panel = panelOf(descriptor, declared, wantEasyFirst);
   } catch (err) {
     throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
   }
@@ -496,8 +518,8 @@ ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
 
 /** Every file of a descriptor's modgui, as [path relative to the LV2 bundle, bytes], in a fixed order. `source`
  * is what the banner names the files were made from. */
-export function generateModgui(descriptor, { panel: declared, stem, source }, look = loadLook()) {
-  const panel = resolvePanel(descriptor, { panel: declared, stem });
+export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false }, look = loadLook()) {
+  const panel = resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst });
   const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem };
   const f = files(panel.stem);
   return [
@@ -557,7 +579,7 @@ export function main(argv) {
   const manifest = join(dir, 'manifest.ttl');
   let made;
   try {
-    made = generateModgui(descriptor, { panel, stem, source }, look);
+    made = generateModgui(descriptor, { panel, stem, source, easyFirst: argv.includes('--easy-first') }, look);
   } catch (err) {
     if (err.code === 'MODGUI_CHOICE_NO_VALUES') {
       console.error(`${err.code}: ${err.message}`);
