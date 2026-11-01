@@ -19,6 +19,7 @@
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { easyOf } from './easy.mjs';
 import { meaningOfRole, servedToken } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
@@ -293,7 +294,9 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const listsPrograms = ['programs', 'presets'].map((k) => [k, descriptor[k]]).find(([, v]) => Array.isArray(v) && v.length > 0);
     throw new NoControls(`${where}: no control to lay out (${all.length === 0 ? 'the descriptor states no controls' : `its ${all.length} controls are all hidden`})${listsPrograms ? `; its ${listsPrograms[1].length} ${listsPrograms[0]} are not drawn, a program list is not a control` : ''}`);
   }
-  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports) };
+  // The Easy face: a view of the panel, so it stays out of the canonical form and the fingerprint
+  const easy = easyOf({ family, roles, controls }, { declared: panel?.easy ?? descriptor.easy, where });
+  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy };
 }
 
 /** A channel kind whose default a contract travel states (byKind) -> the placement it is. */
@@ -302,6 +305,9 @@ const PLACEMENT_OF_KIND = { fxReturn: 'return', main: 'master' };
 /** The key a control carries its declared group under, for the page cut: a symbol, so no serialisation sees it. */
 export const GROUP = Symbol('group');
 
+/** The name of the Easy controls' page and of a MOD GUI's first section. */
+export const EASY_PAGE = 'Easy';
+
 /** The surface's slots per page, CLAP_REMOTE_CONTROLS_COUNT. */
 export const PAGE_SIZE = 8;
 
@@ -309,12 +315,20 @@ export const PAGE_SIZE = 8;
  * pages of `perPage` (default eight, the surface's slots), a section of several pages numbering them; a
  * short page's slots are null. With `perPage` stated, a group that fits a page is not split across two
  * (a page ends early to keep it whole; a group wider than a page is cut), and a section of several
- * pages names each page by the controls it holds, "Band: Freq - Q". Left out, the cut is the plain one. */
-export function pagesOf(x, { perPage } = {}) {
+ * pages names each page by the controls it holds, "Band: Freq - Q". Left out, the cut is the plain one.
+ * With `easyFirst` the Easy controls come first, on pages of their own named Easy, Easy 2, and do not repeat. */
+export function pagesOf(x, { perPage, easyFirst = false } = {}) {
   const size = perPage ?? PAGE_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
-  return x.sections.flatMap((s, section) => {
-    const cs = x.controls.filter((c) => c.section === section);
+  const easy = easyFirst ? x.easy : [];
+  const easyPages = [];
+  for (let k = 0; k < easy.length; k += size) {
+    const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
+    while (ids.length < size) ids.push(null);
+    easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: k === 0 ? EASY_PAGE : `${EASY_PAGE} ${k / size + 1}`, ids });
+  }
+  return [...easyPages, ...x.sections.flatMap((s, section) => {
+    const cs = x.controls.filter((c) => c.section === section && !easy.includes(c.symbol));
     const pages = [];
     if (perPage === undefined) for (let k = 0; k < cs.length; k += size) pages.push(cs.slice(k, k + size));
     else {
@@ -339,7 +353,7 @@ export function pagesOf(x, { perPage } = {}) {
       const pageName = pages.length === 1 ? s.label : perPage === undefined ? `${s.label} ${k + 1}` : `${s.label}: ${held}`;
       return { section, sectionName: s.label, pageName, ids };
     });
-  });
+  })];
 }
 
 /** The shortest decimal that round-trips to the same binary64, -0 written 0. */

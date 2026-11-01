@@ -277,3 +277,21 @@ test('a default is shown with its unit: 300 ms, a bare number for a unitless tra
   const panel = resolvePanel(read('omx-delay.descriptor.json'), { stem: 'omx-delay', panel: read('omx-delay.panel.json') });
   assert.deepEqual(panel.sections[0].controls.map(valueText), ['Off', '300 ms', '0.3', '0.3', '0.3']);
 });
+
+test('--easy-first: the Easy controls are the first section and the listed ports; a declared list wins; a panel Easy holds whole keeps its sections', () => {
+  const declared = read('omx-delay.panel.json');
+  const ttl = (d, panel) => new Map(generateModgui(d, { stem: 'omx-delay', panel, source: 'x', easyFirst: true })).get('modgui.ttl').toString();
+  const ported = (text) => [...text.matchAll(/lv2:symbol "([^"]+)"/g)].map((m) => m[1]);
+  const d = read('omx-delay.descriptor.json');
+  assert.deepEqual(ported(ttl(d, declared)), ['fxDelayTime', 'fxDelayFeedback', 'tone', 'mix']);
+  assert.deepEqual(ported(ttl({ ...d, easy: ['mix', 'pingpong'] }, declared)), ['mix', 'pingpong']);
+  const opts = { stem: 'omx-delay', panel: declared, easyFirst: true };
+  assert.deepEqual(resolvePanel(d, opts).sections.map((s) => [s.key, s.controls.length]), [['easy', 4], ['delay', 1]]);
+  assert.deepEqual(resolvePanel({ ...d, easy: ['pingpong', 'fxDelayTime', 'fxDelayFeedback', 'mix', 'tone'] }, opts).sections.map((s) => s.key), ['delay'], 'nothing to unfold');
+  assert.throws(() => resolvePanel({ ...d, easy: ['nothing'] }, opts), /'nothing', no control/);
+  assert.deepEqual(resolvePanel(d, { stem: 'omx-delay', panel: declared }).sections.map((s) => s.key), ['delay'], 'without the option the bytes stay what a plugin package committed');
+  const out = join(mkdtempSync(join(tmpdir(), 'easy-gui-')), 'omx-delay.lv2');
+  const r = cli('--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'), '--out', out, '--easy-first');
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(ported(readFileSync(join(out, 'modgui.ttl'), 'utf8')), ['fxDelayTime', 'fxDelayFeedback', 'tone', 'mix']);
+});
