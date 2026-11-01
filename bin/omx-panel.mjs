@@ -22,7 +22,7 @@
  *   descriptors --installed                              each installed plugin descriptor file, one path per line
  */
 import { spawnSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSkin } from '../lib/validate.mjs';
@@ -33,7 +33,8 @@ process.stdout.on('error', (err) => {
   throw err;
 });
 
-const TOOLS = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools');
+const HERE = dirname(fileURLToPath(import.meta.url));
+const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first]]\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
@@ -42,9 +43,13 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
   + '       omx-panel look [--check]\n'
   + '       omx-panel vocabulary [<package>/<name>]...\n'
-  + '       omx-panel descriptors --installed\n';
+  + '       omx-panel descriptors --installed\n'
+  + '       omx-panel --version\n';
 
 const [command, ...args] = process.argv.slice(2);
+
+/** package.json sits beside bin/ in the tree and the installed package, and two up from dist/bin in the npm one. */
+const packageVersion = () => JSON.parse(readFileSync(['..', '../..'].map((up) => join(HERE, up, 'package.json')).find(existsSync), 'utf8')).version;
 
 /** A verb that is a tool of its own: run it with the same node, its exit status this command's. */
 const tool = (file) => process.exit(spawnSync(process.execPath, [join(TOOLS, file), ...args], { stdio: 'inherit' }).status ?? 1);
@@ -184,6 +189,7 @@ else if (command === 'complement') tool('lv2-complement.mjs');
 else if (command === 'look') tool('look.mjs');
 else if (command === 'vocabulary') await vocabulary(args);
 else if (command === 'descriptors') await descriptors(args);
+else if (command === '--version') process.stdout.write(`omx-panel ${packageVersion()}\n`);
 else {
   process.stderr.write(USAGE);
   process.exit(2);
