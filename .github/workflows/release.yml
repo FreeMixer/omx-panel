@@ -107,11 +107,14 @@ jobs:
         run: |
           mkdir -p pack
           npm pack --pack-destination pack
+          tools/vendored-source.sh pack
           ls -l pack
       - uses: actions/upload-artifact@v4
         with:
           name: npm-pack
-          path: pack/*.tgz
+          path: |
+            pack/*.tgz
+            pack/*-vendored.tar.gz
 
   attach:
     name: Attach the npm tarball to the GitHub release
@@ -139,7 +142,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" pack/*.tgz --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$TAG" pack/*.tgz pack/*-vendored.tar.gz --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" pack/*.tgz --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" pack/*.tgz pack/*-vendored.tar.gz --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --repo "$GITHUB_REPOSITORY"
           fi
