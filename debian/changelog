@@ -1,3 +1,11 @@
+omx-panel (0.8.1) unstable; urgency=medium
+
+  * The param-contract unit table is read from omx-contract 3.6.0's
+    param-contract.json; omx-plugins-contract is no build or run dependency
+    of the vocabulary.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 01 Nov 2026 18:00:00 +0100
+
 omx-panel (0.8.0) unstable; urgency=medium
 
   * The Easy face: every plugin's handful of controls, from a declared list,

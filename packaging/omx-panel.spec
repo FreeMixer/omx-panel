@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.8.0
+Version: 0.8.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -82,6 +82,11 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Sun Nov 01 2026 Pau Aliagas <linuxnow@gmail.com> - 0.8.1-1
+- The param-contract unit table is read from omx-contract 3.6.0's
+  param-contract.json; omx-plugins-contract is no build or run dependency of the
+  vocabulary, and a 0.16.x omx-plugins-contract beside omx-contract-data 3.6.0 is
+  no longer needed.
 * Sun Nov 01 2026 Pau Aliagas <linuxnow@gmail.com> - 0.8.0-1
 - The Easy face: every plugin's handful of controls, from a declared list, else
   its family's roles, else its first controls. omx-panel layout --pages
