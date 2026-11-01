@@ -78,7 +78,7 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
 
 test('omx-panel vocabulary reads each source where the lookup puts it, and fails on one that is missing', () => {
   const UNITS = { OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value: { none: 0, db: 13, dbu: 0x101 } } };
-  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR, 'param-units.json': UNITS } });
+  const dir = contractDir({ 'plugin-hostd': { 'formats/lv2.json': LV2 }, 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } , 'omx-contract': { 'param-contract.json': UNITS } });
   const schema = join(dir, 'omx-contract.schema.json');
   writeFileSync(schema, JSON.stringify({ $defs: { meaning: { enum: ['gain', 'delay', 'unknown'] } } }));
   const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, PKG_CONFIG: NO_PKG_CONFIG };
@@ -92,6 +92,21 @@ test('omx-panel vocabulary reads each source where the lookup puts it, and fails
   const missing = command(['omx-plugins/omx-nothing'], set);
   assert.equal(missing.status, 1);
   assert.match(missing.stdout, /^FAIL descriptor omx-plugins\/omx-nothing vocabulary: no descriptor omx-plugins\/omx-nothing is installed/m);
+});
+
+test('the unit codes are omx-contract\'s sheet; a stale omx-plugins param-units.json beside it is never read', () => {
+  const sheet = (value) => ({ OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value } });
+  const dir = contractDir({
+    'omx-contract': { 'param-contract.json': sheet({ none: 0, db: 13, midiNote: 24, dbu: 0x101 }) },
+    'omx-plugins': { 'param-units.json': sheet({ none: 0, db: 99 }) },
+  });
+  const set = { OMX_CONTRACT_PATH: dir, PKG_CONFIG: NO_PKG_CONFIG };
+  assert.equal(lookup('v.paramUnitsFile()', set), join(dir, '3/omx-contract/param-contract.json'));
+  assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13], ['MIDINOTE', 24], ['DBU', 0x101]]);
+  // a directory with only omx-plugins' sheet (omx-contract before 3.6.0) has no units: the read refuses and names the fix
+  const old = contractDir({ 'omx-plugins': { 'param-units.json': sheet({ none: 0, db: 13 }) } });
+  const r = command([], { OMX_CONTRACT_PATH: old, PKG_CONFIG: NO_PKG_CONFIG });
+  assert.match(r.stdout, /^FAIL param-contract .*install omx-contract-data \(>= 3\.6\.0\)/m);
 });
 
 test('an install with omx-contract-data and no omx-contract.pc reads its schema from the default directory', { skip: !existsSync('/usr/share/omx-contract/omx-contract.schema.json') && 'omx-contract-data is not installed' }, () => {
