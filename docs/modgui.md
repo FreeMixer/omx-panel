@@ -7,14 +7,14 @@ from its **descriptor** (omx-contract `docs/descriptors.md`) and, when the plugi
 
 ```
 omx-panel modgui --descriptor <file> | --installed <package>/<name>
-                 [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>] [--check | --emit-stdout]
+                 [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>] [--easy-first] [--check | --emit-stdout]
 ```
 
 - `--descriptor` names a descriptor file; `--installed omx-plugins/omx-delay` reads the one a package installed into
   omx-contract's contract directory (`<contractdir>/3/<package>/plugins/<name>.json`).
 - `--panel` names a JSON file holding the declared panel: `family`, `sections` (each `key`, `label`, `controls` by
   symbol) and, optionally, `widgets` (symbol to `knob`, `fader`, `switch` or `selector`, the list in
-  `schema/panel.schema.json`). With none, the sections are the descriptor's groups, laid out by
+  `schema/panel.schema.json`) and `easy` (the controls of the Easy face). With none, the sections are the descriptor's groups, laid out by
   `tools/panel-description.mjs`, and the family the one their meanings make.
 - `--out` is the LV2 bundle the files go into: `modgui.ttl` and `modgui/`. `--stem` names the files
   (`icon-<stem>.html`, `stylesheet-<stem>.css`, `screenshot-<stem>.png`, `thumbnail-<stem>.png`); it defaults to
@@ -26,7 +26,7 @@ omx-panel modgui --descriptor <file> | --installed <package>/<name>
 
 Every control's symbol, travel, default and label is the descriptor's. A toggle is a switch; a choice, or an
 integer travel of at most 16 steps, a selector over its values; every other travel a knob. The template lays out
-every section and every control; `modgui.ttl` lists the input controls of the first section as `modgui:port`.
+every section and every control; `modgui.ttl` lists the input controls of the first section as `modgui:port`. With `--easy-first` the Easy controls ([panel-layout.md](panel-layout.md)) are that first section, so a pedal's listed ports are them; a plugin's package turns it on when it regenerates its committed files, and `omx-modgui-sync` always does.
 
 A readout (a `readonly` control: a gain reduction, a level) has no travel to turn and no default. It is drawn as a
 display: a frame in its cell carrying its symbol and its range, never a knob, a fader, a switch or a selector, and

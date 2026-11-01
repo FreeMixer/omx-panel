@@ -250,7 +250,7 @@ generate() {
 	fi
 	tmp=$(mktemp -d "$STATE_DIR/tmp.XXXXXX")
 	local status=0 reason
-	(cd "$tmp" && omx-panel modgui "${args[@]}" --out "$tmp/$name.lv2" --source "$desc_file" >/dev/null 2>"$tmp/stderr") || status=$?
+	(cd "$tmp" && omx-panel modgui "${args[@]}" --easy-first --out "$tmp/$name.lv2" --source "$desc_file" >/dev/null 2>"$tmp/stderr") || status=$?
 	if [ "$status" != 0 ]; then
 		if [ "$status" = 3 ]; then
 			# omx-panel's exit 3: the descriptor has no visible control, there is no face to make
