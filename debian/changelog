@@ -1,3 +1,14 @@
+omx-panel (0.8.0) unstable; urgency=medium
+
+  * The Easy face: every plugin's handful of controls, from a declared list,
+    else its family's roles, else its first controls. omx-panel layout --pages
+    --easy-first and omx-panel modgui --easy-first put them first; without the
+    option every page and file is as before. omx-modgui-sync turns it on.
+  * Compare A/B/C/D and an undo ring per processor, as pure functions a host
+    runs: @openmixer/omx-panel/compare, and omx-panel compare for other hosts.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 01 Nov 2026 12:00:00 +0100
+
 omx-panel (0.7.2) unstable; urgency=medium
 
   * omx-panel layout --pages --per-page N cuts each section into pages of at
