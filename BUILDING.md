@@ -59,3 +59,10 @@ examples/skins/                   a skin package that validates
 test/                             the suite and its fixtures
 packaging/ debian/                omx-panel (RPM), omx-panel (deb)
 ```
+
+## Building with no network
+
+The RPM and DEB builds run `npm ci` unless `node_modules` is already in the source tree. A distribution build (mock,
+pbuilder, koji) has no registry, so each release also carries `omx-panel-<version>-vendored.tar.gz`: the same source
+with `node_modules` inside. For the RPM, use it as `Source0`, named `omx-panel-<version>.tar.gz`. `tools/vendored-source.sh`
+makes it from a checkout, and `tools/offline-build-check.sh <rpm | deb>` builds it in a container with `--network=none`.

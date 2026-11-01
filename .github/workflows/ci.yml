@@ -89,6 +89,22 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # A distribution build has no registry: the vendored tarball builds with --network=none, and the plain archive does not.
+  offline:
+    name: build with no network (${{ matrix.kind }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [rpm, deb]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: tools/offline-build-check.sh ${{ matrix.kind }}
+
   # The DEB as the release builds it: built from the checkout in a Debian container of each release and linted with
   # lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without packages (#85).
   deb-lint:

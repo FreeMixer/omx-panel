@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.7.2
+Version: 0.8.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -16,7 +16,8 @@ Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 BuildRequires: make
 BuildRequires: sed
 BuildRequires: nodejs >= 18
-# npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry
+# npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry, unless Source0 is
+# the vendored tarball (tools/vendored-source.sh), which holds them; the build still runs npm itself
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema and its param-contract unit table (param-contract.json,
 # from 3.6.0), and plugin-hostd's LV2 table; nothing of omx-plugins, which builds with this package
@@ -50,7 +51,7 @@ under /usr/share/omx-panel for a build that calls them.
 %autosetup
 
 %build
-npm ci --no-audit --no-fund
+test -d node_modules || npm ci --no-audit --no-fund
 %make_build
 
 %install
@@ -81,6 +82,13 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Sun Nov 01 2026 Pau Aliagas <linuxnow@gmail.com> - 0.8.0-1
+- The Easy face: every plugin's handful of controls, from a declared list, else
+  its family's roles, else its first controls. omx-panel layout --pages
+  --easy-first and omx-panel modgui --easy-first put them first; without the
+  option every page and file is as before. omx-modgui-sync turns it on.
+- Compare A/B/C/D and an undo ring per processor, as pure functions a host runs:
+  @openmixer/omx-panel/compare, and omx-panel compare for other hosts.
 * Fri Oct 30 2026 Pau Aliagas <linuxnow@gmail.com> - 0.7.2-1
 - omx-panel layout --pages --per-page N cuts each section into pages of at most
   N controls, in the section's order, keeping a declared group that fits a page

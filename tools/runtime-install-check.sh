@@ -137,6 +137,9 @@ done
 # 4. the installed command reads the installed contract data, nothing set and no omx-contract.pc
 [ ! -e /usr/share/pkgconfig/omx-contract.pc ] && [ ! -e /usr/lib64/pkgconfig/omx-contract.pc ] \
   && pass "no omx-contract.pc is installed" || fail "omx-contract.pc is installed: the lookup without it is not exercised"
+want=$(case "$FORMAT" in rpm) rpm -qp --qf '%{VERSION}' "$PKG" ;; deb) dpkg-deb -f "$PKG" Version | cut -d- -f1 ;; esac)
+[ "$(omx-panel --version)" = "omx-panel $want" ] && pass "omx-panel --version says $want" || fail "omx-panel --version says $(omx-panel --version), the package is $want"
+
 out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA -u PLUGIN_HOSTD_TABLES omx-panel vocabulary "$DESCRIPTOR" || true)
 echo "$out"
 expect() { grep -qE "$2" <<< "$out" && pass "omx-panel vocabulary: $1" || fail "omx-panel vocabulary: $1"; }

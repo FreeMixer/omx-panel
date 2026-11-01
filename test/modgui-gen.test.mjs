@@ -15,7 +15,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { emitLook, TOKENS_CSS, LOOK_JSON } from '../tools/look.mjs';
 import { parseFont } from '../tools/font.mjs';
-import { ChoiceNoValues, generateModgui, NothingToDraw, resolvePanel, valueText } from '../tools/modgui-gen.mjs';
+import { ChoiceNoValues, generateModgui, manifestSeesModgui, NothingToDraw, resolvePanel, valueText } from '../tools/modgui-gen.mjs';
 import { canvas, drawText } from '../tools/raster.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -164,10 +164,43 @@ test('a bundle manifest gets rdfs:seeAlso <modgui.ttl> once; --check refuses one
   assert.equal(readFileSync(manifest, 'utf8'), once);
   assert.equal(cli('--check', ...args).status, 0);
   // a manifest that already says it, in the prefixed spelling, is left as it is
-  const said = `${own}<urn:openmixer:delay> rdfs:seeAlso <modgui.ttl> .\n`;
+  const said = `@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n${own}<urn:openmixer:delay> rdfs:seeAlso <modgui.ttl> .\n`;
   writeFileSync(manifest, said);
   assert.equal(cli(...args).status, 0);
   assert.equal(readFileSync(manifest, 'utf8'), said);
+});
+
+test('the manifest check reads the seeAlso objects as Turtle: any order, and only a real triple counts (#68)', () => {
+  const head = '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n';
+  const sees = (body) => manifestSeesModgui(`${head}${body}\n`);
+  assert.equal(sees('<urn:p> rdfs:seeAlso <modgui.ttl> , <omx-comp.ttl> .'), true, 'modgui.ttl first');
+  assert.equal(sees('<urn:p> rdfs:seeAlso <omx-comp.ttl> , <modgui.ttl> .'), true, 'a dotted object before it');
+  assert.equal(sees('<urn:p> a lv2:Plugin ; rdfs:seeAlso <a.ttl> , <b.ttl> , <./modgui.ttl> .'), true, 'after two, in another spelling');
+  assert.equal(sees('<urn:p> <http://www.w3.org/2000/01/rdf-schema#seeAlso> <omx-comp.ttl> ,\n  <modgui.ttl> .'), true, 'the full predicate, over two lines');
+  assert.equal(sees('<urn:p> rdfs:seeAlso <omx-comp.ttl> .'), false, 'another file');
+  assert.equal(sees('<urn:p> rdfs:seeAlso <omx-comp.ttl> .\n# <urn:p> rdfs:seeAlso <modgui.ttl> .'), false, 'a comment says nothing');
+  assert.equal(sees('<urn:p> lv2:binary <modgui.ttl> .'), false, 'another predicate');
+  assert.equal(sees('<urn:p> rdfs:seeAlso <sub/modgui.ttl> .'), false, 'a file of that name elsewhere');
+});
+
+test('--check passes a manifest listing another object first; a manifest that is not Turtle is refused by line and left as it is (#68)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'mg68-'));
+  const bundle = join(dir, 'omx-delay.lv2');
+  const args = ['--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'), '--out', bundle, '--source', SOURCE];
+  assert.equal(cli(...args).status, 0);
+  const manifest = join(bundle, 'manifest.ttl');
+  const dotted = '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n<urn:openmixer:delay> rdfs:seeAlso <omx-comp.ttl> , <modgui.ttl> .\n';
+  writeFileSync(manifest, dotted);
+  assert.equal(cli('--check', ...args).status, 0);
+  assert.equal(cli(...args).status, 0);
+  assert.equal(readFileSync(manifest, 'utf8'), dotted, 'nothing added: it already said it');
+  const broken = '<urn:openmixer:delay> rdfs:seeAlso <modgui.ttl> .\n';
+  writeFileSync(manifest, broken);
+  for (const run of [cli('--check', ...args), cli(...args)]) {
+    assert.notEqual(run.status, 0);
+    assert.match(run.stderr, /manifest\.ttl.*line 1: undeclared prefix 'rdfs:'/);
+  }
+  assert.equal(readFileSync(manifest, 'utf8'), broken);
 });
 
 test('a trigger control beside a normal one is left off the face and reported: the normal one is drawn (the ZLFO shape)', () => {
@@ -276,4 +309,22 @@ test('a renamed plugin or a moved label moves the screenshot, so --check refuses
 test('a default is shown with its unit: 300 ms, a bare number for a unitless travel, On or Off for a switch', () => {
   const panel = resolvePanel(read('omx-delay.descriptor.json'), { stem: 'omx-delay', panel: read('omx-delay.panel.json') });
   assert.deepEqual(panel.sections[0].controls.map(valueText), ['Off', '300 ms', '0.3', '0.3', '0.3']);
+});
+
+test('--easy-first: the Easy controls are the first section and the listed ports; a declared list wins; a panel Easy holds whole keeps its sections', () => {
+  const declared = read('omx-delay.panel.json');
+  const ttl = (d, panel) => new Map(generateModgui(d, { stem: 'omx-delay', panel, source: 'x', easyFirst: true })).get('modgui.ttl').toString();
+  const ported = (text) => [...text.matchAll(/lv2:symbol "([^"]+)"/g)].map((m) => m[1]);
+  const d = read('omx-delay.descriptor.json');
+  assert.deepEqual(ported(ttl(d, declared)), ['fxDelayTime', 'fxDelayFeedback', 'tone', 'mix']);
+  assert.deepEqual(ported(ttl({ ...d, easy: ['mix', 'pingpong'] }, declared)), ['mix', 'pingpong']);
+  const opts = { stem: 'omx-delay', panel: declared, easyFirst: true };
+  assert.deepEqual(resolvePanel(d, opts).sections.map((s) => [s.key, s.controls.length]), [['easy', 4], ['delay', 1]]);
+  assert.deepEqual(resolvePanel({ ...d, easy: ['pingpong', 'fxDelayTime', 'fxDelayFeedback', 'mix', 'tone'] }, opts).sections.map((s) => s.key), ['delay'], 'nothing to unfold');
+  assert.throws(() => resolvePanel({ ...d, easy: ['nothing'] }, opts), /'nothing', no control/);
+  assert.deepEqual(resolvePanel(d, { stem: 'omx-delay', panel: declared }).sections.map((s) => s.key), ['delay'], 'without the option the bytes stay what a plugin package committed');
+  const out = join(mkdtempSync(join(tmpdir(), 'easy-gui-')), 'omx-delay.lv2');
+  const r = cli('--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'), '--out', out, '--easy-first');
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(ported(readFileSync(join(out, 'modgui.ttl'), 'utf8')), ['fxDelayTime', 'fxDelayFeedback', 'tone', 'mix']);
 });

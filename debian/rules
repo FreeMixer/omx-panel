@@ -5,9 +5,10 @@
 %:
 	dh $@
 
-# npm ci fetches typescript (the build) and ajv (the validator, installed with the package)
+# npm ci fetches typescript (the build) and ajv (the validator, installed with the package); the vendored source
+# tarball (tools/vendored-source.sh) already holds them, for a build with no registry
 override_dh_auto_build:
-	npm ci --no-audit --no-fund
+	test -d node_modules || npm ci --no-audit --no-fund
 	dh_auto_build
 
 override_dh_auto_test:
@@ -21,6 +22,7 @@ override_dh_auto_install:
 	find debian/omx-panel/usr/share/omx-panel -path '*/node_modules/*' -name '.*' -type f -delete
 
 # the sync units are installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` (and
-# omx-complement-sync) is the choice
+# omx-complement-sync) is the choice; so an upgrade has nothing of ours to stop either, and on a host that never had the
+# unit the stop only prints an error
 override_dh_installsystemd:
-	dh_installsystemd --no-enable --no-start
+	dh_installsystemd --no-enable --no-start --no-stop-on-upgrade
