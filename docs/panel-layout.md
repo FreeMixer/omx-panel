@@ -28,10 +28,10 @@ A control's unit is the descriptor's `travel.unit`. A role checks it against the
 param-contract extension serves (`tools/vocabulary.mjs`, `servedToken`): a unit's token is the LV2 unit a
 face writes for it, plugin-hostd's installed LV2 table read backwards, or the name of a unit in the
 extension's vendor block (`dBu`, `ratio`); it is served when the extension's unit table,
-`param-units.json` (omx-plugins-contract installs it in the contract directory), gives the token a value. So a unit that table or that block knows (`LUFS`, `dBu`
+`OMX_PARAM_CONTRACT_UNITS` (omx-contract's sheet, `3/omx-contract/param-contract.json` in the contract directory, omx-contract-data from 3.6.0), gives the token a value. So a unit that table or that block knows (`LUFS`, `dBu`
 among them) is checked like any other. A unit with no token there, `unknown` included, takes no role and
 is drawn as a plain number. Nothing here types a unit: the reader reads the installed table
-(`$PLUGIN_HOSTD_TABLES` stands in for it) and the installed unit table (`param-units.json` in the contract directory), and refuses by name when either is missing.
+(`$PLUGIN_HOSTD_TABLES` stands in for it) and the installed unit sheet (`param-contract.json` in omx-contract's directory), and refuses by name when either is missing.
 
 The level roles (`threshold`, `ceiling`) take `dB`, `dBFS`, `dBu` and `LUFS`.
 
