@@ -5,9 +5,10 @@
 %:
 	dh $@
 
-# npm ci fetches typescript (the build) and ajv (the validator, installed with the package)
+# npm ci fetches typescript (the build) and ajv (the validator, installed with the package); the vendored source
+# tarball (tools/vendored-source.sh) already holds them, for a build with no registry
 override_dh_auto_build:
-	npm ci --no-audit --no-fund
+	test -d node_modules || npm ci --no-audit --no-fund
 	dh_auto_build
 
 override_dh_auto_test:
