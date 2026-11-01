@@ -15,4 +15,8 @@ DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
 changes=$(ls ../"${name}"_*.changes)
 lintian --fail-on error,warning "$changes"
 cp ../"${name}"_*_all.deb "$out/"
+# what debhelper made of the scripts: the reload is there, and an upgrade stops nothing (#74)
+deb=$(ls "$out"/"${name}"_*_all.deb)
+grep -q '^ *systemctl daemon-reload' <<< "$(dpkg-deb --info "$deb" postinst)" || { echo "postinst does not reload systemd" >&2; exit 1; }
+if grep -q 'deb-systemd-invoke stop' <<< "$(dpkg-deb --info "$deb" preinst 2>/dev/null || true)"; then echo "preinst stops a unit on upgrade" >&2; exit 1; fi
 ls "$out"/*.deb

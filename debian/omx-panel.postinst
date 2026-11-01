@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+set -e
+
+# the drop-ins on plugin-qualify-sync.service are another package's unit: debhelper reloads for neither them nor units
+# it does not start
+if [ "$1" = configure ] && [ -d /run/systemd/system ]; then
+  systemctl daemon-reload || true
+fi
+
+#DEBHELPER#
+
+exit 0
