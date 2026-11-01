@@ -147,7 +147,7 @@ expect "the contract directory is $CONTRACTDIR" "^ok   contractdir $CONTRACTDIR\
 expect "the meanings from omx-contract-data's schema" '^ok   meanings [1-9][0-9]* from /usr/share/omx-contract/omx-contract\.schema\.json$'
 expect "the LV2 table from the contract directory" "^ok   lv2-units [1-9][0-9]* from $CONTRACTDIR/3/plugin-hostd/formats/lv2\\.json\$"
 expect "the descriptor $DESCRIPTOR from the contract directory" "^ok   descriptor $DESCRIPTOR [1-9][0-9]* controls from $CONTRACTDIR/3/${DESCRIPTOR%%/*}/plugins/${DESCRIPTOR#*/}\\.json\$"
-expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-plugins/param-units\\.json\$"
+expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-contract/param-contract\\.json\$"
 
 for u in "${unverified[@]}"; do echo "::warning::not verified: $u"; done
 [ "$fails" -eq 0 ] || { echo "runtime-install-check: $fails check(s) failed" >&2; exit 1; }
