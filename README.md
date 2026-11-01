@@ -37,9 +37,24 @@ the plugin's own declaration, in the omx look, vintage or modern.
 
 ## Install
 
-The first release publishes `omx-panel` as an RPM (`dnf install omx-panel`) and a DEB (`apt install omx-panel`),
-each carrying the tools, the schema and the skins directory, and `@openmixer/omx-panel` on npm
-(`npm install @openmixer/omx-panel`). Until then, build from source: see [BUILDING.md](BUILDING.md).
+`omx-panel` comes as an RPM and a DEB, each carrying the tools, the schema and the skins directory, and as
+`@openmixer/omx-panel` on npm (`npm install @openmixer/omx-panel`).
+
+Fedora 44, x86_64 or aarch64:
+
+```
+sudo dnf install https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
+sudo dnf install omx-panel
+```
+
+Debian bookworm and trixie, amd64 or arm64 (also Raspberry Pi OS and Zynthian):
+
+```
+curl -fsSLO https://www.openmixer.org/deb/openmixer-release.deb && sudo apt install ./openmixer-release.deb
+sudo apt install omx-panel
+```
+
+To build from source, see [BUILDING.md](BUILDING.md).
 
 ## For a plugin author
 
