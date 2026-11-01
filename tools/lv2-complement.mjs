@@ -32,7 +32,7 @@
  * and exits 3 when a bundle of ours is stale (the run would remove it) or out of date (it would write it again).
  */
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -508,7 +508,7 @@ function mirror(src, dst, written, rel) {
 // ---------------------------------------------------------------------------------------------------------------
 // The run over a search list.
 
-/** Every bundle directory on the search list, in its order; the writer's own bundles (marked) are not installed ones. */
+/** Every bundle directory on the search list, in its order, one reached twice by its first path; the writer's own bundles (marked) are not installed ones. */
 export function installedBundles(lv2Path) {
   const out = [];
   const seen = new Set();
@@ -521,9 +521,10 @@ export function installedBundles(lv2Path) {
     }
     for (const name of names) {
       const dir = resolve(root, name);
-      if (seen.has(dir)) continue;
-      seen.add(dir);
       try {
+        const real = realpathSync(dir);
+        if (seen.has(real)) continue;
+        seen.add(real);
         if (!statSync(dir).isDirectory() || existsSync(join(dir, MARKER))) continue;
       } catch {
         continue;
