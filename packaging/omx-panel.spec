@@ -16,7 +16,8 @@ Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 BuildRequires: make
 BuildRequires: sed
 BuildRequires: nodejs >= 18
-# npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry
+# npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry, unless Source0 is
+# the vendored tarball (tools/vendored-source.sh), which holds them; the build still runs npm itself
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit table (param-units.json, from 0.15.0)
@@ -52,7 +53,7 @@ under /usr/share/omx-panel for a build that calls them.
 %autosetup
 
 %build
-npm ci --no-audit --no-fund
+test -d node_modules || npm ci --no-audit --no-fund
 %make_build
 
 %install
