@@ -29,6 +29,7 @@ import {
   renderBundle,
   summary,
   sync,
+  installedBundles,
 } from '../dist/tools/lv2-complement.mjs';
 import { parseTurtle } from '../dist/tools/turtle-read.mjs';
 
@@ -531,6 +532,25 @@ describe('the degenerate cases are refused with a reason and never written', () 
     assert.equal(r.refusals['plugin-in-several-bundles'], 2);
     assert.equal(r.counts.written, 0);
     empty(join(root, 'out'));
+  });
+
+  it('one bundle reached twice is one bundle: a symlinked search root, and a symlinked bundle directory, are not refused (#70)', () => {
+    const root = scratch();
+    const lv2 = join(root, 'lv2');
+    installed(lv2, 'triple_para-swh', ['swh-triplepara']);
+    const alias = join(root, 'alias');
+    symlinkSync(lv2, alias);
+    const out = join(root, 'out');
+    assert.deepEqual(installedBundles(`${lv2}:${alias}`), [join(lv2, 'triple_para-swh.lv2')], 'the first path is the one kept');
+    assert.deepEqual(installedBundles(`${alias}:${lv2}`), [join(alias, 'triple_para-swh.lv2')], 'whichever comes first');
+    const r = run(`${lv2}:${alias}`, out);
+    assert.equal(r.refusals['plugin-in-several-bundles'] ?? 0, 0);
+    assert.equal(r.counts.written, 1);
+
+    const second = join(root, 'lv2b');
+    mkdirSync(second);
+    symlinkSync(join(lv2, 'triple_para-swh.lv2'), join(second, 'triple_para-link.lv2'));
+    assert.deepEqual(installedBundles(`${lv2}:${second}`), [join(lv2, 'triple_para-swh.lv2')]);
   });
 
   it('two installed bundles whose complements would have one name (same basename, two roots): both written under names derived from their paths, each removed exactly', () => {
