@@ -31,6 +31,7 @@ import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
 import { EASY_PAGE, keyOf, panelLayout } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
+import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
 export { LOOK_JSON };
@@ -542,8 +543,16 @@ function walk(dir, base) {
 
 const SEE_ALSO = 'http://www.w3.org/2000/01/rdf-schema#seeAlso';
 
-/** Whether a bundle manifest points a lilv host at modgui.ttl (`rdfs:seeAlso <modgui.ttl>`, any spelling of the predicate). */
-export const manifestSeesModgui = (text) => /(?:rdfs:seeAlso|rdf-schema#seeAlso>)[^.;]*<modgui\.ttl>/.test(text);
+const MANIFEST_BASE = 'file:///bundle/manifest.ttl';
+
+/**
+ * Whether a bundle manifest points a lilv host at modgui.ttl: a seeAlso triple with that object, read as Turtle, so any
+ * spelling and any place in an object list. A manifest that is not Turtle throws, naming the line: lilv cannot read it either.
+ */
+export function manifestSeesModgui(text) {
+  const want = new URL(MODGUI_TTL, MANIFEST_BASE).href;
+  return parseTurtle(text, MANIFEST_BASE).some(({ p, o }) => p.v === SEE_ALSO && o.t === 'iri' && o.v === want);
+}
 
 /** The manifest with `<uri> rdfs:seeAlso <modgui.ttl>` added, or unchanged when it already has it. */
 export function withModguiSeeAlso(text, uri) {
@@ -577,6 +586,14 @@ export function main(argv) {
   const dir = resolve(out);
   const shown = (p) => relative(process.cwd(), join(dir, p));
   const manifest = join(dir, 'manifest.ttl');
+  const manifestText = !toStdout && existsSync(manifest) ? readFileSync(manifest, 'utf8') : null;
+  let manifestSees = false;
+  try {
+    manifestSees = manifestText !== null && manifestSeesModgui(manifestText);
+  } catch (err) {
+    console.error(`modgui: MANIFEST ${shown('manifest.ttl')}: ${err.message}`);
+    process.exit(1);
+  }
   let made;
   try {
     made = generateModgui(descriptor, { panel, stem, source, easyFirst: argv.includes('--easy-first') }, look);
@@ -603,7 +620,7 @@ export function main(argv) {
         stale++;
       }
     }
-    if (existsSync(manifest) && !manifestSeesModgui(readFileSync(manifest, 'utf8'))) {
+    if (manifestText !== null && !manifestSees) {
       console.error(`modgui: MANIFEST ${shown('manifest.ttl')} has no rdfs:seeAlso <${MODGUI_TTL}>, so a lilv host never reads the MOD GUI (run \`node tools/modgui-gen.mjs\`)`);
       stale++;
     }
@@ -622,10 +639,9 @@ export function main(argv) {
       console.log(`modgui: wrote ${shown(p)}`);
     }
     // a lilv host reads modgui.ttl only if the bundle manifest points at it; with no manifest nothing is created
-    if (existsSync(manifest)) {
-      const text = readFileSync(manifest, 'utf8');
-      const next = withModguiSeeAlso(text, resolvePanel(descriptor, { panel, stem }).uri);
-      if (next !== text) {
+    if (manifestText !== null) {
+      const next = withModguiSeeAlso(manifestText, resolvePanel(descriptor, { panel, stem }).uri);
+      if (next !== manifestText) {
         writeFileSync(manifest, next);
         console.log(`modgui: added rdfs:seeAlso <${MODGUI_TTL}> to ${shown('manifest.ttl')}`);
       }
