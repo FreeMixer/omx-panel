@@ -1,3 +1,12 @@
+omx-panel (0.8.1) unstable; urgency=medium
+
+  * The param-contract unit codes are read from omx-contract's
+    OMX_PARAM_CONTRACT_UNITS sheet (omx-contract-data 3.6.0), no longer from
+    omx-plugins-contract's param-units.json, which omx-plugins 0.17.0 drops.
+    The omx-contract-data requirement is now >= 3.6.0.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 01 Nov 2026 20:00:00 +0100
+
 omx-panel (0.8.0) unstable; urgency=medium
 
   * The Easy face: every plugin's handful of controls, from a declared list,
