@@ -20,10 +20,9 @@ BuildRequires: nodejs >= 18
 # the vendored tarball (tools/vendored-source.sh), which holds them; the build still runs npm itself
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
-# unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0)
+# unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: omx-contract-data >= 3.6.0
 BuildRequires: plugin-hostd-contract >= 0.12.0
-BuildRequires: omx-plugins-contract >= 0.15.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe
 Recommends: python3-lilv
 Recommends: plugin-hostd
@@ -36,7 +35,7 @@ Requires: nodejs >= 18
 Requires: omx-contract-data >= 3.6.0
 Requires: plugin-hostd-contract >= 0.12.0
 # the descriptors of omx-plugins' plugins, for modgui --installed
-Requires: omx-plugins-contract >= 0.15.0
+Recommends: omx-plugins-contract >= 0.15.0
 Provides: bundled(nodejs-ajv)
 
 %description

@@ -19,7 +19,7 @@
  *      test/fixtures/descriptors/ at the descriptor words' commit) each give a sensible panel.
  *
  * Part of `make test`. It reads the installed vocabulary (tools/vocabulary.mjs): omx-contract's schema,
- * plugin-hostd's LV2 table and the param-contract header. The rule over omx-plugins' own plugins (their authored
+ * plugin-hostd's LV2 table and the param-contract unit table. The rule over omx-plugins' own plugins (their authored
  * descriptors state no unknown, and the layout with no declared panel finds the declared family and roles) loads
  * their declarations, so it stays in omx-plugins.
  */
