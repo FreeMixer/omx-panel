@@ -15,7 +15,7 @@ jobs:
     # the private development copy runs on FreeMixer's own runners (hosted runners are refused there); the public
     # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema, plugin-hostd's LV2
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
-    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
       image: fedora:44
     steps:
@@ -118,7 +118,7 @@ jobs:
   # lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without packages (#85).
   deb-lint:
     name: build and lint the DEB (${{ matrix.suite }})
-    runs-on: ${{ vars.OMX_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -138,7 +138,7 @@ jobs:
   runtime-install:
     name: runtime install (${{ matrix.image }})
     needs: packages
-    runs-on: ${{ vars.OMX_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
