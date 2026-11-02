@@ -18,7 +18,7 @@
  *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
  *                                                        directories, the meanings, the LV2 unit table, the param-contract
- *                                                        header and each descriptor named; exit 1 when one is missing
+ *                                                        unit table and each descriptor named; exit 1 when one is missing
  *   descriptors --installed                              each installed plugin descriptor file, one path per line
  */
 import { spawnSync } from 'node:child_process';

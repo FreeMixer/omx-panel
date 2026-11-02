@@ -152,15 +152,15 @@ export function unitTokenOf(unit) {
   return (paramUnits().get(name) ?? 0) >= VENDOR_BLOCK ? name.toLowerCase() : undefined;
 }
 
-/** The token of a unit the param-contract extension serves (one with a header value, or "" for none), else undefined. */
+/** The token of a unit the param-contract extension serves (one with a code in the unit table, or "" for none), else undefined. */
 export function servedToken(unit) {
   if (unit === '') return 'none';
   const token = unitTokenOf(unit);
   return token && paramUnits().get(token.toUpperCase()) ? token : undefined;
 }
 
-/** Every unit plugin-hostd's LV2 table maps, and "", with its contract unit: `{ <unit>: [token, header value] }`, a unit
- * the header has no value for `['none', 0]`. */
+/** Every unit plugin-hostd's LV2 table maps, and "", with its contract unit: `{ <unit>: [token, code] }`, a unit
+ * the unit table has no code for `['none', 0]`. */
 export function contractUnits() {
   return Object.fromEntries(['', ...Object.keys(lv2UnitTable())].map((u) => {
     const token = u === '' ? undefined : unitTokenOf(u);
