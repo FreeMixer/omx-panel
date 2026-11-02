@@ -5,7 +5,7 @@
  * fixture modgui bundle of our own (test/fixtures/modgui, no MOD art), the package it writes parses under §6.3, its
  * labels and order equal the bundle's, its files are the bundle's byte for byte, and every refusal code of the
  * declaration is produced by a bundle that earns it, with nothing written. The CEO arm runs the spec's own proof
- * where caps-lv2 is installed. Moved from the console with its assertions unchanged; each `expect` there is an
+ * where caps-lv2 is installed, and CI installs it and requires it. Moved from the console with its assertions unchanged; each `expect` there is an
  * `assert` here.
  */
 import assert from 'node:assert/strict';
@@ -24,7 +24,15 @@ import { parseTurtle } from '../dist/tools/turtle-read.mjs';
 const PKG = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURE = join(PKG, 'test/fixtures/modgui/omx-fixture-echo.lv2');
 const PLUGIN = 'urn:openmixer:fixture:echo';
-const CEO = '/usr/lib64/lv2/mod-caps-CEO.lv2';
+/*
+ * The real-bundle proof reads caps-lv2 where it is installed: LV2_PATH, or the search list omx-modgui-sync and
+ * omx-complement-sync fall back to (/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2). No MOD file is copied into this
+ * tree. OMX_PANEL_REAL_BUNDLES=required (CI) makes a missing caps-lv2 a failure, not a skip, so the proof runs where
+ * it is claimed.
+ */
+const LV2_DIRS = (process.env.LV2_PATH || '/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2').split(':').filter(Boolean);
+const CEO = LV2_DIRS.map((d) => join(d, 'mod-caps-CEO.lv2')).find((b) => existsSync(b));
+const REAL_REQUIRED = process.env.OMX_PANEL_REAL_BUNDLES === 'required';
 const TOOL = join(PKG, 'dist/tools/modgui-import.mjs');
 
 const scratch = mkdtempSync(join(tmpdir(), 'omx-modgui-import-'));
@@ -339,8 +347,14 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
   });
 });
 
-describe('modgui-import: the proof on the installed caps CEO', { skip: !existsSync(CEO) && `${CEO} is not installed` }, () => {
+const ceoSkip = !CEO && !REAL_REQUIRED && `caps-lv2's mod-caps-CEO.lv2 is not on ${LV2_DIRS.join(':')}`;
+describe('modgui-import: the proof on the installed caps CEO', { skip: ceoSkip }, () => {
+  it('caps-lv2 is installed where the proof reads it (OMX_PANEL_REAL_BUNDLES=required)', () => {
+    assert.ok(CEO, `mod-caps-CEO.lv2 on ${LV2_DIRS.join(':')}: install caps-lv2`);
+  });
+
   it('labels Profit, Level, Damping on ppm, volume, damping, and the licence recorded', () => {
+    assert.ok(CEO, 'caps-lv2 is installed');
     const r = importModgui({ bundle: CEO, out: fresh('out') }, core);
     assert.deepEqual(r.skin.sections[0].controls, ['ppm', 'volume', 'damping']);
     assert.deepEqual(r.skin.labels, { ppm: { label: 'Profit' }, volume: { label: 'Level' }, damping: { label: 'Damping' } });
@@ -349,6 +363,7 @@ describe('modgui-import: the proof on the installed caps CEO', { skip: !existsSy
   });
 
   it("every installed caps bundle's templates pass the reference check: no real bundle is refused for what its templates name", () => {
+    assert.ok(CEO, 'caps-lv2 is installed');
     const lv2 = dirname(CEO);
     const bundles = readdirSync(lv2).filter((d) => d.startsWith('mod-caps-') && existsSync(join(lv2, d, 'modgui.ttl')));
     assert.ok(bundles.length > 1, `caps bundles under ${lv2}`);
