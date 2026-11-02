@@ -30,6 +30,12 @@ jobs:
           # plugin-hostd's LV2 table: plugin-hostd-contract from 0.12.0; plugin-hostd-devel installs the same file before it
           dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.12.0' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
+      - name: Install the real MOD bundles the importer proof reads
+        # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
+        # bundle reads them where they are installed, and no MOD file is copied into this tree.
+        run: |
+          dnf copr enable -y ycollet/audinux
+          dnf install -y --setopt=install_weak_deps=False caps-lv2
       - uses: actions/checkout@v4
       - name: The checkout is a git directory this job may read
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -38,6 +44,9 @@ jobs:
         run: npm ci
       - id: handback-test
         name: Tests over the built tree (the layout, the MOD GUI, the look, the skin facts and schema, the importer, the command)
+        env:
+          # the importer's proof on the installed caps bundles runs here, or the job fails
+          OMX_PANEL_REAL_BUNDLES: required
         run: make test
       - id: handback-spdx
         name: Every tracked file carries the licence and copyright lines
