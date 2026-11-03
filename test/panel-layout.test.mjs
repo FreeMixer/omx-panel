@@ -15,8 +15,8 @@
  *   4. the family from meanings: inference in order, an instrument none, a declared family its
  *      meanings do not back refused (a transient designer is no compressor, #138);
  *   5. sections from groups, hidden controls left out, the ports carried;
- *   6. omx-contract's example descriptors (test/fixtures/descriptors/, copied from omx-contract's
- *      test/fixtures/descriptors/ at the descriptor words' commit) each give a sensible panel.
+ *   6. omx-contract's example descriptors (@openmixer/omx-contract/examples/descriptors/, read where the
+ *      installed package holds them) each give a sensible panel.
  *
  * Part of `make test`. It reads the installed vocabulary (tools/vocabulary.mjs): omx-contract's schema,
  * plugin-hostd's LV2 table and the param-contract unit table. The rule over omx-plugins' own plugins (their authored
@@ -25,6 +25,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +33,9 @@ import { keyOf, NoControls, panelLayout, servedWidget, unitToken, widgetOf } fro
 import { contractUnits } from '../tools/vocabulary.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const fixture = (name) => JSON.parse(readFileSync(join(HERE, 'fixtures', 'descriptors', `${name}.json`), 'utf8'));
+/** omx-contract's example descriptor `name`, where the installed package holds it. */
+const example = (name) => createRequire(import.meta.url).resolve(`@openmixer/omx-contract/examples/descriptors/${name}`);
+const fixture = (name) => JSON.parse(readFileSync(example(`${name}.json`), 'utf8'));
 const clone = (x) => structuredClone(x);
 
 let bad = 0, n = 0;
@@ -144,7 +147,7 @@ effect.plugin.features = ['audio-effect'];
 effect.instrument = undefined;
 check('arm: the same controls on an effect make a filter', panelLayout(effect).family, 'filter');
 const delay = panelLayout(fixture('authored-omx-delay'));
-check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'p0', 'ms'], ['feedback', 0, 'p1', ''], ['tone', 0, 'p2', ''], ['mix', 0, 'p3', '']]]);
+check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', ''], ['tone', 0, 'tone', ''], ['mix', 0, 'mix', '']]]);
 
 // a CLAP control is keyed by its numeric id, p<id>: two parameters of one name are two controls (#27)
 const dup = descriptor([{ ...travel('dB'), id: 3670762539, name: 'Filter mode' }, { ...travel('dB'), id: 1515688365, name: 'Filter mode' }]);
