@@ -23,11 +23,14 @@ BuildRequires: npm
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: omx-contract-data >= 3.6.0
 BuildRequires: plugin-hostd-contract >= 0.12.0
-# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe
+# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
+# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails
 Recommends: python3-lilv
+Recommends: lilv-devel
 Recommends: plugin-hostd
-# %%check runs omx-modgui-sync over a bundle
+# %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
+BuildRequires: lilv-devel
 BuildRequires: systemd-rpm-macros
 
 Requires: nodejs >= 18
