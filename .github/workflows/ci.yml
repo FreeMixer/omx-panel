@@ -47,6 +47,8 @@ jobs:
         env:
           # the importer's proof on the installed caps bundles runs here, or the job fails
           OMX_PANEL_REAL_BUNDLES: required
+          # the lilv proofs (the complements and the modgui sync read by a real lilv world) run here, or the job fails
+          OMX_PANEL_LILV: required
         run: make test
       - id: handback-spdx
         name: Every tracked file carries the licence and copyright lines

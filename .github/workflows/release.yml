@@ -55,7 +55,10 @@ jobs:
         run: |
           want="v$(node -p 'require("./package.json").version')"
           [ "$TAG" = "$want" ] || { echo "::error::tag $TAG is not $want (package.json)"; exit 1; }
-      - run: npm test
+      - name: npm test, the lilv proofs required (python3-lilv is installed above)
+        env:
+          OMX_PANEL_LILV: required
+        run: npm test
       - name: The shared private-refs check, outside the checkout it scans
         run: git -c advice.detachedHead=false clone -q --depth 1 --branch v1 https://github.com/FreeMixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
       - run: make check FREEMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"

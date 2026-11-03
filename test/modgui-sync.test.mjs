@@ -14,8 +14,14 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SYNC = join(ROOT, 'bin/omx-modgui-sync');
-const lilv = spawnSync('python3', ['-I', '-c', 'import lilv']).status === 0;
-const skip = !lilv && 'python3-lilv is not installed';
+// OMX_PANEL_LILV=required (CI) makes a python3-lilv that does not import a failure naming why, not a skip
+const lilvProbe = spawnSync('python3', ['-I', '-c', 'import lilv'], { encoding: 'utf8' });
+const lilv = lilvProbe.status === 0;
+const skip = !lilv && process.env.OMX_PANEL_LILV !== 'required' && 'python3-lilv is not installed';
+
+test('python3-lilv imports (OMX_PANEL_LILV=required)', { skip }, () => {
+  assert.ok(lilv, `python3 -I -c 'import lilv': ${lilvProbe.stderr || lilvProbe.error?.message}`);
+});
 
 const bundle = (lv2, dir, uri, name) => {
   mkdirSync(join(lv2, `${dir}.lv2`), { recursive: true });
