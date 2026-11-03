@@ -35,6 +35,10 @@ the plugin's own declaration, in the omx look, vintage or modern.
 - A worked example: a third-party LV2 plugin (ZamComp) and CLAP plugin (LSP Limiter Mono) from the scan to a
   generated panel, and where Zynthian reads the LV2 one ([docs/worked-example.md](docs/worked-example.md)).
 
+The documents are also published at <https://openmixer.org/projects/omx-panel>, and why most LV2 plugins on a
+Zynthian need inferred port groups is the technical note
+<https://openmixer.org/notes/why-lv2-plugins-on-zynthian-need-inferred-port-groups>.
+
 ## Install
 
 `omx-panel` comes as an RPM and a DEB, each carrying the tools, the schema and the skins directory, and as
