@@ -5,8 +5,10 @@
 Most installed LV2 plugins declare no port groups, so a consumer that draws screens per group (the Zynthian
 touchscreen cuts each group into screens of four) shows them as screens of four in port order.
 `tools/group-infer.mjs` (`@openmixer/omx-panel/group-infer`) infers the groups such a plugin lacks from what it
-already states, or says it cannot with confidence. It is the rule set of plugin-hostd#218 (step G1): a pure
-function, no file written. The bundle that carries the result to lilv is [lv2-complement.md](lv2-complement.md)'s (G2).
+already states, or says it cannot with confidence. It is a pure
+function, no file written. The bundle that carries the result to lilv is [lv2-complement.md](lv2-complement.md)'s.
+Why most LV2 plugins on a Zynthian need it is the technical note
+[Why most LV2 plugins on a Zynthian need inferred port groups](https://openmixer.org/notes/why-lv2-plugins-on-zynthian-need-inferred-port-groups).
 
 ```js
 import { readBundle } from '@openmixer/omx-panel/modgui-import';
@@ -125,7 +127,7 @@ Otherwise the verdict names the first condition that failed: `unplaced-controls`
 
 ## Measured
 
-Over the 979 plugins installed on a Fedora 44 desk: 333 fit one screen, 98 have no controls, 40 carry
+Over the 979 plugins installed on a Fedora 44 workstation: 333 fit one screen, 98 have no controls, 40 carry
 their own complete groups (all 19 of omx-plugins among them), 84 are grouped, and 424 have no confident grouping
 (402 with controls left in no group, 19 mostly by index, 3 with more than 32 groups). The thresholds favour leaving a
 plugin alone over a guess; loosening `MAX_UNPLACED` is the one change that would group most of the rest.
