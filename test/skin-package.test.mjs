@@ -194,7 +194,7 @@ describe('D6 over the panel vocabulary', () => {
 
 describe('the view lint (§7.3) — an accident catcher, not a boundary', () => {
   it('names the first refused word or a non-relative dynamic import, and passes a clean view', () => {
-    assert.equal(lintSkinViewSource('export const api = "1.0"; export default (h) => h.vue.h("div")'), null);
+    assert.equal(lintSkinViewSource('export const api = "1.0"; export default (h) => h["vue"].h("div")'), null);
     assert.equal(lintSkinViewSource('await fetch("/api/x")'), 'fetch');
     assert.equal(lintSkinViewSource('localStorage.setItem("a", 1)'), 'localStorage');
     assert.equal(lintSkinViewSource('import("https://cdn.example/vue.js")'), 'import(');
