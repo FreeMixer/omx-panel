@@ -26,6 +26,10 @@
       "types": "./dist/lib/validate.d.mts",
       "default": "./dist/lib/validate.mjs"
     },
+    "./role-table": {
+      "types": "./dist/tools/role-table.d.mts",
+      "default": "./dist/tools/role-table.mjs"
+    },
     "./panel-description": {
       "types": "./dist/tools/panel-description.d.mts",
       "default": "./dist/tools/panel-description.mjs"
