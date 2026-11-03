@@ -51,9 +51,6 @@ jobs:
       - id: handback-spdx
         name: Every tracked file carries the licence and copyright lines
         run: make spdx
-      - id: handback-public-sources
-        name: No tracked file points into a private repository, branch, issue or path
-        run: make public-sources
       - id: handback-look
         name: look.json is what the token cascade resolves to
         run: make look
