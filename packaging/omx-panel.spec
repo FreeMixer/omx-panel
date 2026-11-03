@@ -49,6 +49,7 @@ Zynthian in the omx look, imports a plugin's own MOD GUI into a skin package,
 and carries the skin package schema, its validator and the directory skin
 packages are installed into. The omx-panel command runs each; the tools are
 under /usr/share/omx-panel for a build that calls them.
+Its documentation is on openmixer.org.
 
 %prep
 %autosetup
@@ -65,7 +66,6 @@ make test
 
 %files
 %license LICENSE
-%doc README.md docs/
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
 %{_bindir}/omx-complement-sync
