@@ -1,3 +1,13 @@
+omx-panel (0.9.0) unstable; urgency=medium
+
+  * The MOD GUI test bundle ships with the package, exported as
+    @openmixer/omx-panel/fixtures (MODGUI_ECHO, FIXTURES_DIR), so a package
+    that tests against it reads it from here instead of keeping a copy (#116).
+  * The commit message and private reference checks run from the shared
+    FreeMixer/.github workflow; the local copies are gone (#115).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 03 Nov 2026 13:30:00 +0100
+
 omx-panel (0.8.1) unstable; urgency=medium
 
   * The param-contract unit codes are read from omx-contract's
