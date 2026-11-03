@@ -56,7 +56,9 @@ jobs:
           want="v$(node -p 'require("./package.json").version')"
           [ "$TAG" = "$want" ] || { echo "::error::tag $TAG is not $want (package.json)"; exit 1; }
       - run: npm test
-      - run: make check
+      - name: The shared private-refs check, outside the checkout it scans
+        run: git -c advice.detachedHead=false clone -q --depth 1 --branch v1 https://github.com/FreeMixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
+      - run: make check FREEMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
       - name: The bump covers every change since the previous tag
         run: |
           prev=$(git tag --list 'v*' --sort=-v:refname --merged HEAD | grep -vx "v$(node -p 'require("./package.json").version')" | head -1)

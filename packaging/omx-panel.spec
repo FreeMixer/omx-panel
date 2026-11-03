@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.9.0
+Version: 0.9.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -82,6 +82,10 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.1-1
+- 0.9.0 was tagged but not published: the release proof ran make check without
+  the shared private-refs check at hand. Everything 0.9.0 carries is in this
+  release; the release workflow now fetches that check before make check.
 * Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.0-1
 - The MOD GUI test bundle ships with the package, exported as
   @openmixer/omx-panel/fixtures, so a package that tests against it reads it

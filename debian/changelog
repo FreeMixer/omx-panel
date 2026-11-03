@@ -1,3 +1,12 @@
+omx-panel (0.9.1) unstable; urgency=medium
+
+  * 0.9.0 was tagged but not published: the release proof ran make check
+    without the shared private-refs check at hand. Everything 0.9.0 carries is
+    in this release; the release workflow now fetches that check before make
+    check.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 03 Nov 2026 14:30:00 +0100
+
 omx-panel (0.9.0) unstable; urgency=medium
 
   * The MOD GUI test bundle ships with the package, exported as
