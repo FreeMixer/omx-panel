@@ -37,9 +37,11 @@ spdx:
 	node tools/check-spdx.mjs
 
 # No tracked file points into a private repository, branch, issue or path.
+# FreeMixer/.github's private-refs check, from a checkout of it (FREEMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
+# runs it through the public-sources-check workflow.
+FREEMIXER_DOTGITHUB ?= ../freemixer-dotgithub
 public-sources:
-	node tools/check-public-sources.mjs --self-test
-	node tools/check-public-sources.mjs
+	$(FREEMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
 
 look:
 	node tools/look.mjs --check
