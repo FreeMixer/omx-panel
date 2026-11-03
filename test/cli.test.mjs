@@ -58,7 +58,7 @@ test('modgui: --check over omx-plugins\' committed omx-delay MOD GUI is clean', 
 
 test('import: the fixture bundle becomes a package that validates; a refused licence exits 3 with nothing written', () => {
   const out = mkdtempSync(join(tmpdir(), 'omx-panel-skins-'));
-  const r = run('import', join(ROOT, 'test/fixtures/modgui/omx-fixture-echo.lv2'), '--out', out);
+  const r = run('import', join(ROOT, 'fixtures/modgui/omx-fixture-echo.lv2'), '--out', out);
   assert.equal(r.status, 0, r.stderr);
   const line = JSON.parse(r.stdout.split('\n').find((l) => l.startsWith('MODGUI-IMPORT-JSON ')).slice('MODGUI-IMPORT-JSON '.length));
   assert.equal(line.verdict, 'written');

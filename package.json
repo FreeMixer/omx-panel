@@ -70,6 +70,10 @@
       "types": "./dist/tools/raster.d.mts",
       "default": "./dist/tools/raster.mjs"
     },
+    "./fixtures": {
+      "types": "./dist/tools/fixtures.d.mts",
+      "default": "./dist/tools/fixtures.mjs"
+    },
     "./schema/skin-package.schema.json": "./dist/schema/skin-package.schema.json",
     "./schema/panel.schema.json": "./dist/schema/panel.schema.json",
     "./tokens.css": "./dist/tools/look/tokens.css",
