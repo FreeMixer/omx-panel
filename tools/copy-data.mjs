@@ -16,7 +16,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
 /** The tree's own checks, which the package does not carry. */
-const NOT_SHIPPED = ['tools/copy-data.mjs', 'tools/check-spdx.mjs', 'tools/check-public-sources.mjs'];
+const NOT_SHIPPED = ['tools/copy-data.mjs', 'tools/check-spdx.mjs'];
 /** Every .mjs module the package carries, as the tree holds it. */
 export const MODULES = ['bin', 'lib', 'tools'].flatMap((d) => readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.mjs')).map((f) => `${d}/${f}`)).filter((f) => !NOT_SHIPPED.includes(f));
 /** The shipped fixture bundles (tools/fixtures.mjs), every file under fixtures/. */
