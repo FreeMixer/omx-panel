@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.8.1
+Version: 0.9.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -82,6 +82,12 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.0-1
+- The MOD GUI test bundle ships with the package, exported as
+  @openmixer/omx-panel/fixtures, so a package that tests against it reads it
+  from here instead of keeping a copy (#116).
+- The commit message and private reference checks run from the shared
+  FreeMixer/.github workflow; the local copies are gone (#115).
 * Sun Nov 01 2026 Pau Aliagas <linuxnow@gmail.com> - 0.8.1-1
 - The param-contract unit codes are read from omx-contract's
   OMX_PARAM_CONTRACT_UNITS sheet (omx-contract-data 3.6.0), no longer from
