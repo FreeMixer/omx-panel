@@ -5,11 +5,11 @@
  * copy-data.mjs — the second half of the build. tsc (allowJs) emits src/ as JavaScript and every module's
  * declarations; it also reprints the .mjs modules, so they are put back into dist/ as the tree holds them, byte for
  * byte. The files tsc does not emit go in beside the modules that read them, at the same relative paths (the
- * schemas, the look, the modgui terms, the test script), and the commands keep their execute bit. `npm run build`
+ * schemas, the look, the modgui terms, the test script, the fixture bundles), and the commands keep their execute bit. `npm run build`
  * runs it after tsc.
  */
 import { chmodSync, copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -19,8 +19,13 @@ const DIST = join(ROOT, 'dist');
 const NOT_SHIPPED = ['tools/copy-data.mjs', 'tools/check-spdx.mjs', 'tools/check-public-sources.mjs'];
 /** Every .mjs module the package carries, as the tree holds it. */
 export const MODULES = ['bin', 'lib', 'tools'].flatMap((d) => readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.mjs')).map((f) => `${d}/${f}`)).filter((f) => !NOT_SHIPPED.includes(f));
+/** The shipped fixture bundles (tools/fixtures.mjs), every file under fixtures/. */
+const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFileTypes: true })
+  .filter((e) => e.isFile())
+  .map((e) => relative(ROOT, join(e.parentPath, e.name)))
+  .sort();
 /** Every file dist/ carries that is not a module. */
-export const DATA = ['schema/skin-package.schema.json', 'schema/panel.schema.json', 'tools/look.json', 'tools/look/tokens.css', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/panel.schema.json', 'tools/look.json', 'tools/look/tokens.css', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/modgui-test.sh'];
 
