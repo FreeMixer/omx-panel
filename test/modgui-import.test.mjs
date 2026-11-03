@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
  * tools/modgui-import.mjs (docs/skin-package.md, "Importing a MOD GUI"), built: over a
- * fixture modgui bundle of our own (test/fixtures/modgui, no MOD art), the package it writes parses under §6.3, its
+ * fixture modgui bundle of our own (fixtures/modgui, shipped, no MOD art), the package it writes parses under §6.3, its
  * labels and order equal the bundle's, its files are the bundle's byte for byte, and every refusal code of the
  * declaration is produced by a bundle that earns it, with nothing written. The CEO arm runs the spec's own proof
  * where caps-lv2 is installed, and CI installs it and requires it. Moved from the console with its assertions unchanged; each `expect` there is an
@@ -20,9 +20,10 @@ import { fileURLToPath } from 'node:url';
 import * as core from '../dist/src/skin-package.js';
 import { importModgui } from '../dist/tools/modgui-import.mjs';
 import { parseTurtle } from '../dist/tools/turtle-read.mjs';
+import { MODGUI_ECHO } from '../dist/tools/fixtures.mjs';
 
 const PKG = join(dirname(fileURLToPath(import.meta.url)), '..');
-const FIXTURE = join(PKG, 'test/fixtures/modgui/omx-fixture-echo.lv2');
+const FIXTURE = MODGUI_ECHO;
 const PLUGIN = 'urn:openmixer:fixture:echo';
 /*
  * The real-bundle proof reads caps-lv2 where it is installed: LV2_PATH, or the search list omx-modgui-sync and

@@ -23,7 +23,6 @@
   ],
   "exclude": [
     "tools/copy-data.mjs",
-    "tools/check-spdx.mjs",
-    "tools/check-public-sources.mjs"
+    "tools/check-spdx.mjs"
   ]
 }

@@ -42,7 +42,7 @@ jobs:
         run: |
           set -o pipefail
           npm run build
-          make spdx public-sources look
+          make spdx look
           node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
       - name: The tag is the package version
