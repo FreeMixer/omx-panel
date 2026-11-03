@@ -62,6 +62,10 @@
       "types": "./dist/tools/turtle-read.d.mts",
       "default": "./dist/tools/turtle-read.mjs"
     },
+    "./public-sources-check": {
+      "types": "./dist/tools/public-sources-check.d.mts",
+      "default": "./dist/tools/public-sources-check.mjs"
+    },
     "./look": {
       "types": "./dist/tools/look.d.mts",
       "default": "./dist/tools/look.mjs"
