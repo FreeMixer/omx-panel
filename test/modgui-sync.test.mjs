@@ -6,6 +6,7 @@
 // of ours goes with its plugin.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -13,6 +14,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+/** omx-contract's example descriptor `name`, where the installed package holds it. */
+const example = (name) => createRequire(import.meta.url).resolve(`@openmixer/omx-contract/examples/descriptors/${name}`);
 const SYNC = join(ROOT, 'bin/omx-modgui-sync');
 // OMX_PANEL_LILV=required (CI) makes a python3-lilv that does not import a failure naming why, not a skip
 const lilvProbe = spawnSync('python3', ['-I', '-c', 'import lilv'], { encoding: 'utf8' });
@@ -39,7 +42,9 @@ const bundle = (lv2, dir, uri, name) => {
 
 /** A descriptor file for `uri` from a fixture, its vendor removed: a plugin that states none. */
 const descriptor = (desc, file, uri, fixture, mutate = () => {}) => {
-  const d = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/descriptors', fixture), 'utf8'));
+  // a fixture of this tree's own (one omx-contract does not publish), else the published example
+  const own = join(ROOT, 'test/fixtures/descriptors', fixture);
+  const d = JSON.parse(readFileSync(existsSync(own) ? own : example(fixture), 'utf8'));
   d.plugin.id = uri;
   d.plugin.uri = uri;
   delete d.plugin.vendor;

@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { inflateSync } from 'node:zlib';
@@ -19,6 +20,8 @@ import { ChoiceNoValues, generateModgui, manifestSeesModgui, NothingToDraw, reso
 import { canvas, drawText } from '../tools/raster.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+/** omx-contract's example descriptor `name`, where the installed package holds it. */
+const example = (name) => createRequire(import.meta.url).resolve(`@openmixer/omx-contract/examples/descriptors/${name}`);
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
 const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
 const SOURCE = 'plugins/omx-delay/omx-delay.decl.json (its panel block) and tools/look.json';
@@ -65,8 +68,8 @@ test('a declared widget is drawn when the control can take it, and refused when 
 });
 
 test('a scanned LV2 compressor with no panel generates, its gain-reduction readout a display and no port', () => {
-  const d = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/descriptors/scanned-lv2-compressor.json'), 'utf8'));
-  const files = new Map(generateModgui(d, { stem: 'compressor', source: 'test/fixtures/descriptors/scanned-lv2-compressor.json' }));
+  const d = JSON.parse(readFileSync(example('scanned-lv2-compressor.json'), 'utf8'));
+  const files = new Map(generateModgui(d, { stem: 'compressor', source: '@openmixer/omx-contract/examples/descriptors/scanned-lv2-compressor.json' }));
   const html = files.get('modgui/icon-compressor.html').toString();
   const ttl = files.get('modgui.ttl').toString();
   assert.match(html, /<div class="omx-control omx-display"[^>]* data-symbol="gr" data-min="0" data-max="40">/);
