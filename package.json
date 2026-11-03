@@ -74,6 +74,10 @@
       "types": "./dist/tools/raster.d.mts",
       "default": "./dist/tools/raster.mjs"
     },
+    "./copies-check": {
+      "types": "./dist/tools/copies-check.d.mts",
+      "default": "./dist/tools/copies-check.mjs"
+    },
     "./fixtures": {
       "types": "./dist/tools/fixtures.d.mts",
       "default": "./dist/tools/fixtures.mjs"

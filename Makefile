@@ -15,7 +15,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look install
+.PHONY: all build check test spdx public-sources look copies install
 
 all: build
 
@@ -25,7 +25,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema and look.json is what the token cascade resolves to.
-check: build spdx public-sources look
+check: build spdx public-sources look copies
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -45,6 +45,11 @@ public-sources:
 
 look:
 	node tools/look.mjs --check
+
+# No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
+copies:
+	node tools/copies-check.mjs --self-test
+	node tools/copies-check.mjs .
 
 install: build
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
