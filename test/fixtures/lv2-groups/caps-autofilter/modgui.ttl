@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) its authors; see test/fixtures/lv2-groups/SOURCES
 @prefix modgui: <http://moddevices.com/ns/modgui#> .
 @prefix lv2:    <http://lv2plug.in/ns/lv2core#> .
 

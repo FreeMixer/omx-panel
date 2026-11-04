@@ -43,8 +43,7 @@ image carries the channel), and `python3-lilv` and `sord` are installed with the
 `omx-panel` is this checkout, run as `omx-panel` through the link above (`/usr/local/bin` comes before
 `/usr/bin` on the path). The commands ran at `3ebf9b7`, the commit that adds `repeat.sh`; its omx-panel is
 `origin/main` at `15cc25bb9` (with the readout fix), and the branch
-adds only the example, this document, a line of the README and the exemption of the example's output files in
-`tools/check-spdx.mjs`. The released omx-panel 0.2.5, installed last, is run as `/usr/bin/omx-panel`
+adds only the example, this document and a line of the README. The released omx-panel 0.2.5, installed last, is run as `/usr/bin/omx-panel`
 once: it stops on ZamComp ([section 3](#the-released-025-on-zamcomp)). Every other
 command runs as an unprivileged user.
 
