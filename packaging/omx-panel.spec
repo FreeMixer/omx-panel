@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.9.1
+Version: 0.10.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -87,6 +87,15 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Wed Nov 04 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.0-1
+- visibleWhen: a declared panel shows a control only while another control's value
+  meets a rule; the pages and the MOD GUI follow it (#123)
+- omx-panel modgui --films-only writes the film strips into a built bundle
+- A C renderer for a panel description into a CPU buffer, and its window; a hidden
+  control is not drawn (#120, #124); built in CI, not packaged yet
+- @openmixer/omx-panel/role-table and copies-check are exported
+- The tests read omx-contract's example descriptors; the lilv proofs run in CI
+- The package installs its licence and a short README and no other markdown
 * Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.1-1
 - 0.9.0 was tagged but not published: the release proof ran make check without
   the shared private-refs check at hand. Everything 0.9.0 carries is in this
