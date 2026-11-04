@@ -69,3 +69,7 @@ modgui:knob a rdf:Property , owl:DatatypeProperty ;
 modgui:port a rdf:Property , owl:ObjectProperty ;
     rdfs:label "port" ;
     rdfs:comment "A control the pedal draws: lv2:index (its order on the pedal), lv2:symbol, lv2:name." .
+
+modgui:javascript a rdf:Property , owl:ObjectProperty ;
+    rdfs:label "javascript" ;
+    rdfs:comment "The script MOD runs beside the pedal: here, the one that shows and hides the controls a panel's visibleWhen governs." .
