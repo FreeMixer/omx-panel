@@ -88,11 +88,20 @@ bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fra
 /** A selector's reading: option `at` of `count`, and its label. */
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count, const char *text);
 
+/** A governing control's integer value. A control the description shows only for certain values of another (its
+ * `visibleWhen` and `mask`, a declared panel's visibleWhen) is shown while bit `value` of its mask is set: a hidden
+ * control takes no cell and is not drawn, and a section left with none takes no space. Until it is set, each reads the
+ * governing control's come-up value (`visibleWhen.default`). False when no control of the panel is governed by `symbol`. */
+bool omx_panel_view_set_integer(omx_panel_view_t *view, const char *symbol, int64_t value);
+
+/** Whether control `index` is shown at the current governing values. */
+bool omx_panel_view_visible(const omx_panel_view_t *view, uint32_t index);
+
 /** The size, in logical px, the panel is laid out at with nothing to fit: what a window opens at. */
 void omx_panel_view_natural_size(const omx_panel_view_t *view, uint32_t *width, uint32_t *height);
 
 /** Where control `index` sits when the panel is drawn into a buffer of width x height device px at `scale`: its cell,
- * as x, y, width and height in device px. What a pointer event is hit-tested against. */
+ * as x, y, width and height in device px. What a pointer event is hit-tested against. False for a hidden control. */
 bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, uint32_t height, double scale, uint32_t index,
                                  double rect[4]);
 

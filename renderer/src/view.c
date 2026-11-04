@@ -38,6 +38,11 @@ typedef struct {
   double fraction;
   char *text;
   uint32_t at, count;
+  /* visibility (the description's visibleWhen and mask): shown while bit `value` of `mask` is set, `value` the
+   * governing control's current integer; `gov` NULL for a control always shown */
+  char *gov;
+  uint64_t mask;
+  int64_t value;
 } control;
 
 typedef struct {
@@ -189,6 +194,19 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
     }
     c->symbol = dup(sym), c->label = dup(label), c->section = sec->valueint, c->w = (widget)found;
     c->text = dup(""), c->at = 0, c->count = 1, c->fraction = 0;
+    cJSON *vis = cJSON_GetObjectItemCaseSensitive(it, "visibleWhen");
+    if (vis && !cJSON_IsNull(vis)) {
+      const char *gov = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(vis, "symbol"));
+      cJSON *def = cJSON_GetObjectItemCaseSensitive(vis, "default");
+      const char *mask = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "mask"));
+      char *end = NULL;
+      unsigned long long m = mask ? strtoull(mask, &end, 16) : 0;
+      if (!gov || !cJSON_IsNumber(def) || !mask || !*mask || *end) {
+        fail(err, n, "description: control '%s' has a visibleWhen without its symbol, default or hex mask%s", sym, NULL);
+        goto bad;
+      }
+      c->gov = dup(gov), c->mask = (uint64_t)m, c->value = (int64_t)def->valuedouble;
+    }
   }
   cJSON_Delete(root);
   return 1;
@@ -268,7 +286,8 @@ out:
 void omx_panel_view_destroy(omx_panel_view_t *v) {
   if (!v) return;
   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]);
-  for (size_t i = 0; i < v->ncontrols; i++) free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text);
+  for (size_t i = 0; i < v->ncontrols; i++)
+    free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov);
   free(v->sections), free(v->controls), free(v->brand), free(v->name);
   omx_font_free(v->font);
   free(v);
@@ -307,6 +326,18 @@ bool omx_panel_view_set_choice(omx_panel_view_t *v, uint32_t i, uint32_t at, uin
   return true;
 }
 
+/* Whether control `c` is shown at its governing control's current value. */
+static int shown(const control *c) { return !c->gov || (c->value >= 0 && c->value <= 63 && ((c->mask >> c->value) & 1u)); }
+
+bool omx_panel_view_set_integer(omx_panel_view_t *v, const char *symbol, int64_t value) {
+  bool governs = false;
+  for (size_t i = 0; v && symbol && i < v->ncontrols; i++)
+    if (v->controls[i].gov && strcmp(v->controls[i].gov, symbol) == 0) v->controls[i].value = value, governs = true;
+  return governs;
+}
+
+bool omx_panel_view_visible(const omx_panel_view_t *v, uint32_t i) { return v && i < v->ncontrols && shown(&v->controls[i]); }
+
 /* ------------------------------------------------------------------------------------ layout */
 
 typedef struct { double x, y, w, h; } box;
@@ -314,39 +345,46 @@ typedef struct {
   double w, h;
   box *sections;     /* one per section */
   double *cx, *cy;   /* each control's cell, relative to its section */
+  char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
 } laid;
 
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
 static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
-            calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double))};
+            calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1)};
+  /* a hidden control takes no cell; a section the values empty takes no space (one declared empty keeps its title) */
   size_t most = 0;
   for (size_t s = 0; s < v->nsections; s++) {
-    size_t k = 0;
-    for (size_t i = 0; i < v->ncontrols; i++) k += v->controls[i].section == (int)s;
+    size_t k = 0, all = 0;
+    for (size_t i = 0; i < v->ncontrols; i++)
+      if (v->controls[i].section == (int)s) all++, k += shown(&v->controls[i]);
+    L.drawn[s] = k > 0 || all == 0;
     if (k > most) most = k;
   }
   if (most > (size_t)per_row) most = (size_t)per_row;
   double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
+  double last = -1;
   for (size_t s = 0; s < v->nsections; s++) {
+    if (!L.drawn[s]) continue;
     size_t j = 0;
     for (size_t i = 0; i < v->ncontrols; i++) {
-      if (v->controls[i].section != (int)s) continue;
+      if (v->controls[i].section != (int)s || !shown(&v->controls[i])) continue;
       L.cx[i] = g->sectionPad + (double)(j % per_row) * g->cellW;
       L.cy[i] = g->sectionTitleH + floor((double)j / per_row) * g->cellH;
       j++;
     }
     double rows = ceil((double)j / per_row), h = g->sectionTitleH + rows * g->cellH + g->sectionPad / 2;
     L.sections[s] = (box){g->pad, y, section_w, h};
+    last = y + h;
     y += h + g->sectionGap;
   }
   L.w = section_w + 2 * g->pad;
-  L.h = v->nsections ? L.sections[v->nsections - 1].y + L.sections[v->nsections - 1].h + g->pad : g->sectionTop + g->pad;
+  L.h = last >= 0 ? last + g->pad : g->sectionTop + g->pad;
   return L;
 }
 
-static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy); }
+static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn); }
 
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;
@@ -439,7 +477,7 @@ static laid place(const omx_panel_view_t *v, uint32_t width, uint32_t height, do
 
 bool omx_panel_view_control_rect(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, uint32_t index,
                                  double rect[4]) {
-  if (!v || index >= v->ncontrols || !width || !height || !(scale > 0)) return false;
+  if (!v || index >= v->ncontrols || !shown(&v->controls[index]) || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
   const box *sec = &L.sections[v->controls[index].section];
@@ -465,13 +503,14 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
   text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
   text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
   for (size_t si = 0; si < v->nsections; si++) {
+    if (!L.drawn[si]) continue;
     box sec = L.sections[si];
     d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
     text(d, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
          T->small * s, col->inkDim, OMX_ALIGN_LEFT);
     for (size_t i = 0; i < v->ncontrols; i++) {
       const control *k = &v->controls[i];
-      if (k->section != (int)si) continue;
+      if (k->section != (int)si || !shown(k)) continue;
       double x = sec.x + L.cx[i], y = sec.y + L.cy[i];
       int reading = 0;
       switch (k->w) {
