@@ -15,7 +15,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look install renderer renderer-check
+.PHONY: all build check test spdx public-sources look copies install renderer renderer-check
 
 all: build
 
@@ -25,7 +25,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema and look.json is what the token cascade resolves to.
-check: build spdx public-sources look
+check: build spdx public-sources look copies
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -46,6 +46,11 @@ public-sources:
 look:
 	node tools/look.mjs --check
 
+# No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
+copies:
+	node tools/copies-check.mjs --self-test
+	node tools/copies-check.mjs .
+
 # The panel renderer, C (docs/renderer.md): its own Makefile, not part of `make` or the package yet. Its check reads the
 # built tree, so `make` first. WINDOW=1 adds the window (pugl, NanoVG); its tests want a display (xvfb-run).
 WINDOW ?= 0
@@ -63,6 +68,8 @@ install: build
 	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \
 	  rel=$${m#$(CURDIR)/}; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
 	done
+	# their pages are theirs, not the package's: the package's one page is its README
+	if [ -d $(DESTDIR)$(PKGDIR)/node_modules ]; then find $(DESTDIR)$(PKGDIR)/node_modules -type f -iname '*.md' -delete; fi
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/

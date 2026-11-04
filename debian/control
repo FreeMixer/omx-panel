@@ -27,3 +27,5 @@ Description: panels for LV2 and CLAP plugins, generated from what each plugin de
  and carries the skin package schema, its validator and the directory skin
  packages are installed into. The omx-panel command runs each; the tools are
  under /usr/share/omx-panel for a build that calls them.
+ .
+ Its documentation is on openmixer.org.
