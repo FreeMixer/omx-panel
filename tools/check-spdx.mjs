@@ -25,6 +25,7 @@ export const EXEMPT = [
   [/^LICENSE$/, 'the licence text'],
   [/^\.gitignore$/, 'a list of patterns'],
   [/^debian\/(changelog|control|source\/format|copyright)$/, 'Debian metadata, a format of its own'],
+  [/^debian\/[^/]+\.(docs|manpages)$/, 'a debhelper file list: one path per line, a licence line would be read as a path'],
   [/^examples\/.*\.png$/, 'example art'],
   [/^examples\/worked-example\/.*\.(tsv|txt)$/, 'a command\'s output, kept as the command wrote it (docs/worked-example.md)'],
   [/^test\/fixtures\/lv2-groups\/(?!omx-|synthetic\/)[^/]+\/[^/]+\.ttl$/, 'a third party\'s LV2 TTL, copied byte for byte under its own licence (test/fixtures/lv2-groups/SOURCES)'],
