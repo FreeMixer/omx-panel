@@ -26,6 +26,10 @@
       "types": "./dist/lib/validate.d.mts",
       "default": "./dist/lib/validate.mjs"
     },
+    "./role-table": {
+      "types": "./dist/tools/role-table.d.mts",
+      "default": "./dist/tools/role-table.mjs"
+    },
     "./panel-description": {
       "types": "./dist/tools/panel-description.d.mts",
       "default": "./dist/tools/panel-description.mjs"
@@ -70,6 +74,10 @@
       "types": "./dist/tools/raster.d.mts",
       "default": "./dist/tools/raster.mjs"
     },
+    "./copies-check": {
+      "types": "./dist/tools/copies-check.d.mts",
+      "default": "./dist/tools/copies-check.mjs"
+    },
     "./fixtures": {
       "types": "./dist/tools/fixtures.d.mts",
       "default": "./dist/tools/fixtures.mjs"
@@ -91,6 +99,7 @@
     "ajv": "^8.17.1"
   },
   "devDependencies": {
+    "@openmixer/omx-contract": ">=3.8.0",
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"
   },

@@ -18,7 +18,9 @@
  *
  * Usage: `node tools/modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>)
  * [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>] [--easy-first]` — `--check` writes nothing and refuses a
- * stale, missing or extra file byte for byte; `--emit-stdout` prints every text file and one digest line per
+ * stale, missing or extra file byte for byte; `--no-films` leaves out the knob and fader film strips (every bundle's
+ * same render of the look, which a tree need not track: `--check` then names a returning one EXTRA), and
+ * `--films-only` writes only them, into a built bundle, leaving its other files as they are; `--emit-stdout` prints every text file and one digest line per
  * image, writing nothing. `--stem` names the files (the bundle's name without .lv2 by default); `--source` is what
  * the banner names as their source (the descriptor and the panel files by default).
  */
@@ -557,18 +559,20 @@ export function withModguiSeeAlso(text, uri) {
   return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] [--no-films|--films-only] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
   const toStdout = argv.includes('--emit-stdout');
+  const noFilms = argv.includes('--no-films');
+  const filmsOnly = argv.includes('--films-only');
   const opt = (flag) => {
     const k = argv.indexOf(flag);
     return k >= 0 ? argv[k + 1] : undefined;
   };
   const out = opt('--out');
   const descriptorFile = opt('--descriptor') ?? (opt('--installed') && installedDescriptorFile(opt('--installed')));
-  if (!out || !descriptorFile) {
+  if (!out || !descriptorFile || (noFilms && filmsOnly)) {
     console.error(USAGE);
     process.exit(2);
   }
@@ -603,6 +607,11 @@ export function main(argv) {
     console.error(err.message);
     process.exit(3);
   }
+  // the film strips are every bundle's same render of the look: a tree that does not track them leaves them out, and
+  // its build writes only them into the built bundle
+  const films = new Set(Object.entries(files(stem)).filter(([k]) => k === 'film' || k === 'faderFilm').map(([, p]) => p));
+  if (noFilms) made = made.filter(([p]) => !films.has(p));
+  if (filmsOnly) made = made.filter(([p]) => films.has(p));
   for (const symbol of resolvePanel(descriptor, { panel, stem }).skipped) console.error(`modgui: skipped trigger control '${symbol}'`);
   if (toStdout) {
     for (const [p, bytes] of made) {
@@ -629,7 +638,7 @@ export function main(argv) {
       }
     }
   } else {
-    rmSync(join(dir, MODGUI_DIR), { recursive: true, force: true });
+    if (!filmsOnly) rmSync(join(dir, MODGUI_DIR), { recursive: true, force: true });
     for (const [p, bytes] of made) {
       mkdirSync(dirname(join(dir, p)), { recursive: true });
       writeFileSync(join(dir, p), bytes);
