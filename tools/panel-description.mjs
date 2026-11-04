@@ -205,7 +205,11 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     return { key: k, labelKey: labelKey(`section.${k}`, 'section label key'), label: label(s.label, `section '${s.key}'`) };
   });
   if (new Set(sections.map((s) => s.key)).size !== sections.length) throw new Error(`${where}: two panel sections share a key`);
+  for (const sym of Object.keys(panel?.visibleWhen ?? {})) if (!listed.some((s) => s.controls.includes(sym))) throw new Error(`${where}: visibleWhen names '${sym}', which no panel section lists`);
 
+  // the declared visibility: each governed control's governing parameter (its id, as the ABI's visible_param_id) and
+  // the mask of the values that show it, bit v for value v
+  const visibility = new Map(Object.entries(panel?.visibleWhen ?? {}).map(([sym, rule]) => [sym, visibilityOf(sym, rule, control, where)]));
   const seen = new Set();
   const controls = listed.flatMap((s, section) =>
     s.controls.map((sym) => {
@@ -213,12 +217,15 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
       if (!c) throw new Error(`${where}: panel section '${s.key}' lists '${sym}', no parameter`);
       if (seen.has(sym)) throw new Error(`${where}: '${sym}' is a control twice`);
       seen.add(sym);
+      const shown = visibility.get(sym);
       const standard = widgetOf(c, panel?.widgets?.[sym]);
       if (standard.widget === 'switch' && c.kind !== 'toggle' && c.kind !== 'trigger') throw new Error(`${where}: '${sym}' is drawn as a switch and is not a toggle`);
       return {
         symbol: sym, param: c.id, section, sectionKey: sections[section].key, widget: servedWidget(standard.widget), standard,
-        labelKey: labelKey(snake(sym), 'control label key'), label: label(c.label ?? c.name, `'${sym}'`), visible: null, mask: 0n,
+        labelKey: labelKey(snake(sym), 'control label key'), label: label(c.label ?? c.name, `'${sym}'`), visible: shown?.visible ?? null, mask: shown?.mask ?? 0n,
         unit: unitOf(c), meaning: c.meaning ?? null,
+        // what a renderer and the page cut read the mask against: the governing control's symbol and its come-up value
+        ...(shown ? { visibleWhen: { symbol: shown.symbol, default: shown.default } } : {}),
         // the group is read by the page cut only: it stays out of the JSON and the canonical form
         ...(c.group?.length ? { [GROUP]: c.group.join(' / ') } : {}),
       };
@@ -282,6 +289,64 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy };
 }
 
+/** The highest value a visibility mask has a bit for: the ABI's visible_mask is 64 bits. */
+export const VISIBLE_MAX = 63;
+const ALL_BITS = (1n << BigInt(VISIBLE_MAX + 1)) - 1n;
+
+/** The integer a control holds at come-up, or undefined for one that holds no integer (a travel that is not whole). */
+function integerDefault(c) {
+  if (c.kind === 'toggle') return c.default ? 1 : 0;
+  if (c.kind === 'choice' && Array.isArray(c.values)) {
+    const at = (c.ids ?? []).indexOf(c.default);
+    return at >= 0 ? c.values[at] : Number.isInteger(c.default) ? c.default : c.values[0];
+  }
+  if (c.kind === 'travel' && c.travel?.step === 1) return c.travel.default ?? c.travel.min;
+  return undefined;
+}
+
+/** The mask of a visibility rule: `values` sets bit v for each value v; `atLeast: n` sets bits n..63 (a count: band n
+ * shows while the count is n or more). */
+export function visibilityMask(rule) {
+  if (rule.atLeast !== undefined) return ALL_BITS ^ ((1n << BigInt(rule.atLeast)) - 1n);
+  return rule.values.reduce((m, v) => m | (1n << BigInt(v)), 0n);
+}
+
+/** A declared `visibleWhen` entry for control `sym`, checked: `{ param, values }` or `{ param, atLeast }`, its param an
+ * integer or toggle control of the plugin, every value inside 0..63. */
+function visibilityOf(sym, rule, control, where) {
+  const what = `visibleWhen of '${sym}'`;
+  if (rule === null || typeof rule !== 'object' || typeof rule.param !== 'string') throw new Error(`${where}: ${what} names no param`);
+  const hasValues = rule.values !== undefined, hasAtLeast = rule.atLeast !== undefined;
+  if (hasValues === hasAtLeast) throw new Error(`${where}: ${what} states one of values or atLeast`);
+  const inRange = (v) => Number.isInteger(v) && v >= 0 && v <= VISIBLE_MAX;
+  if (hasValues && (!Array.isArray(rule.values) || rule.values.length === 0 || !rule.values.every(inRange))) throw new Error(`${where}: ${what}: values are integers 0..${VISIBLE_MAX}`);
+  if (hasAtLeast && !inRange(rule.atLeast)) throw new Error(`${where}: ${what}: atLeast is an integer 0..${VISIBLE_MAX}`);
+  if (rule.param === sym) throw new Error(`${where}: ${what} is governed by itself`);
+  const g = control(rule.param);
+  if (!g) throw new Error(`${where}: ${what} names '${rule.param}', no parameter`);
+  const def = integerDefault(g);
+  if (def === undefined) throw new Error(`${where}: ${what} names '${rule.param}', which is not an integer or toggle parameter`);
+  return { symbol: rule.param, visible: g.id, mask: visibilityMask(rule), default: def };
+}
+
+/** The checked visibility rules of a declared panel over `descriptor`: control symbol -> `{ symbol, visible, mask,
+ * default }`, the governing control's symbol and id, the mask, and the governing control's come-up value. */
+export function visibilityRules(descriptor, visibleWhen = {}, where = `descriptor ${descriptor.plugin?.id}`) {
+  const all = descriptor.controls ?? [];
+  const control = (sym) => all.find((c) => keyOf(c) === sym);
+  return new Map(Object.entries(visibleWhen).map(([sym, rule]) => [sym, visibilityOf(sym, rule, control, where)]));
+}
+
+/** Whether control `c` of a layout is shown while the controls read `values` (symbol -> value; a governing control left
+ * out reads its come-up value). A control with no visibility rule is always shown. */
+export function isVisible(c, values = {}) {
+  if (c.visible === null || c.visible === undefined) return true;
+  const v = values[c.visibleWhen.symbol] ?? c.visibleWhen.default;
+  // a layout read back from its JSON carries the mask as hex
+  const mask = typeof c.mask === 'string' ? BigInt(`0x${c.mask}`) : BigInt(c.mask);
+  return Number.isInteger(v) && v >= 0 && v <= VISIBLE_MAX && ((mask >> BigInt(v)) & 1n) === 1n;
+}
+
 /** A channel kind whose default a contract travel states (byKind) -> the placement it is. */
 const PLACEMENT_OF_KIND = { fxReturn: 'return', main: 'master' };
 
@@ -299,11 +364,16 @@ export const PAGE_SIZE = 8;
  * short page's slots are null. With `perPage` stated, a group that fits a page is not split across two
  * (a page ends early to keep it whole; a group wider than a page is cut), and a section of several
  * pages names each page by the controls it holds, "Band: Freq - Q". Left out, the cut is the plain one.
- * With `easyFirst` the Easy controls come first, on pages of their own named Easy, Easy 2, and do not repeat. */
-export function pagesOf(x, { perPage, easyFirst = false } = {}) {
+ * With `easyFirst` the Easy controls come first, on pages of their own named Easy, Easy 2, and do not repeat.
+ * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) takes
+ * no slot, and a section left with none has no page: a host cuts again when a governing value changes. */
+export function pagesOf(x, { perPage, easyFirst = false, values = {} } = {}) {
   const size = perPage ?? PAGE_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
-  const easy = easyFirst ? x.easy : [];
+  // a control the current values hide takes no slot: the pages are a function of the governing values
+  const shown = x.controls.filter((c) => isVisible(c, values));
+  x = { ...x, controls: shown };
+  const easy = (easyFirst ? x.easy : []).filter((symbol) => shown.some((c) => c.symbol === symbol));
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
     const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
