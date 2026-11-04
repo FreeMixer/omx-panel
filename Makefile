@@ -47,12 +47,13 @@ look:
 	node tools/look.mjs --check
 
 # The panel renderer, C (docs/renderer.md): its own Makefile, not part of `make` or the package yet. Its check reads the
-# built tree, so `make` first.
+# built tree, so `make` first. WINDOW=1 adds the window (pugl, NanoVG); its tests want a display (xvfb-run).
+WINDOW ?= 0
 renderer:
-	$(MAKE) -C renderer
+	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
 renderer-check: build
-	$(MAKE) -C renderer check
+	$(MAKE) -C renderer check WINDOW=$(WINDOW)
 
 install: build
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins

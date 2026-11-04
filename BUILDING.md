@@ -24,6 +24,8 @@ The panel renderer (`renderer/`, [docs/renderer.md](docs/renderer.md)) is C and 
 (`cjson-devel`; `libcjson-dev` on Debian) and omx-contract's C headers (`omx-contract-devel`; `libomx-contract-dev`).
 `make renderer` builds the library, its header, its pkg-config file and the `omx-panel-render` command into
 `renderer/build/`; `make renderer-check` draws the fixtures against the golden images and the MOD GUI face.
+`WINDOW=1` adds the window, which needs pugl and NanoVG (`pugl-devel`, `nanovg-devel`; `libpugl-dev`, `libnanovg-dev`,
+from the OpenMixer channel) and OpenGL; `xvfb-run -a make renderer-check WINDOW=1` holds the window to the buffer.
 
 Enable the commit message check once per clone: `git config core.hooksPath .githooks`. A commit message that
 carries an attribution line is refused; CI runs the same check over a pull request's commits.
