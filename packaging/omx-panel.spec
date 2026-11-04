@@ -24,9 +24,10 @@ BuildRequires: npm
 BuildRequires: omx-contract-data >= 3.6.0
 BuildRequires: plugin-hostd-contract >= 0.12.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
-# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails
+# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
+# does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
+# runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: lilv-devel
 Recommends: plugin-hostd
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
