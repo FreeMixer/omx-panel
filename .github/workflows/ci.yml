@@ -58,6 +58,27 @@ jobs:
         name: The example skin package validates
         run: node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
+  # The panel renderer (docs/renderer.md): the C library and its command built with warnings as errors, then the golden
+  # images and the parity with the MOD GUI face, which read the built tree and the installed vocabulary.
+  renderer:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:44
+    steps:
+      - name: Install the compiler, cJSON and node
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins python3-lilv
+      - name: Add the OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - name: Install omx-contract's C headers and the vocabulary the layout reads
+        run: |
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0'
+      - uses: actions/checkout@v4
+      - name: The tree the tests read
+        run: npm ci && make
+      - name: The renderer, and its golden images and parity with the MOD GUI face
+        run: make renderer-check
+
   # The packages as a runtime install takes them: built from the checkout, installed in a clean container from the
   # channel with weak dependencies off, no -devel (-dev) package arrives and `omx-panel vocabulary` reads the installed
   # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.

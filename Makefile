@@ -15,7 +15,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look install
+.PHONY: all build check test spdx public-sources look install renderer renderer-check
 
 all: build
 
@@ -45,6 +45,14 @@ public-sources:
 
 look:
 	node tools/look.mjs --check
+
+# The panel renderer, C (docs/renderer.md): its own Makefile, not part of `make` or the package yet. Its check reads the
+# built tree, so `make` first.
+renderer:
+	$(MAKE) -C renderer
+
+renderer-check: build
+	$(MAKE) -C renderer check
 
 install: build
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins

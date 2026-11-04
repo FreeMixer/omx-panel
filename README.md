@@ -32,6 +32,9 @@ the plugin's own declaration, in the omx look, vintage or modern.
   ([docs/skin-package.md](docs/skin-package.md)).
 - The importer: `omx-panel import` turns a MOD GUI bundle into a skin package.
 - The widgets a panel names (`schema/panel.schema.json`): knob, fader, switch, selector.
+- The renderer: a C library that draws a panel description in the omx look into a plain pixel buffer, the MOD GUI's
+  face to the bit, at any size and scale, for a plugin window, a host's inline view or the console
+  ([docs/renderer.md](docs/renderer.md)).
 - A worked example: a third-party LV2 plugin (ZamComp) and CLAP plugin (LSP Limiter Mono) from the scan to a
   generated panel, and where Zynthian reads the LV2 one ([docs/worked-example.md](docs/worked-example.md)).
 
