@@ -5,13 +5,15 @@
  * own front door, for the tests and for a tool that wants a picture of a panel.
  *
  *   omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]
- *                    [--width W --height H] [--scale S] [--format rgba|bgra] (--raw <file> | --png <file>)
+ *                    [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]
+ *                    [--raw <file>] [--png <file>] [--rects]
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
- * {"at", "count", "text"}}}. --raw writes the buffer's bytes as they are (rows of width * 4); --png
- * an RGBA PNG, its image data in stored (uncompressed) deflate blocks, so it needs no zlib.
- * Prints "<width> <height>" on stdout. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
+ * {"at", "count", "text"}}}. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+ * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
+ * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
+ * "x y width height" in device px. Prints "<width> <height>" on stdout first. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
  */
 #include <cjson/cJSON.h>
 #include <math.h>
@@ -27,7 +29,8 @@
 
 static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
-    "                        [--width W --height H] [--scale S] [--format rgba|bgra] (--raw <file> | --png <file>)\n";
+    "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
+    "                        [--raw <file>] [--png <file>] [--rects]\n";
 
 static uint32_t crc_table[256];
 static void crc_init(void) {
@@ -139,9 +142,10 @@ int main(int argc, char **argv) {
   const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL;
   double scale = 1;
   long width = 0, height = 0;
-  omx_panel_pixel_format_t format = OMX_PANEL_PIXEL_RGBA8;
+  int bgra = 0, straight = 0, rects = 0;
   for (int i = 1; i < argc; i++) {
     const char *a = argv[i], *val = i + 1 < argc ? argv[i + 1] : NULL;
+    if (!strcmp(a, "--rects")) { rects = 1; continue; }
     if (!val) { fputs(USAGE, stderr); return 2; }
     if (!strcmp(a, "--description")) desc = val;
     else if (!strcmp(a, "--data")) data = val;
@@ -151,11 +155,12 @@ int main(int argc, char **argv) {
     else if (!strcmp(a, "--scale")) scale = strtod(val, NULL);
     else if (!strcmp(a, "--width")) width = strtol(val, NULL, 10);
     else if (!strcmp(a, "--height")) height = strtol(val, NULL, 10);
-    else if (!strcmp(a, "--format") && (!strcmp(val, "rgba") || !strcmp(val, "bgra"))) format = !strcmp(val, "bgra");
+    else if (!strcmp(a, "--format") && (!strcmp(val, "rgba") || !strcmp(val, "bgra"))) bgra = !strcmp(val, "bgra");
+    else if (!strcmp(a, "--alpha") && (!strcmp(val, "premultiplied") || !strcmp(val, "straight"))) straight = !strcmp(val, "straight");
     else { fputs(USAGE, stderr); return 2; }
     i++;
   }
-  if (!desc || (!raw && !png) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0) {
+  if (!desc || (!raw && !png && !rects) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0) {
     fputs(USAGE, stderr);
     return 2;
   }
@@ -168,6 +173,8 @@ int main(int argc, char **argv) {
     omx_panel_view_natural_size(v, &w, &h);
     width = lround(w * scale), height = lround(h * scale);
   }
+  omx_panel_pixel_format_t format = bgra ? (straight ? OMX_PANEL_PIXEL_BGRA8_STRAIGHT : OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
+                                          : (straight ? OMX_PANEL_PIXEL_RGBA8_STRAIGHT : OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED);
   omx_panel_buffer_t b = {malloc((size_t)width * height * 4), (uint32_t)width, (uint32_t)height, (uint32_t)width * 4, scale, format};
   int ok = b.pixels && omx_panel_view_draw(v, &b);
   if (ok && raw) {
@@ -175,12 +182,18 @@ int main(int argc, char **argv) {
     ok = f && fwrite(b.pixels, 1, (size_t)width * height * 4, f) == (size_t)width * height * 4;
     if (f && fclose(f)) ok = 0;
   }
-  if (ok && png) {
+  if (ok && png) { /* a PNG holds straight alpha: drawn so, whatever the buffer asked for */
     crc_init();
-    ok = write_png(png, b.pixels, b.width, b.height, b.stride, format == OMX_PANEL_PIXEL_BGRA8);
+    b.format = OMX_PANEL_PIXEL_RGBA8_STRAIGHT;
+    ok = omx_panel_view_draw(v, &b) && write_png(png, b.pixels, b.width, b.height, b.stride, 0);
   }
   if (ok) printf("%ld %ld\n", width, height);
-  else fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
+  for (uint32_t i = 0; ok && rects && i < omx_panel_view_count(v); i++) {
+    double r[4];
+    omx_panel_view_control_rect(v, b.width, b.height, scale, i, r);
+    printf("%g %g %g %g\n", r[0], r[1], r[2], r[3]);
+  }
+  if (!ok) fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
   free(b.pixels);
   omx_panel_view_destroy(v);
   return ok ? 0 : 1;

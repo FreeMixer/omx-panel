@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "raster.h"
+#include "draw.h"
 
 typedef enum { W_KNOB, W_FADER, W_SWITCH, W_SELECTOR, W_METER, W_CURVE, W_XY, W_DISPLAY } widget;
 
@@ -358,41 +358,44 @@ void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_
 
 /* ----------------------------------------------------------------------------------- drawing */
 
-static void draw_knob(omx_canvas *c, double cx, double cy, double r, double f, const palette *col) {
-  omx_disc(c, cx, cy, r, col->rim);
-  omx_disc(c, cx, cy, r - fmax(1, r * 0.08), col->body);
+/* The widgets, each one drawing over the backend's primitives: the same calls reach the CPU raster (a buffer) and
+ * NanoVG (a window), so both draw one layout with one widget code. */
+
+static void draw_knob(const omx_draw *d, double cx, double cy, double r, double f, const palette *col) {
+  d->disc(d->ctx, cx, cy, r, col->rim);
+  d->disc(d->ctx, cx, cy, r - fmax(1, r * 0.08), col->body);
   double th = (-135 + 270 * fmin(1, fmax(0, f))) * (M_PI / 180);
   double sx = sin(th), sy = -cos(th);
-  omx_segment(c, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, fmax(0.75, r * 0.08), col->accent);
+  d->segment(d->ctx, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, fmax(0.75, r * 0.08), col->accent);
 }
 
-static void draw_selector(omx_canvas *c, double x, double y, double w, double h, double at, double n, const palette *col) {
-  omx_round_rect(c, x, y, w, h, fmin(4, h / 4), col->rim);
-  omx_round_rect(c, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+static void draw_selector(const omx_draw *d, double x, double y, double w, double h, double at, double n, const palette *col) {
+  d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
   double seg = (w - 4) / fmax(1, n);
-  omx_round_rect(c, x + 2 + at * seg, y + h - 4, fmax(1, seg), 2, 0, col->accent);
+  d->round_rect(d->ctx, x + 2 + at * seg, y + h - 4, fmax(1, seg), 2, 0, col->accent);
 }
 
-static void draw_fader(omx_canvas *c, const geometry *g, double cx, double top, double h, double f, const palette *col) {
+static void draw_fader(const omx_draw *d, const geometry *g, double cx, double top, double h, double f, const palette *col) {
   double slot = fmax(1, g->faderW * 0.25 * (h / g->knob));
   double cap = g->faderCap * (h / g->knob);
-  omx_round_rect(c, cx - slot / 2, top + cap / 2, slot, h - cap, slot / 2, col->rim);
+  d->round_rect(d->ctx, cx - slot / 2, top + cap / 2, slot, h - cap, slot / 2, col->rim);
   double y = top + (1 - fmin(1, fmax(0, f))) * (h - cap);
-  omx_round_rect(c, cx - (g->faderW * (h / g->knob)) / 2, y, g->faderW * (h / g->knob), cap, fmin(2, cap / 4), col->inkDim);
-  omx_round_rect(c, cx - (g->faderW * (h / g->knob)) / 2, y + cap / 2 - 0.5, g->faderW * (h / g->knob), 1, 0, col->accent);
+  d->round_rect(d->ctx, cx - (g->faderW * (h / g->knob)) / 2, y, g->faderW * (h / g->knob), cap, fmin(2, cap / 4), col->inkDim);
+  d->round_rect(d->ctx, cx - (g->faderW * (h / g->knob)) / 2, y + cap / 2 - 0.5, g->faderW * (h / g->knob), 1, 0, col->accent);
 }
 
 /* A reading's frame; a meter fills it to its fraction along the foot. */
-static void draw_display(omx_canvas *c, double x, double y, double w, double h, double fill, const palette *col) {
-  omx_round_rect(c, x, y, w, h, fmin(4, h / 4), col->rim);
-  omx_round_rect(c, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
-  if (fill > 0) omx_round_rect(c, x + 2, y + h - 4, (w - 4) * fill, 2, 0, col->accent);
+static void draw_display(const omx_draw *d, double x, double y, double w, double h, double fill, const palette *col) {
+  d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+  if (fill > 0) d->round_rect(d->ctx, x + 2, y + h - 4, (w - 4) * fill, 2, 0, col->accent);
 }
 
-static void draw_switch(omx_canvas *c, double x, double y, double w, double h, int on, const palette *col) {
-  omx_round_rect(c, x, y, w, h, h / 2, on ? col->accent : col->body);
+static void draw_switch(const omx_draw *d, double x, double y, double w, double h, int on, const palette *col) {
+  d->round_rect(d->ctx, x, y, w, h, h / 2, on ? col->accent : col->body);
   double r = h / 2 - h * 0.15;
-  omx_disc(c, on ? x + w - h / 2 : x + h / 2, y + h / 2, r, on ? col->ink : col->inkDim);
+  d->disc(d->ctx, on ? x + w - h / 2 : x + h / 2, y + h / 2, r, on ? col->ink : col->inkDim);
 }
 
 /* `s` as code points, upper-cased in ASCII (a section label and the brand are set in capitals). */
@@ -404,51 +407,67 @@ static size_t text_of(const char *s, int upper, uint32_t **out) {
   return n;
 }
 
-static void text(omx_canvas *c, omx_font *f, const char *s, int upper, double fit, double x, double y, double px, omx_rgb rgb,
+/* A line of text, cut to fit by the font's own advances whatever the backend: both cut it at the same character. */
+static void text(const omx_draw *d, omx_font *f, const char *s, int upper, double fit, double x, double y, double px, omx_rgb rgb,
                  omx_align align) {
   uint32_t *cps;
   size_t n = text_of(s, upper, &cps);
   n = omx_fit_text(f, cps, n, px, fit);
-  omx_draw_text(c, f, cps, n, x, y, px, rgb, align);
+  d->text(d->ctx, f, cps, n, x, y, px, rgb, align);
   free(cps);
 }
 
-bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
-  if (!v || !b || !b->pixels || !b->width || !b->height || b->stride < (uint64_t)b->width * 4 || !(b->scale > 0)) return false;
-  for (uint32_t y = 0; y < b->height; y++) memset(b->pixels + (size_t)y * b->stride, 0, (size_t)b->width * 4);
-  omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, b->format == OMX_PANEL_PIXEL_BGRA8}, *c = &cv;
-  const geometry *g = &v->g;
-  const textsizes *T = &v->t;
-  const palette *col = &v->col;
-  omx_font *font = v->font;
-
-  /* the controls a row that let the panel be drawn largest in the box, the most of them at a tie: at its natural size
-   * (or larger) the panel is drawn as laid out, smaller than that it reflows, then shrinks */
+/* The layout a box of width x height device px at `scale` gets, and the scale it is drawn at: the controls a row that
+ * let the panel be drawn largest in the box, the most of them at a tie. At its natural size (or larger) the panel is
+ * drawn as laid out; smaller than that it reflows, then shrinks. */
+static laid place(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, double *s) {
   laid L = {0};
   double k = -1;
   for (int per_row = v->row_controls; per_row >= 1; per_row--) {
     laid T = lay_out(v, per_row);
-    double kx = omx_round(T.w * b->scale) <= b->width ? 1 : b->width / (T.w * b->scale);
-    double ky = omx_round(T.h * b->scale) <= b->height ? 1 : b->height / (T.h * b->scale);
+    double kx = omx_round(T.w * scale) <= width ? 1 : width / (T.w * scale);
+    double ky = omx_round(T.h * scale) <= height ? 1 : height / (T.h * scale);
     if (fmin(kx, ky) > k) {
       if (k >= 0) lay_free(&L);
       L = T, k = fmin(kx, ky);
     } else
       lay_free(&T);
   }
-  double s = b->scale * k;
+  *s = scale * k;
+  return L;
+}
 
-  omx_round_rect(c, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
-  omx_round_rect(c, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
-  omx_round_rect(c, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
-  omx_disc(c, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
+bool omx_panel_view_control_rect(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, uint32_t index,
+                                 double rect[4]) {
+  if (!v || index >= v->ncontrols || !width || !height || !(scale > 0)) return false;
+  double s;
+  laid L = place(v, width, height, scale, &s);
+  const box *sec = &L.sections[v->controls[index].section];
+  rect[0] = (sec->x + L.cx[index]) * s, rect[1] = (sec->y + L.cy[index]) * s;
+  rect[2] = v->g.cellW * s, rect[3] = v->g.cellH * s;
+  lay_free(&L);
+  return true;
+}
+
+void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
+  const geometry *g = &v->g;
+  const textsizes *T = &v->t;
+  const palette *col = &v->col;
+  omx_font *font = v->font;
+  double s;
+  laid L = place(v, width, height, scale, &s);
+
+  d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
+  d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
+  d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
+  d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
   double head_w = (L.w - 2 * g->pad - 24) * s;
-  text(c, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
-  text(c, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+  text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
+  text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
   for (size_t si = 0; si < v->nsections; si++) {
     box sec = L.sections[si];
-    omx_round_rect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
-    text(c, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
+    d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
+    text(d, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
          T->small * s, col->inkDim, OMX_ALIGN_LEFT);
     for (size_t i = 0; i < v->ncontrols; i++) {
       const control *k = &v->controls[i];
@@ -457,31 +476,61 @@ bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
       int reading = 0;
       switch (k->w) {
       case W_SWITCH:
-        draw_switch(c, (x + (g->cellW - g->switchW) / 2) * s, (y + g->switchTop) * s, g->switchW * s, g->switchH * s, k->fraction >= 0.5, col);
+        draw_switch(d, (x + (g->cellW - g->switchW) / 2) * s, (y + g->switchTop) * s, g->switchW * s, g->switchH * s, k->fraction >= 0.5, col);
         break;
       case W_SELECTOR:
-        draw_selector(c, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s, k->at, k->count, col);
+        draw_selector(d, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s, k->at, k->count, col);
         break;
       case W_FADER:
-        draw_fader(c, g, (x + g->cellW / 2) * s, (y + g->knobTop) * s, g->knob * s, k->fraction, col);
+        draw_fader(d, g, (x + g->cellW / 2) * s, (y + g->knobTop) * s, g->knob * s, k->fraction, col);
         break;
       case W_KNOB:
-        draw_knob(c, (x + g->cellW / 2) * s, (y + g->knobTop + g->knob / 2) * s, (g->knob / 2) * s, k->fraction, col);
+        draw_knob(d, (x + g->cellW / 2) * s, (y + g->knobTop + g->knob / 2) * s, (g->knob / 2) * s, k->fraction, col);
         break;
       default: /* a meter fills its frame; a display, a curve and an xy pad show a frame until each has its own drawing */
-        draw_display(c, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s,
+        draw_display(d, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s,
                      k->w == W_METER ? k->fraction : 0, col);
         reading = 1;
       }
       double mid = (x + g->cellW / 2) * s, w = (g->cellW - 4) * s;
-      text(c, font, k->label, 0, w, mid, (y + T->nameBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
+      text(d, font, k->label, 0, w, mid, (y + T->nameBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
       if (k->w == W_SELECTOR)
-        text(c, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
+        text(d, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
              T->small * s, col->ink, OMX_ALIGN_CENTRE);
       else if (!reading || k->text[0])
-        text(c, font, k->text, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+        text(d, font, k->text, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
     }
   }
   lay_free(&L);
+}
+
+omx_font *omx_panel_view_font(const omx_panel_view_t *v) { return v ? v->font : NULL; }
+
+/* ------------------------------------------------------------------------------- the CPU path */
+
+static void cpu_round_rect(void *c, double x, double y, double w, double h, double r, omx_rgb rgb) { omx_round_rect(c, x, y, w, h, r, rgb); }
+static void cpu_disc(void *c, double cx, double cy, double r, omx_rgb rgb) { omx_disc(c, cx, cy, r, rgb); }
+static void cpu_segment(void *c, double ax, double ay, double bx, double by, double hw, omx_rgb rgb) { omx_segment(c, ax, ay, bx, by, hw, rgb); }
+static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
+  omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
+}
+
+bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
+  if (!v || !b || !b->pixels || !b->width || !b->height || b->stride < (uint64_t)b->width * 4 || !(b->scale > 0) ||
+      (unsigned)b->format > OMX_PANEL_PIXEL_BGRA8_STRAIGHT)
+    return false;
+  for (uint32_t y = 0; y < b->height; y++) memset(b->pixels + (size_t)y * b->stride, 0, (size_t)b->width * 4);
+  int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
+  omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra};
+  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_text};
+  omx_panel_view_paint(v, b->width, b->height, b->scale, &d);
+  /* drawn with straight alpha; a premultiplied buffer gets each colour times its alpha, rounded to the nearest */
+  if (b->format == OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
+    for (uint32_t y = 0; y < b->height; y++) {
+      uint8_t *p = b->pixels + (size_t)y * b->stride;
+      for (uint32_t x = 0; x < b->width; x++, p += 4)
+        if (p[3] != 255)
+          for (int k = 0; k < 3; k++) p[k] = (uint8_t)((p[k] * p[3] + 127) / 255);
+    }
   return true;
 }

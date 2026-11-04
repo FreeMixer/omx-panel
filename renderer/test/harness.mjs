@@ -72,11 +72,12 @@ export function stateFile(fx, dir, readings = {}) {
 
 export const scratch = () => mkdtempSync(join(tmpdir(), 'omx-panel-render-'));
 
-/** The renderer over a description and a state: `{ w, h, data }`, RGBA. `size` [w, h] in device px, or the natural size. */
-export function render(description, state, { scale = 1, size, format = 'rgba' } = {}) {
+/** The renderer over a description and a state: `{ w, h, data }`, RGBA with straight alpha unless `format`/`alpha` say
+ * otherwise. `size` [w, h] in device px, or the natural size. */
+export function render(description, state, { scale = 1, size, format = 'rgba', alpha = 'straight' } = {}) {
   const dir = scratch();
   const out = join(dir, 'out.raw');
-  const args = ['--description', description, '--data', DATA, '--state', state, '--scale', String(scale), '--format', format, '--raw', out];
+  const args = ['--description', description, '--data', DATA, '--state', state, '--scale', String(scale), '--format', format, '--alpha', alpha, '--raw', out];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   const [w, h] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split(' ').map(Number);
   return { w, h, data: new Uint8Array(readFileSync(out)) };
@@ -136,4 +137,11 @@ export function encodePng({ w, h, data }) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr.set([8, 6, 0, 0, 0], 8);
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('tEXt', Buffer.from(`Comment\0\n${LICENCE}`, 'latin1')), chunk('IDAT', deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
+}
+
+/** Each control's cell where the renderer places it in a box: `[x, y, w, h]` in device px, in the description's order. */
+export function rects(description, { scale = 1, size } = {}) {
+  const args = ['--description', description, '--data', DATA, '--scale', String(scale), '--rects'];
+  if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
+  return execFileSync(CLI, args, { encoding: 'utf8' }).trim().split('\n').slice(1).map((l) => l.split(' ').map(Number));
 }

@@ -25,10 +25,13 @@
 extern "C" {
 #endif
 
-/** The byte order of a pixel in a buffer: four 8-bit channels, straight (not premultiplied) alpha. */
+/** A pixel in a buffer: four 8-bit channels in the order named, the colour premultiplied by its alpha (the default,
+ * what a compositor blends) or straight (what a PNG holds). */
 typedef enum omx_panel_pixel_format {
-  OMX_PANEL_PIXEL_RGBA8 = 0,
-  OMX_PANEL_PIXEL_BGRA8 = 1,
+  OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED = 0,
+  OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED = 1,
+  OMX_PANEL_PIXEL_RGBA8_STRAIGHT = 2,
+  OMX_PANEL_PIXEL_BGRA8_STRAIGHT = 3,
 } omx_panel_pixel_format_t;
 
 /** A buffer the caller owns: `height` rows of `stride` bytes, each row's first `width` pixels drawn.
@@ -88,11 +91,16 @@ bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t 
 /** The size, in logical px, the panel is laid out at with nothing to fit: what a window opens at. */
 void omx_panel_view_natural_size(const omx_panel_view_t *view, uint32_t *width, uint32_t *height);
 
+/** Where control `index` sits when the panel is drawn into a buffer of width x height device px at `scale`: its cell,
+ * as x, y, width and height in device px. What a pointer event is hit-tested against. */
+bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, uint32_t height, double scale, uint32_t index,
+                                 double rect[4]);
+
 /** Draw the panel into `buffer`, every pixel of it: what the panel does not cover is transparent.
  * A buffer smaller than the natural size (times its scale) gets the panel reflowed to fewer controls
  * a row and, if it still does not fit, drawn smaller; a larger one gets it at its natural size in
  * the top-left corner. False, drawing nothing, for a buffer that is not one (no pixels, a zero
- * size, a stride under four bytes a pixel, a scale that is not positive). */
+ * size, a stride under four bytes a pixel, a scale that is not positive, a format that is not one). */
 bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffer);
 
 #ifdef __cplusplus
