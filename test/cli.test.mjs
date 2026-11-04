@@ -51,7 +51,7 @@ test('layout: a descriptor under its declared panel, as JSON, canonical text and
 });
 
 test('modgui: --check over omx-plugins\' committed omx-delay MOD GUI is clean', () => {
-  const r = run('modgui', '--check', '--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'),
+  const r = run('modgui', '--check', '--no-films', '--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'),
     '--out', join(FIX, 'omx-delay.lv2'), '--source', 'plugins/omx-delay/omx-delay.decl.json (its panel block) and tools/look.json');
   assert.equal(r.status, 0, r.stderr);
 });

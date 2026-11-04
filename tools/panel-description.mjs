@@ -18,8 +18,8 @@
  * it and the fingerprint would no longer be what it reads); the generated header names each one.
  */
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { easyOf } from './easy.mjs';
+import { INDEXED_ROLES, ROLES } from './role-table.mjs';
 import { meaningOfRole, servedToken } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
@@ -80,26 +80,9 @@ const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], e
  * a plain number and takes no role. */
 export const unitToken = (unit) => servedToken(unit);
 
-const T = ['ms', 's'], LVL = ['db', 'dbfs', 'dbu', 'lufs'], DB = ['db'], FREQ = ['hz', 'khz'], PLAIN = ['none', 'pc', 'coef'], RATIO = ['ratio', 'coef'], CHOICE = ['none'];
-const WET = { mix: ['pc', 'coef', 'none'], output: DB };
-/** Each family's roles and the units each accepts. */
-export const ROLES = {
-  none: {},
-  gate: { threshold: LVL, range: DB, attack: T, release: T, hold: T, knee_start: DB, knee_end: DB, hysteresis: DB, ratio: RATIO, key_listen: CHOICE },
-  dynamics: { threshold: LVL, ratio: RATIO, attack: T, release: T, knee: DB, makeup: DB, lookahead: ['ms'], ...WET },
-  limiter: { ceiling: LVL, release: T, lookahead: ['ms'], threshold: LVL, ...WET },
-  deesser: { frequency: FREQ, threshold: LVL, range: DB, width: ['oct'], ratio: RATIO, attack: T, release: T, knee: DB, mode: CHOICE, listen: CHOICE, ...WET },
-  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['db', 'coef'], band_q: ['none', 'coef', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'db'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'db'], lpf_on: CHOICE, output: DB },
-  filter: { cutoff: FREQ, resonance: PLAIN, filter_type: CHOICE, ...WET },
-  drive: { drive: DB, tone: PLAIN, model: CHOICE, ...WET },
-  modulation: { rate: ['hz', 'bpm'], depth: [...PLAIN, 'oct'], feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },
-  delay: { time: T, feedback: PLAIN, tone: PLAIN, sync: CHOICE, division: CHOICE, pingpong: CHOICE, ...WET },
-  reverb: { size: PLAIN, decay: T, algorithm: CHOICE, predelay: ['ms'], damping: PLAIN, width: PLAIN, low_cut: FREQ, high_cut: FREQ, ...WET },
-  pitch: { shift: ['semitone12TET', 'cent'], fine: ['cent'], ...WET },
-};
-
-/** The roles that repeat by index, one control per band: schema/panel.schema.json's `$defs.indexedRole`. */
-export const INDEXED_ROLES = JSON.parse(readFileSync(new URL('../schema/panel.schema.json', import.meta.url), 'utf8')).$defs.indexedRole.enum;
+/** Each family's roles and the units each accepts, and the roles that repeat by index: tools/role-table.mjs's, the
+ * one table, data a browser loads as it is. */
+export { INDEXED_ROLES, ROLES };
 
 /**
  * The meanings each family stands on, in the order inference tries them: `backs`, one of which a

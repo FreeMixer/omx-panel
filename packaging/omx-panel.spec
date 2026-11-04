@@ -23,11 +23,14 @@ BuildRequires: npm
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: omx-contract-data >= 3.6.0
 BuildRequires: plugin-hostd-contract >= 0.12.0
-# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe
+# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
+# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails
 Recommends: python3-lilv
+Recommends: lilv-devel
 Recommends: plugin-hostd
-# %%check runs omx-modgui-sync over a bundle
+# %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
+BuildRequires: lilv-devel
 BuildRequires: systemd-rpm-macros
 
 Requires: nodejs >= 18
@@ -46,6 +49,7 @@ Zynthian in the omx look, imports a plugin's own MOD GUI into a skin package,
 and carries the skin package schema, its validator and the directory skin
 packages are installed into. The omx-panel command runs each; the tools are
 under /usr/share/omx-panel for a build that calls them.
+Its documentation is on openmixer.org.
 
 %prep
 %autosetup
@@ -62,7 +66,7 @@ make test
 
 %files
 %license LICENSE
-%doc README.md docs/
+%doc README.md
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
 %{_bindir}/omx-complement-sync

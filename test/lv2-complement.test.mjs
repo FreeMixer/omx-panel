@@ -39,8 +39,10 @@ const LV2 = 'http://lv2plug.in/ns/lv2core#';
 const PG = 'http://lv2plug.in/ns/ext/port-groups#';
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const SEE_ALSO = 'http://www.w3.org/2000/01/rdf-schema#seeAlso';
-const lilv = spawnSync('python3', ['-I', '-c', 'import lilv'], { encoding: 'utf8' }).status === 0;
-const noLilv = !lilv && 'python3-lilv is not installed';
+// OMX_PANEL_LILV=required (CI) makes a python3-lilv that does not import a failure naming why, not a skip
+const lilvProbe = spawnSync('python3', ['-I', '-c', 'import lilv'], { encoding: 'utf8' });
+const lilv = lilvProbe.status === 0;
+const noLilv = !lilv && process.env.OMX_PANEL_LILV !== 'required' && 'python3-lilv is not installed';
 
 const scratch = () => mkdtempSync(join(tmpdir(), 'omx-lv2-complement-'));
 
@@ -108,6 +110,10 @@ function run(lv2, out, extra = {}) {
   const r = sync({ lv2Path: `${out}:${lv2}`, outDir: out, stateDir: join(dirname(out), 'state'), log: (l) => lines.push(l), ...extra });
   return { ...r, lines };
 }
+
+it('python3-lilv imports (OMX_PANEL_LILV=required)', { skip: noLilv }, () => {
+  assert.ok(lilv, `python3 -I -c 'import lilv': ${lilvProbe.stderr || lilvProbe.error?.message}`);
+});
 
 describe('the Turtle reader keeps an absolute IRI as written', () => {
   it('a host in capitals and a bare authority are not rewritten; a relative reference is resolved', () => {
@@ -628,20 +634,36 @@ print(json.dumps(out))
     const [ua] = a.uris;
     const [ub] = b.uris;
     const sync2 = () => sync({ lv2Path: path, outDir: out, stateDir: join(root, 'state'), log: () => {} });
+    // what lilv reads is held, not assumed: a bundle may carry groups of its own (mda's RezFilter does, on its
+    // filter and envelope controls and its main ports); the sync adds the ones its plan infers and keeps the rest
+    const inferred = (dir, uri) => plan(dir).plugins.find((p) => p.uri === uri).verdict.groups;
+    const added = { [ua]: inferred(a.dir, ua), [ub]: inferred(b.dir, ub) };
     const before = lilvRead(path, [ua, ub]);
-    assert.deepEqual([before[ua].groups, before[ub].groups], [{}, {}]);
+    for (const u of [ua, ub]) {
+      // a group the plan infers that the installed files already state is restated with the same ports; at least one
+      // is new, or the complement proves nothing about lilv reading it
+      const fresh = added[u].filter((g) => before[u].groups[g.symbol] === undefined);
+      assert.ok(fresh.length > 0, `${u}: the plan infers a group lilv does not read before the sync`);
+      for (const g of added[u].filter((x) => !fresh.includes(x))) assert.deepEqual(before[u].groups[g.symbol], g.ports, `${u}: ${g.symbol} as installed`);
+    }
+    // the groups the complement carries, each port by symbol, and every group the installed files state, as it was
+    const holds = (read, u) => {
+      for (const g of added[u]) assert.deepEqual(read[u].groups[g.symbol], g.ports, `${u}: ${g.symbol}`);
+      for (const [symbol, ports] of Object.entries(before[u].groups)) assert.deepEqual(read[u].groups[symbol], ports, `${u}: its own ${symbol}`);
+    };
     assert.equal(sync2().counts.written, 2);
     const after = lilvRead(path, [ua, ub]);
     assert.equal(after[ua].bundle, pathToFileURL(`${join(out, outName(a.dir, true))}/`).href);
     assert.equal(after[ub].bundle, pathToFileURL(`${join(out, outName(b.dir, true))}/`).href);
-    assert.ok(Object.keys(after[ua].groups).length > 0 && Object.keys(after[ub].groups).length > 0, 'two groups readable');
+    holds(after, ua);
+    holds(after, ub);
     // the first package removed: its complement goes, the other's stays and still loads
     rmSync(a.dir, { recursive: true });
     assert.equal(sync2().counts.removed, 2);
     assert.deepEqual(readdirSync(out), [outName(b.dir)]);
     const last = lilvRead(path, [ub]);
     assert.equal(last[ub].bundle, pathToFileURL(`${join(out, outName(b.dir))}/`).href);
-    assert.ok(Object.keys(last[ub].groups).length > 0);
+    holds(last, ub);
     rmSync(b.dir, { recursive: true });
     sync2();
     assert.deepEqual(readdirSync(out), []);
