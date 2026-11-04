@@ -6,14 +6,16 @@
  *
  *   omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]
  *                    [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]
- *                    [--raw <file>] [--png <file>] [--rects]
+ *                    [--raw <file>] [--png <file>] [--rects] [--window]
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
  * {"at", "count", "text"}}}. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
- * "x y width height" in device px. Prints "<width> <height>" on stdout first. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
+ * "x y width height" in device px. --window (a build with the window, WINDOW=1) draws the panel in a window of its
+ * own at its natural size, NanoVG on OpenGL, and reads the window's frame back instead of drawing the buffer.
+ * Prints "<width> <height>" on stdout first. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
  */
 #include <cjson/cJSON.h>
 #include <math.h>
@@ -22,6 +24,9 @@
 #include <string.h>
 
 #include "omx_panel_render.h"
+#ifdef OMX_PANEL_WINDOW
+#include "omx_panel_window.h"
+#endif
 
 #ifndef OMX_PANEL_DATA_DIR
 #define OMX_PANEL_DATA_DIR "/usr/share/omx-panel/tools"
@@ -30,7 +35,7 @@
 static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
-    "                        [--raw <file>] [--png <file>] [--rects]\n";
+    "                        [--raw <file>] [--png <file>] [--rects] [--window]\n";
 
 static uint32_t crc_table[256];
 static void crc_init(void) {
@@ -142,10 +147,11 @@ int main(int argc, char **argv) {
   const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL;
   double scale = 1;
   long width = 0, height = 0;
-  int bgra = 0, straight = 0, rects = 0;
+  int bgra = 0, straight = 0, rects = 0, window = 0;
   for (int i = 1; i < argc; i++) {
     const char *a = argv[i], *val = i + 1 < argc ? argv[i + 1] : NULL;
     if (!strcmp(a, "--rects")) { rects = 1; continue; }
+    if (!strcmp(a, "--window")) { window = 1; continue; }
     if (!val) { fputs(USAGE, stderr); return 2; }
     if (!strcmp(a, "--description")) desc = val;
     else if (!strcmp(a, "--data")) data = val;
@@ -160,10 +166,17 @@ int main(int argc, char **argv) {
     else { fputs(USAGE, stderr); return 2; }
     i++;
   }
-  if (!desc || (!raw && !png && !rects) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0) {
+  if (!desc || (!raw && !png && !rects) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
+      (window && width)) {
     fputs(USAGE, stderr);
     return 2;
   }
+#ifndef OMX_PANEL_WINDOW
+  if (window) {
+    fputs("omx-panel-render: built without the window (make WINDOW=1)\n", stderr);
+    return 1;
+  }
+#endif
   char err[512];
   omx_panel_view_t *v = omx_panel_view_create_from_files(desc, data, err, sizeof err);
   if (!v) { fprintf(stderr, "omx-panel-render: %s\n", err); return 1; }
@@ -173,10 +186,24 @@ int main(int argc, char **argv) {
     omx_panel_view_natural_size(v, &w, &h);
     width = lround(w * scale), height = lround(h * scale);
   }
+#ifdef OMX_PANEL_WINDOW
+  omx_panel_window_t *win = NULL;
+  if (window) {
+    if (!(win = omx_panel_window_create(v, 0, scale, err, sizeof err))) {
+      fprintf(stderr, "omx-panel-render: %s\n", err);
+      omx_panel_view_destroy(v);
+      return 1;
+    }
+    omx_panel_window_show(win);
+  }
+#define DRAW(b) (win ? omx_panel_window_read(win, b) : omx_panel_view_draw(v, b))
+#else
+#define DRAW(b) omx_panel_view_draw(v, b)
+#endif
   omx_panel_pixel_format_t format = bgra ? (straight ? OMX_PANEL_PIXEL_BGRA8_STRAIGHT : OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
                                           : (straight ? OMX_PANEL_PIXEL_RGBA8_STRAIGHT : OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED);
   omx_panel_buffer_t b = {malloc((size_t)width * height * 4), (uint32_t)width, (uint32_t)height, (uint32_t)width * 4, scale, format};
-  int ok = b.pixels && omx_panel_view_draw(v, &b);
+  int ok = b.pixels && DRAW(&b);
   if (ok && raw) {
     FILE *f = fopen(raw, "wb");
     ok = f && fwrite(b.pixels, 1, (size_t)width * height * 4, f) == (size_t)width * height * 4;
@@ -185,7 +212,7 @@ int main(int argc, char **argv) {
   if (ok && png) { /* a PNG holds straight alpha: drawn so, whatever the buffer asked for */
     crc_init();
     b.format = OMX_PANEL_PIXEL_RGBA8_STRAIGHT;
-    ok = omx_panel_view_draw(v, &b) && write_png(png, b.pixels, b.width, b.height, b.stride, 0);
+    ok = DRAW(&b) && write_png(png, b.pixels, b.width, b.height, b.stride, 0);
   }
   if (ok) printf("%ld %ld\n", width, height);
   for (uint32_t i = 0; ok && rects && i < omx_panel_view_count(v); i++) {
@@ -195,6 +222,9 @@ int main(int argc, char **argv) {
   }
   if (!ok) fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
   free(b.pixels);
+#ifdef OMX_PANEL_WINDOW
+  omx_panel_window_destroy(win);
+#endif
   omx_panel_view_destroy(v);
   return ok ? 0 : 1;
 }
