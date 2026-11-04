@@ -10,10 +10,10 @@
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
- * {"at", "count", "text"}}}. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+ * {"at", "count", "text"}}, "integers": {"<symbol>": n}}, the last the governing values a visibility rule reads. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
- * "x y width height" in device px. --window (a build with the window, WINDOW=1) draws the panel in a window of its
+ * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
  * own at its natural size, NanoVG on OpenGL, and reads the window's frame back instead of drawing the buffer.
  * Prints "<width> <height>" on stdout first. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
  */
@@ -139,6 +139,13 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
       ok = 0;
     }
   }
+  /* "integers": {"<symbol>": n}, the governing controls' values a visibility rule reads */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "integers")) {
+    if (!cJSON_IsNumber(it) || !omx_panel_view_set_integer(v, it->string, (int64_t)it->valuedouble)) {
+      fprintf(stderr, "omx-panel-render: state's integers name '%s', which governs no control of the panel\n", it->string);
+      ok = 0;
+    }
+  }
   cJSON_Delete(root);
   return ok;
 }
@@ -217,8 +224,9 @@ int main(int argc, char **argv) {
   if (ok) printf("%ld %ld\n", width, height);
   for (uint32_t i = 0; ok && rects && i < omx_panel_view_count(v); i++) {
     double r[4];
-    omx_panel_view_control_rect(v, b.width, b.height, scale, i, r);
-    printf("%g %g %g %g\n", r[0], r[1], r[2], r[3]);
+    /* a hidden control has no cell: its line is "hidden" */
+    if (omx_panel_view_control_rect(v, b.width, b.height, scale, i, r)) printf("%g %g %g %g\n", r[0], r[1], r[2], r[3]);
+    else puts("hidden");
   }
   if (!ok) fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
   free(b.pixels);
