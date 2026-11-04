@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later AND Zlib
+# Copyright (C) its authors; see test/fixtures/lv2-groups/SOURCES
 @prefix doap:       <http://usefulinc.com/ns/doap#> .
 @prefix dc:         <http://purl.org/dc/terms/> .
 @prefix foaf:       <http://xmlns.com/foaf/0.1/> .
