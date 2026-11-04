@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: omx-panel-window
+Description: A panel view in a window: pugl and NanoVG on OpenGL, the layout and widgets of omx-panel-render
+Version: @VERSION@
+Requires: omx-panel-render
+Requires.private: pugl-0 pugl-gl-0 nanovg gl
+Cflags: -I${includedir}
+Libs: -L${libdir} -lomx-panel-window

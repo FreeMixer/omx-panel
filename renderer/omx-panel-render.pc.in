@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+# the look, the geometry and the font a view is made from (omx_panel_view_create_from_files)
+datadir=@DATADIR@/omx-panel/tools
+
+Name: omx-panel-render
+Description: Draws a panel description in the omx look into a CPU pixel buffer
+Version: @VERSION@
+Requires.private: libcjson
+Cflags: -I${includedir}
+Libs: -L${libdir} -lomx-panel-render -lm

@@ -20,6 +20,13 @@ make check                         # the licence lines, no private pointer in a 
 make install PREFIX=/usr DESTDIR=…   # the built tree under share/omx-panel, the omx-panel command, the empty skins directory
 ```
 
+The panel renderer (`renderer/`, [docs/renderer.md](docs/renderer.md)) is C and builds on its own: a C11 compiler, cJSON
+(`cjson-devel`; `libcjson-dev` on Debian) and omx-contract's C headers (`omx-contract-devel`; `libomx-contract-dev`).
+`make renderer` builds the library, its header, its pkg-config file and the `omx-panel-render` command into
+`renderer/build/`; `make renderer-check` draws the fixtures against the golden images and the MOD GUI face.
+`WINDOW=1` adds the window, which needs pugl and NanoVG (`pugl-devel`, `nanovg-devel`; `libpugl-dev`, `libnanovg-dev`,
+from the OpenMixer channel) and OpenGL; `xvfb-run -a make renderer-check WINDOW=1` holds the window to the buffer.
+
 Enable the commit message check once per clone: `git config core.hooksPath .githooks`. A commit message that
 carries an attribution line is refused; CI runs the same check over a pull request's commits.
 
@@ -48,7 +55,7 @@ src/skin-package.ts               the skin package's facts: name, schema 1, over
 tools/panel-description.mjs       the layout from a descriptor
 tools/vocabulary.mjs              the readers of the installed vocabulary: meanings, unit tokens
 tools/modgui-gen.mjs raster.mjs   the MOD GUI and its images
-tools/look.mjs look/ look.json    the omx look's tokens and their resolved values
+tools/look.mjs look/ look.json    the omx look's tokens and their resolved values, the face's geometry (look/geometry.json)
 tools/modgui-test.sh modgui-terms.ttl  a written MOD GUI held to its descriptor
 tools/modgui-import.mjs turtle-read.mjs  a MOD GUI bundle in, a skin package out
 tools/group-infer.mjs             the port groups an LV2 plugin lacks, inferred
@@ -58,6 +65,7 @@ lib/validate.mjs bin/omx-panel.mjs  the validator and the command
 examples/skins/                   a skin package that validates
 test/                             the suite and its fixtures
 packaging/ debian/                omx-panel (RPM), omx-panel (deb)
+renderer/                         the panel renderer, C: the library, its command, its tests and golden images
 ```
 
 ## Building with no network
