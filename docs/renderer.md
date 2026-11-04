@@ -50,6 +50,8 @@ void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const c
 bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fraction, const char *text);
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count,
                                const char *text);
+bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, uint32_t height, double scale,
+                                 uint32_t index, double rect[4]);
 
 void omx_panel_view_natural_size(const omx_panel_view_t *view, uint32_t *width, uint32_t *height);
 bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffer);
@@ -63,7 +65,15 @@ plugin can embed the four and draw with no file at all.
 `omx_panel_view_draw` fills every pixel of the buffer, transparent where the panel does not reach. At the
 natural size times the scale the panel is drawn as laid out. A smaller buffer gets the number of controls
 a row that lets the panel be drawn largest, then the panel scaled down to fit; a larger one gets the panel
-at its natural size in the top-left corner. Alpha is straight, not premultiplied.
+at its natural size in the top-left corner.
+
+The buffer names its pixel format: RGBA or BGRA, each with its colours premultiplied by alpha (the default,
+what a compositor blends) or straight. The panel is drawn with straight alpha and premultiplied at the end,
+each channel times its alpha rounded to the nearest. A PNG holds straight alpha, so the command asks for
+straight when it writes one: the conversion is at the edge, never inside the drawing.
+
+`omx_panel_view_control_rect` gives a control's cell in a buffer of a given size and scale: what a pointer
+event will be hit-tested against.
 
 Still to come, in this order: input (a pointer press, drag and release on a control, a scroll, answered
 with the control and the new fraction, and a gesture's begin and end), redrawing only what changed, and

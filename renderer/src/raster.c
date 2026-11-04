@@ -212,6 +212,11 @@ omx_font *omx_font_load(const uint8_t *bytes, size_t size, char *err, size_t err
   return f;
 }
 
+const uint8_t *omx_font_bytes(const omx_font *f, size_t *size) {
+  if (size) *size = f ? f->size : 0;
+  return f ? f->b : NULL;
+}
+
 void omx_font_free(omx_font *f) {
   if (!f) return;
   for (size_t i = 0; i < f->ncache; i++) {
