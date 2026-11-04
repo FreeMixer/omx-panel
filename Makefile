@@ -59,6 +59,8 @@ install: build
 	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \
 	  rel=$${m#$(CURDIR)/}; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
 	done
+	# their pages are theirs, not the package's: the package's one page is its README
+	if [ -d $(DESTDIR)$(PKGDIR)/node_modules ]; then find $(DESTDIR)$(PKGDIR)/node_modules -type f -iname '*.md' -delete; fi
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/

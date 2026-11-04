@@ -6,43 +6,11 @@ Panels for audio plugins, generated from what the plugin declares. Give any LV2 
 without drawing one: a MOD GUI for MOD and Zynthian, pages for a controller, a layout for a host, all from
 the plugin's own declaration, in the omx look, vintage or modern.
 
-## What is here
-
-- The layout: `tools/panel-description.mjs` lays out a panel from a plugin's descriptor (sections, controls, roles,
-  the family, the pages of eight a controller shows), under the plugin's declared panel when it has one
-  ([docs/panel-layout.md](docs/panel-layout.md)).
-- The MOD GUI generator: `omx-panel modgui` writes a plugin's MOD GUI from its descriptor, its images rasterised
-  byte for byte, in the omx look (`tools/look/tokens.css`) ([docs/modgui.md](docs/modgui.md)).
-- The sync: `omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, into
-  `/usr/local/lib/lv2` (`~/.lv2` for a user), one bundle per plugin, never touching a bundle that is not its own.
-  The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync` makes it run after each
-  `plugin-qualify-sync` (a drop-in on that unit queues it when a scan finishes, only if enabled). `omx-modgui-sync --check` says whether MOD-UI reads the folder. A plugin that cannot get a GUI never
-  fails the run; `omx-modgui-sync(1)` has the directories, the exit status and the summary.
-- The group inference: `tools/group-infer.mjs` finds the port groups an LV2 plugin lacks from what it states (its own
-  partial groups, designations, name and symbol prefixes, units, index runs, its MOD GUI), or says it cannot with
-  confidence and leaves the plugin as it is ([docs/group-inference.md](docs/group-inference.md)).
-- The complement: `omx-complement-sync` (`omx-panel complement`) carries those groups to lilv, for jalv on the Zynthian
-  touchscreen: for an installed bundle with a plugin to group it writes, beside omx-modgui-sync's GUIs, a bundle that
-  restates the installed TTL, adds the groups and raises `lv2:microVersion` by one, so lilv loads it in place of the
-  installed one. The installed files are never touched; a marker makes a second run write nothing, a run removes the
-  bundles of its own no longer wanted (the installed bundle gone, changed or needing no groups now), and deleting the
-  bundle restores the plugin as installed ([docs/lv2-complement.md](docs/lv2-complement.md), `omx-complement-sync(1)`).
-- The skin package: its schema, `omx-panel validate`, and its facts as a module (`src/skin-package.ts`: the
-  directory name, the override and how it applies, the licence allow-list, the refusal codes)
-  ([docs/skin-package.md](docs/skin-package.md)).
-- The importer: `omx-panel import` turns a MOD GUI bundle into a skin package.
-- The widgets a panel names (`schema/panel.schema.json`): knob, fader, switch, selector.
-- A worked example: a third-party LV2 plugin (ZamComp) and CLAP plugin (LSP Limiter Mono) from the scan to a
-  generated panel, and where Zynthian reads the LV2 one ([docs/worked-example.md](docs/worked-example.md)).
-
-The documents are also published at <https://openmixer.org/projects/omx-panel>, and why most LV2 plugins on a
-Zynthian need inferred port groups is the technical note
-<https://openmixer.org/notes/why-lv2-plugins-on-zynthian-need-inferred-port-groups>.
+`omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, and
+`omx-complement-sync` carries the port groups an LV2 plugin lacks to lilv, for jalv on the Zynthian
+touchscreen. Neither touches an installed bundle.
 
 ## Install
-
-`omx-panel` comes as an RPM and a DEB, each carrying the tools, the schema and the skins directory, and as
-`@openmixer/omx-panel` on npm (`npm install @openmixer/omx-panel`).
 
 Fedora 44, x86_64 or aarch64:
 
@@ -58,21 +26,22 @@ curl -fsSLO https://www.openmixer.org/deb/openmixer-release.deb && sudo apt inst
 sudo apt install omx-panel
 ```
 
-To build from source, see [BUILDING.md](BUILDING.md).
+Also on npm: `npm install @openmixer/omx-panel`.
 
-## For a plugin author
+## Start
 
-A skin package is a directory named after the plugin, holding a `skin.json` that says how the plugin's panel is
-drawn: its sections, labels and displays, the art it brings, and the licence of everything in it. The plugin's
-own description keeps every range, unit and scale; the skin refers to controls by id. The format is described
-in [docs/skin-package.md](docs/skin-package.md); `omx-panel validate` checks a package before it is installed.
+```
+omx-modgui-sync                                   # a MOD GUI for every installed LV2 plugin without one
+sudo systemctl enable omx-modgui-sync             # and again after each plugin-qualify-sync scan
+omx-panel modgui --descriptor <file> --out <bundle.lv2>
+```
 
-A plugin with no MOD GUI gets one from its descriptor: `omx-panel modgui --descriptor <file> --out <bundle.lv2>`
-writes `modgui.ttl` and `modgui/` into the bundle, every control drawn with its own travel and default.
-`omx-panel descriptors --installed` lists the installed descriptor files, one path per line.
+## Documentation
 
-A plugin that already ships a MOD GUI does not start from nothing: the importer reads the bundle's `modgui.ttl` and the plugin's licence and writes a skin package from them, one
-section in port order, the labels from the port names and the screenshot as the backdrop. A bundle whose licence
-is missing or not on the allow-list is refused with a named code and nothing is written.
+<https://www.openmixer.org/projects/omx-panel>, the manual pages (`omx-panel(1)`, `omx-modgui-sync(1)`,
+`omx-complement-sync(1)`), and in this repository: what each tool does and the skin package for plugin authors
+([docs/overview.md](docs/overview.md)); building from source ([BUILDING.md](BUILDING.md)).
 
-Licence: GPL-3.0-or-later (`LICENSE`).
+## Licence
+
+GPL-3.0-or-later. See [LICENSE](LICENSE).
