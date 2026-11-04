@@ -1,3 +1,27 @@
+omx-panel (0.10.0) unstable; urgency=medium
+
+  * A declared panel can show a control only while another control's value
+    meets a rule (visibleWhen: a set of values, or a count reached). A hidden
+    control takes no slot on a page, a section left empty has no page, and the
+    MOD GUI shows and hides the control as the governing port moves (#123).
+  * omx-panel modgui --films-only writes the film strips into a built bundle
+    and touches nothing else, so a plugin tree need not track them.
+  * A C renderer that draws a panel description into a CPU pixel buffer, RGBA
+    or BGRA, at any size and scale, and a window for it through pugl and
+    NanoVG; a control hidden by another control's value is not drawn (#120,
+    #124). It is built and checked in CI; nothing of it is packaged yet.
+  * The family role table ships as browser data,
+    @openmixer/omx-panel/role-table; the copies check is exported as
+    @openmixer/omx-panel/copies-check.
+  * The tests read the example descriptors from @openmixer/omx-contract and
+    keep no copy; the lilv proofs run in CI. The MOD GUI's modgui:javascript
+    term is one sord_validate reads.
+  * The package installs its licence and a short README and no other
+    markdown; its description points to openmixer.org. The RPM asks for no
+    development package at run time.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 04 Nov 2026 18:00:00 +0100
+
 omx-panel (0.9.1) unstable; urgency=medium
 
   * 0.9.0 was tagged but not published: the release proof ran make check
