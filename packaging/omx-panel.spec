@@ -66,6 +66,7 @@ make test
 
 %files
 %license LICENSE
+%doc README.md
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
 %{_bindir}/omx-complement-sync
