@@ -6,10 +6,10 @@
 // `omx-panel vocabulary` reads each source from where the lookup puts it.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,11 +31,22 @@ function lookup(expr, set) {
   return JSON.parse(r.stdout);
 }
 
+/** A directory under the system's temporary directory, removed when this file's tests end. */
+const made = [];
+function scratch(prefix) {
+  const dir = mkdtempSync(prefix);
+  made.push(dir);
+  return dir;
+}
+after(() => {
+  for (const dir of made) rmSync(dir, { recursive: true, force: true });
+});
+
 const command = (args, set) => spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'vocabulary', ...args], { encoding: 'utf8', env: envOf(set) });
 
 /** A contract directory holding `pkgs`: { <package>: { <relative file>: <json> } }. */
 function contractDir(pkgs) {
-  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  const dir = scratch(join(tmpdir(), 'omx-panel-contract-'));
   for (const [pkg, files] of Object.entries(pkgs)) {
     for (const [rel, body] of Object.entries(files)) {
       const file = join(dir, '3', pkg, rel);
@@ -57,7 +68,7 @@ test('no $OMX_CONTRACT_PATH and no pkg-config: the directory omx-contract-data i
 });
 
 test('pkg-config, where omx-contract.pc is installed, names the directories', () => {
-  const bin = mkdtempSync(join(tmpdir(), 'omx-panel-pc-'));
+  const bin = scratch(join(tmpdir(), 'omx-panel-pc-'));
   const fake = join(bin, 'pkg-config');
   writeFileSync(fake, '#!/bin/sh\ncase "$1 $2" in\n  "--variable=contractdir omx-contract") echo /pc/contract.d ;;\n  "--variable=datadir omx-contract") echo /pc/data ;;\n  *) exit 1 ;;\nesac\n');
   chmodSync(fake, 0o755);
@@ -116,7 +127,7 @@ test('an install with omx-contract-data and no omx-contract.pc reads its schema 
 });
 
 test('omx-panel descriptors --installed lists each installed descriptor, whatever the contract major', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  const dir = scratch(join(tmpdir(), 'omx-panel-contract-'));
   const put = (rel) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
@@ -134,7 +145,7 @@ test('omx-panel descriptors --installed lists each installed descriptor, whateve
 });
 
 test('a reader that stops early ends the listing quietly: exit 0, no stack trace (#42)', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-contract-'));
+  const dir = scratch(join(tmpdir(), 'omx-panel-contract-'));
   for (let i = 0; i < 3000; i++) {
     const rel = `7/omx-plugins/plugins/omx-plugin-with-a-long-name-${i}.json`;
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
