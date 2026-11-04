@@ -63,6 +63,57 @@ jobs:
         name: The example skin package validates
         run: node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
+  # The panel renderer (docs/renderer.md): the C library and its command built with warnings as errors, then the golden
+  # images and the parity with the MOD GUI face, which read the built tree and the installed vocabulary.
+  renderer:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:44
+    steps:
+      - name: Install the compiler, cJSON and node
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins python3-lilv
+      - name: Add the OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - name: Install omx-contract's C headers and the vocabulary the layout reads
+        run: |
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0'
+      - uses: actions/checkout@v4
+      - name: The tree the tests read
+        run: npm ci && make
+      - name: The renderer, and its golden images and parity with the MOD GUI face
+        run: make renderer-check
+
+  # The renderer's window (WINDOW=1): pugl and NanoVG on OpenGL, drawn under Xvfb on Mesa's software GL and held to the
+  # buffer by structure (renderer/test/window.test.mjs), never skipped here. pugl-devel and nanovg-devel are built from
+  # FreeMixer/.github's packaging at the commit that adds them, until the channel serves them; then they are installed
+  # from it like the rest.
+  renderer-window:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:44
+    steps:
+      - name: Install the compiler, cJSON, node, OpenGL and Xvfb
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins \
+            python3-lilv mesa-libGL-devel mesa-dri-drivers xorg-x11-server-Xvfb xorg-x11-xauth
+      - name: Add the OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - name: Install omx-contract's C headers and the vocabulary the layout reads
+        run: |
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0'
+      - name: pugl and nanovg, from their packaging
+        uses: FreeMixer/.github/.github/actions/pinned-rpms@9d3faa99b47b029a88b4a4ce1a40672f5c7bbec5
+        with:
+          names: pugl nanovg
+      - uses: actions/checkout@v4
+      - name: The tree the tests read
+        run: npm ci && make
+      - name: The renderer with its window, every test run under Xvfb
+        env:
+          OMX_PANEL_WINDOW_REQUIRED: '1'
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' make renderer-check WINDOW=1
+
   # The packages as a runtime install takes them: built from the checkout, installed in a clean container from the
   # channel with weak dependencies off, no -devel (-dev) package arrives and `omx-panel vocabulary` reads the installed
   # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.

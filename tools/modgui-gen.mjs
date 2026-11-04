@@ -45,16 +45,13 @@ export const MODGUI_TTL = 'modgui.ttl';
 export const MODGUI_DIR = 'modgui';
 /** An integer travel with more steps than this is a continuous knob; fewer is a selector. */
 export const MAX_SELECTOR_STEPS = 16;
+/** The face's numbers, tools/look/geometry.json: the file the C renderer (renderer/) reads too. */
+const FACE = JSON.parse(readFileSync(join(TOOLS, 'look', 'geometry.json'), 'utf8'));
 /** The controls of one row of a section; a section with more wraps onto further rows. */
-export const ROW_CONTROLS = 8;
+export const ROW_CONTROLS = FACE.rowControls;
 
 /** The geometry, in CSS px: one set of numbers the template, the stylesheet and the raster read. */
-export const GEOMETRY = Object.freeze({
-  pad: 16, headH: 40, sectionTop: 52, sectionGap: 10, sectionPad: 8, sectionTitleH: 18,
-  cellW: 72, cellH: 76, knob: 48, knobTop: 4, switchW: 40, switchH: 20, switchTop: 18,
-  selectorW: 64, selectorH: 22, selectorTop: 17, faderW: 14, faderCap: 10,
-  radius: 10, sectionRadius: 6, filmFrames: 65, thumbScale: 0.5,
-});
+export const GEOMETRY = Object.freeze(FACE.geometry);
 
 /** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
  * the descriptor's to say, an index is not it, so the generator refuses and names the control. */
@@ -304,7 +301,7 @@ const palette = (tok) => ({
 });
 
 /** Text sizes and baselines, in px at scale 1: the template's 10 px small text and 14 px title. */
-const TEXT = Object.freeze({ brand: 10, brandBase: 14, title: 14, titleBase: 31, small: 10, sectionBase: 13, nameBase: 62, valueBase: 72 });
+const TEXT = Object.freeze(FACE.text);
 
 /** The default a control shows, with its unit: a number to three significant figures, an option's label, On or Off. */
 export function valueText(k) {
