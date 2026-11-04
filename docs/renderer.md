@@ -50,6 +50,8 @@ void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const c
 bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fraction, const char *text);
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count,
                                const char *text);
+bool omx_panel_view_set_integer(omx_panel_view_t *view, const char *symbol, int64_t value);
+bool omx_panel_view_visible(const omx_panel_view_t *view, uint32_t index);
 bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, uint32_t height, double scale,
                                  uint32_t index, double rect[4]);
 
@@ -75,11 +77,17 @@ straight when it writes one: the conversion is at the edge, never inside the dra
 `omx_panel_view_control_rect` gives a control's cell in a buffer of a given size and scale: what a pointer
 event will be hit-tested against.
 
+A control a declared panel shows only for certain values of another (the description's `visibleWhen` and
+`mask`, docs/panel-layout.md "Visibility") is shown while bit v of its mask is set, v the governing
+control's integer value: its come-up value (`visibleWhen.default`) until the host gives one with
+`omx_panel_view_set_integer`. A hidden control takes no cell, is not drawn and has no rect; a section it
+leaves with none takes no space, so the panel is drawn exactly as one without them.
+
 Still to come: input (a pointer press, drag and release on a control, a scroll, answered with the control
 and the new fraction, and a gesture's begin and end), and redrawing only what changed.
 
 `renderer/build/omx-panel-render` is the library's front door for tests and tools: it draws a description
-with a state file (the title and each control's reading) into a raw buffer or a PNG.
+with a state file (the title, each control's reading and the governing values, `integers`) into a raw buffer or a PNG.
 
 ## One layout, two rasterisers
 
