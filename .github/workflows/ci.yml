@@ -4,7 +4,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, dedupe/all]
   pull_request:
 
 permissions:
@@ -24,6 +24,11 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv lilv-devel
       - name: Add the OpenMixer repository
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - uses: actions/checkout@v4
+      - name: The checkout is a git directory this job may read
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      # a dedupe/all run builds on its siblings' dedupe/all (.github/wave-deps); @main until FreeMixer/.github moves v1 past it
+      - uses: FreeMixer/.github/.github/actions/wave-deps@main
       - name: Install the vocabulary the suite reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.6.0'
@@ -36,9 +41,6 @@ jobs:
         run: |
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
-      - uses: actions/checkout@v4
-      - name: The checkout is a git directory this job may read
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - id: handback-install
         name: Install the build and the validator's dependency
         run: npm ci
@@ -207,6 +209,9 @@ jobs:
           path: out
       - name: The OpenMixer repository
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      # a dedupe/all run builds on its siblings' dedupe/all (.github/wave-deps); @main until FreeMixer/.github moves v1 past it
+      - uses: FreeMixer/.github/.github/actions/wave-deps@main
+
       - name: Installed with weak dependencies off, no development package arrives and omx-panel reads the contract data
         run: |
           if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-*.noarch.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi
