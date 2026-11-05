@@ -21,7 +21,7 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: (omx-contract-data >= 3.6.0 with omx-contract-data < 4)
+BuildRequires: (omx-contract-data >= 3.8.0 with omx-contract-data < 4)
 BuildRequires: (plugin-hostd-contract >= 0.18.0 with plugin-hostd-contract < 0.19)
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
@@ -36,7 +36,7 @@ BuildRequires: systemd-rpm-macros
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: (omx-contract-data >= 3.6.0 with omx-contract-data < 4)
+Requires: (omx-contract-data >= 3.8.0 with omx-contract-data < 4)
 Requires: (plugin-hostd-contract >= 0.18.0 with plugin-hostd-contract < 0.19)
 # the descriptors of omx-plugins' plugins, for modgui --installed
 Recommends: (omx-plugins-contract >= 0.15.0 with omx-plugins-contract < 0.20)
@@ -96,7 +96,7 @@ make test
 - @openmixer/omx-panel/role-table and copies-check are exported
 - The tests read omx-contract's example descriptors; the lilv proofs run in CI
 - The package installs its licence and a short README and no other markdown
-- Every dependency on a sibling states a floor and a ceiling: omx-contract-data >= 3.6.0 and < 4,
+- Every dependency on a sibling states a floor and a ceiling: omx-contract-data >= 3.8.0 and < 4,
   plugin-hostd-contract >= 0.18.0 and < 0.19, omx-plugins-contract (recommended) >= 0.15.0 and < 0.20
 * Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.1-1
 - 0.9.0 was tagged but not published: the release proof ran make check without
