@@ -59,10 +59,10 @@ jobs:
         env:
           OMX_PANEL_LILV: required
         run: npm test
-      - name: The shared private-refs and SPDX checks, outside the checkout they scan (at a commit until v1 carries spdx-check)
+      - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
         run: |
           git clone -q https://github.com/FreeMixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
-          git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q c67b6d0e09fd9f7cf9a8dd24ff41ea30d99f893c
+          git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q v1
       - run: make check FREEMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
       - name: The bump covers every change since the previous tag
         run: |

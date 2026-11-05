@@ -54,7 +54,7 @@ jobs:
         run: make test
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
-        uses: FreeMixer/.github/.github/actions/spdx-check@c67b6d0e09fd9f7cf9a8dd24ff41ea30d99f893c
+        uses: FreeMixer/.github/.github/actions/spdx-check@v1
       - id: handback-copies
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
@@ -105,7 +105,7 @@ jobs:
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0'
       - name: pugl and nanovg, from their packaging
-        uses: FreeMixer/.github/.github/actions/pinned-rpms@9d3faa99b47b029a88b4a4ce1a40672f5c7bbec5
+        uses: FreeMixer/.github/.github/actions/pinned-rpms@v1
         with:
           names: pugl nanovg
       - uses: actions/checkout@v4
