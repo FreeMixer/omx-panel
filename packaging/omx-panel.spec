@@ -98,6 +98,7 @@ make test
 - The package installs its licence and a short README and no other markdown
 - Every dependency on a sibling states a floor and a ceiling: omx-contract-data >= 3.8.0 and < 4,
   plugin-hostd-contract >= 0.18.0 and < 0.19, omx-plugins-contract (recommended) >= 0.15.0 and < 0.20
+- SPDX lines are checked by the shared check, by format; copies-check reads a tree or fails
 * Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.1-1
 - 0.9.0 was tagged but not published: the release proof ran make check without
   the shared private-refs check at hand. Everything 0.9.0 carries is in this
