@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.10.0
+Version: 0.10.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -87,6 +87,9 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Thu Nov 05 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.1-1
+- Publish the Debian packages; 0.10.0 published only the RPMs
+
 * Wed Nov 04 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.0-1
 - visibleWhen: a declared panel shows a control only while another control's value
   meets a rule; the pages and the MOD GUI follow it (#123)
