@@ -35,7 +35,7 @@ jobs:
     steps:
       - name: Install node
         run: |
-          dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv
+          dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv lilv-devel
       - name: Add the OpenMixer repository
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Install the vocabulary the suite reads
@@ -55,9 +55,14 @@ jobs:
         run: |
           want="v$(node -p 'require("./package.json").version')"
           [ "$TAG" = "$want" ] || { echo "::error::tag $TAG is not $want (package.json)"; exit 1; }
-      - run: npm test
-      - name: The shared private-refs check, outside the checkout it scans
-        run: git -c advice.detachedHead=false clone -q --depth 1 --branch v1 https://github.com/FreeMixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
+      - name: npm test, the lilv proofs required (python3-lilv is installed above)
+        env:
+          OMX_PANEL_LILV: required
+        run: npm test
+      - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
+        run: |
+          git clone -q https://github.com/FreeMixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
+          git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q v1
       - run: make check FREEMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
       - name: The bump covers every change since the previous tag
         run: |
@@ -72,6 +77,8 @@ jobs:
       binary-names: omx-panel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       needs-mod-host: false
+      # the channel publishes no fedora 45 tree yet (its noarch repodata answers 404), so the build installs from fc44 only
+      fedora-versions: '["44"]'
       # omx-contract-data and plugin-hostd-contract, which %check reads,
       # come from the channel
       channel-deps: true

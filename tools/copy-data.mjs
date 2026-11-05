@@ -16,7 +16,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
 /** The tree's own checks, which the package does not carry. */
-const NOT_SHIPPED = ['tools/copy-data.mjs', 'tools/check-spdx.mjs'];
+const NOT_SHIPPED = ['tools/copy-data.mjs'];
 /** Every .mjs module the package carries, as the tree holds it. */
 export const MODULES = ['bin', 'lib', 'tools'].flatMap((d) => readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.mjs')).map((f) => `${d}/${f}`)).filter((f) => !NOT_SHIPPED.includes(f));
 /** The shipped fixture bundles (tools/fixtures.mjs), every file under fixtures/. */
@@ -25,9 +25,9 @@ const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFile
   .map((e) => relative(ROOT, join(e.parentPath, e.name)))
   .sort();
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/panel.schema.json', 'tools/look.json', 'tools/look/tokens.css', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/panel.schema.json', 'tools/look.json', 'tools/look/tokens.css', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
-export const COMMANDS = ['bin/omx-panel.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/modgui-test.sh'];
+export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/modgui-test.sh'];
 
 for (const f of [...MODULES, ...DATA]) {
   mkdirSync(dirname(join(DIST, f)), { recursive: true });

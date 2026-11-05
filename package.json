@@ -1,6 +1,6 @@
 {
   "name": "@openmixer/omx-panel",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Panels for LV2 and CLAP plugins from what each plugin declares: the layout, the MOD GUI generator, the omx look, the skin package and the MOD GUI importer",
   "type": "module",
   "license": "GPL-3.0-or-later",
@@ -25,6 +25,10 @@
     "./validate": {
       "types": "./dist/lib/validate.d.mts",
       "default": "./dist/lib/validate.mjs"
+    },
+    "./role-table": {
+      "types": "./dist/tools/role-table.d.mts",
+      "default": "./dist/tools/role-table.mjs"
     },
     "./panel-description": {
       "types": "./dist/tools/panel-description.d.mts",
@@ -70,6 +74,10 @@
       "types": "./dist/tools/raster.d.mts",
       "default": "./dist/tools/raster.mjs"
     },
+    "./copies-check": {
+      "types": "./dist/tools/copies-check.d.mts",
+      "default": "./dist/tools/copies-check.mjs"
+    },
     "./fixtures": {
       "types": "./dist/tools/fixtures.d.mts",
       "default": "./dist/tools/fixtures.mjs"
@@ -91,6 +99,7 @@
     "ajv": "^8.17.1"
   },
   "devDependencies": {
+    "@openmixer/omx-contract": ">=3.8.0 <4",
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"
   },

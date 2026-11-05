@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.9.1
+Version: 0.10.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -21,21 +21,25 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: omx-contract-data >= 3.6.0
-BuildRequires: plugin-hostd-contract >= 0.12.0
-# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe
+BuildRequires: (omx-contract-data >= 3.8.0 with omx-contract-data < 4)
+BuildRequires: (plugin-hostd-contract >= 0.18.0 with plugin-hostd-contract < 0.19)
+# omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
+# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
+# does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
+# runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
 Recommends: plugin-hostd
-# %%check runs omx-modgui-sync over a bundle
+# %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
+BuildRequires: lilv-devel
 BuildRequires: systemd-rpm-macros
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: omx-contract-data >= 3.6.0
-Requires: plugin-hostd-contract >= 0.12.0
+Requires: (omx-contract-data >= 3.8.0 with omx-contract-data < 4)
+Requires: (plugin-hostd-contract >= 0.18.0 with plugin-hostd-contract < 0.19)
 # the descriptors of omx-plugins' plugins, for modgui --installed
-Recommends: omx-plugins-contract >= 0.15.0
+Recommends: (omx-plugins-contract >= 0.15.0 with omx-plugins-contract < 0.20)
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -46,6 +50,7 @@ Zynthian in the omx look, imports a plugin's own MOD GUI into a skin package,
 and carries the skin package schema, its validator and the directory skin
 packages are installed into. The omx-panel command runs each; the tools are
 under /usr/share/omx-panel for a build that calls them.
+Its documentation is on openmixer.org.
 
 %prep
 %autosetup
@@ -62,7 +67,7 @@ make test
 
 %files
 %license LICENSE
-%doc README.md docs/
+%doc README.md
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
 %{_bindir}/omx-complement-sync
@@ -82,6 +87,18 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Wed Nov 04 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.0-1
+- visibleWhen: a declared panel shows a control only while another control's value
+  meets a rule; the pages and the MOD GUI follow it (#123)
+- omx-panel modgui --films-only writes the film strips into a built bundle
+- A C renderer for a panel description into a CPU buffer, and its window; a hidden
+  control is not drawn (#120, #124); built in CI, not packaged yet
+- @openmixer/omx-panel/role-table and copies-check are exported
+- The tests read omx-contract's example descriptors; the lilv proofs run in CI
+- The package installs its licence and a short README and no other markdown
+- Every dependency on a sibling states a floor and a ceiling: omx-contract-data >= 3.8.0 and < 4,
+  plugin-hostd-contract >= 0.18.0 and < 0.19, omx-plugins-contract (recommended) >= 0.15.0 and < 0.20
+- SPDX lines are checked by the shared check, by format; copies-check reads a tree or fails
 * Tue Nov 03 2026 Pau Aliagas <linuxnow@gmail.com> - 0.9.1-1
 - 0.9.0 was tagged but not published: the release proof ran make check without
   the shared private-refs check at hand. Everything 0.9.0 carries is in this

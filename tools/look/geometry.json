@@ -1,0 +1,11 @@
+{
+  "$comment": "The face's geometry and text sizes, in CSS px at scale 1: the one set of numbers the MOD GUI's template, stylesheet and raster (tools/modgui-gen.mjs) and the C renderer (renderer/) read. Hand-kept; a change here moves every committed MOD GUI image, which modgui-gen --check then names.",
+  "rowControls": 8,
+  "geometry": {
+    "pad": 16, "headH": 40, "sectionTop": 52, "sectionGap": 10, "sectionPad": 8, "sectionTitleH": 18,
+    "cellW": 72, "cellH": 76, "knob": 48, "knobTop": 4, "switchW": 40, "switchH": 20, "switchTop": 18,
+    "selectorW": 64, "selectorH": 22, "selectorTop": 17, "faderW": 14, "faderCap": 10,
+    "radius": 10, "sectionRadius": 6, "filmFrames": 65, "thumbScale": 0.5
+  },
+  "text": { "brand": 10, "brandBase": 14, "title": 14, "titleBase": 31, "small": 10, "sectionBase": 13, "nameBase": 62, "valueBase": 72 }
+}

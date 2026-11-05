@@ -119,7 +119,8 @@ stand_in() {
 for m in "${missing[@]}"; do stand_in "$m"; done
 
 # 3. the recommendation, on its own
-for r in $(echo "$weak" | awk '{print $1}'); do
+# a rich RPM recommendation, (name >= a with name < b), is read by its name
+for r in $(echo "$weak" | awk '{print $1}' | sed 's/^(//'); do
   before=$(installed)
   if published "$r"; then
     listed "$r" && fail "$r is published: remove it from NOT_YET_PUBLISHED"
