@@ -16,6 +16,10 @@ on:
         description: 'Sign and publish the packages; only a run on a tag publishes'
         type: boolean
         default: false
+      republish:
+        description: 'finish a partial publish of a version the channel already serves'
+        type: boolean
+        default: false
 
 # A called workflow cannot exceed its caller's token. build-rpm.yml and build-deb.yml run a report-failure job that
 # asks for `issues: write` and `actions: read`; without both here GitHub refuses to start the run at all.
@@ -76,8 +80,9 @@ jobs:
       package-name: omx-panel
       binary-names: omx-panel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
+      republish: ${{ inputs.republish == true }}
       needs-mod-host: false
-      # the channel publishes no fedora 45 tree yet (its noarch repodata answers 404), so the build installs from fc44 only
+      # the channel's fedora 45 tree answers but carries no omx-contract-data or plugin-hostd-contract yet, so the build installs from fc44 only
       fedora-versions: '["44"]'
       # omx-contract-data and plugin-hostd-contract, which %check reads,
       # come from the channel
@@ -93,6 +98,7 @@ jobs:
       package-name: omx-panel
       binary-names: omx-panel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
+      republish: ${{ inputs.republish == true }}
       dependencies: ''
       requires: ''
       # omx-contract-data and plugin-hostd-contract, which the tests read,
