@@ -22,6 +22,8 @@ omx-panel (0.10.0) unstable; urgency=medium
   * Every dependency on a sibling states a floor and a ceiling: omx-contract-data
     >= 3.8.0 and < 4, plugin-hostd-contract >= 0.18.0 and < 0.19, and
     omx-plugins-contract (recommended) >= 0.15.0 and < 0.20.
+  * SPDX lines are checked by the shared check, by format; copies-check reads a
+    tree or fails.
 
  -- Pau Aliagas <linuxnow@gmail.com>  Wed, 04 Nov 2026 18:00:00 +0100
 
