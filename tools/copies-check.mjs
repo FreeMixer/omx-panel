@@ -15,7 +15,7 @@
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,6 +75,12 @@ function check(tree) {
     process.stderr.write(`copies-check: ${tree} is not a git work tree\n`);
     return 2;
   }
+  // reading nothing is not a clean tree
+  const tracked = execFileSync('git', ['-C', tree, 'ls-files', '-z'], { encoding: 'utf8' });
+  if (!tracked) {
+    process.stderr.write(`copies-check: git lists no file in ${tree}, so nothing was read\n`);
+    return 2;
+  }
   const found = copiesIn(tree);
   for (const [path, name] of found) process.stderr.write(`copies-check: COPY ${path} is ${name}; delete it and take it from omx-panel\n`);
   if (found.length) return 1;
@@ -92,7 +98,12 @@ function selfTest() {
   const run = () => spawnSync(process.execPath, [HERE, tree], { encoding: 'utf8' });
   const arms = [];
   const arm = (what, ok) => arms.push([what, ok]);
-  let r = run();
+  const empty = mkdtempSync(join(tmpdir(), 'copies-check-'));
+  execFileSync('git', ['-C', empty, 'init', '-q'], { stdio: 'ignore' });
+  let r = spawnSync(process.execPath, [HERE, empty], { encoding: 'utf8' });
+  arm('a tree that tracks nothing is refused', r.status === 2 && r.stderr.includes('git lists no file'));
+  rmSync(empty, { recursive: true, force: true });
+  r = run();
   arm('a clean tree passes', r.status === 0);
   const knob = join(tree, 'plugin.lv2/modgui/knobs/omx-knob.png');
   mkdirSync(dirname(knob), { recursive: true });

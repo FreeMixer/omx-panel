@@ -31,15 +31,16 @@ check: build spdx public-sources look copies
 test:
 	npm test
 
-# Every tracked file carries the licence line and the author's copyright line, or is exempt with a reason.
+FREEMIXER_DOTGITHUB ?= ../freemixer-dotgithub
+
+# Every file a comment can be written in opens with its licence and copyright: FreeMixer/.github's spdx-check, from a
+# checkout of it (FREEMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI runs the action.
 spdx:
-	node tools/check-spdx.mjs --self-test
-	node tools/check-spdx.mjs
+	$(FREEMIXER_DOTGITHUB)/.github/actions/spdx-check/check.sh .
 
 # No tracked file points into a private repository, branch, issue or path.
 # FreeMixer/.github's private-refs check, from a checkout of it (FREEMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
 # runs it through the public-sources-check workflow.
-FREEMIXER_DOTGITHUB ?= ../freemixer-dotgithub
 public-sources:
 	$(FREEMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
 

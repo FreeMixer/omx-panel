@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later AND LicenseRef-Callaway-BSD
+# Copyright (C) its authors; see test/fixtures/lv2-groups/SOURCES
 @prefix doap: <http://usefulinc.com/ns/doap#> .
 @prefix lv2: <http://lv2plug.in/ns/lv2core#> .
 @prefix mda: <http://drobilla.net/plugins/mda/> .

@@ -42,8 +42,11 @@ jobs:
         run: |
           set -o pipefail
           npm run build
-          make spdx look
+          make look
           node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
+
+      - name: Every file a comment can be written in opens with its licence and copyright
+        uses: FreeMixer/.github/.github/actions/spdx-check@c67b6d0e09fd9f7cf9a8dd24ff41ea30d99f893c
 
       - name: The tag is the package version
         if: github.ref_type == 'tag'

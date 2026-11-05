@@ -22,7 +22,6 @@
     "bin/**/*.mjs"
   ],
   "exclude": [
-    "tools/copy-data.mjs",
-    "tools/check-spdx.mjs"
+    "tools/copy-data.mjs"
   ]
 }
