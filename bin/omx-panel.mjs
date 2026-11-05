@@ -5,7 +5,7 @@
  * omx-panel <verb> ...
  *
  *   validate <skin.json | skin package directory>...     a skin against the schema; exit 0 valid, 1 not, 2 usage or read
- *   layout --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages [--per-page N] [--easy-first]]
+ *   layout --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]
  *                                                        the panel laid out from a descriptor, as JSON (or its canonical
  *                                                        serialisation, or its pages of eight, the Easy ones first)
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
@@ -16,6 +16,7 @@
  *                                                        tools/lv2-complement.mjs: a replacing LV2 bundle with the inferred
  *                                                        port groups, for each installed bundle that needs one
  *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
+ *   copies <tree> | --self-test                          tools/copies-check.mjs: no tracked file copies what omx-panel renders or ships
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
  *                                                        directories, the meanings, the LV2 unit table, the param-contract
  *                                                        unit table and each descriptor named; exit 1 when one is missing
@@ -36,12 +37,13 @@ process.stdout.on('error', (err) => {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
-  + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first]]\n'
+  + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
-  + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check]\n'
+  + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
   + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
   + '       omx-panel look [--check]\n'
+  + '       omx-panel copies <tree> | --self-test\n'
   + '       omx-panel vocabulary [<package>/<name>]...\n'
   + '       omx-panel descriptors --installed\n'
   + '       omx-panel --version\n';
@@ -110,7 +112,15 @@ async function layout(argv) {
     const raw = opt('--per-page');
     const perPage = raw === undefined ? undefined : /^[0-9]+$/.test(raw) ? Number(raw) : NaN;
     try {
-      process.stdout.write(`${JSON.stringify(pagesOf(x, { perPage, easyFirst: argv.includes('--easy-first') }), null, 2)}\n`);
+      // --value <symbol>=<integer>, repeated: the governing values the pages are cut at (left out, the come-up ones)
+      const values = {};
+      argv.forEach((a, k) => {
+        if (a !== '--value') return;
+        const m = /^([^=]+)=(-?[0-9]+)$/.exec(argv[k + 1] ?? '');
+        if (!m) throw new Error(`--value takes <symbol>=<integer>, not ${argv[k + 1]}`);
+        values[m[1]] = Number(m[2]);
+      });
+      process.stdout.write(`${JSON.stringify(pagesOf(x, { perPage, easyFirst: argv.includes('--easy-first'), values }), null, 2)}\n`);
     } catch (err) {
       process.stderr.write(`omx-panel: ${err.message}\n`);
       process.exit(2);
@@ -187,6 +197,7 @@ else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');
 else if (command === 'look') tool('look.mjs');
+else if (command === 'copies') tool('copies-check.mjs');
 else if (command === 'vocabulary') await vocabulary(args);
 else if (command === 'descriptors') await descriptors(args);
 else if (command === '--version') process.stdout.write(`omx-panel ${packageVersion()}\n`);

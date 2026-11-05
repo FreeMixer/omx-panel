@@ -124,6 +124,24 @@ ends early), a group wider than N is cut, and a section of several pages names e
 it holds (`Band: Freq - Q`). Every page carries N slots, a short page's last ones `null`. Left out, the
 output is the plain cut of eight, unchanged.
 
+## Visibility
+
+A declared panel can show a control only while another control holds certain values: `visibleWhen`, control
+symbol to a rule (`visibleWhen` in `schema/panel.schema.json`). `{ "param": "mode", "values": [1, 2] }` shows it while
+`mode` is 1 or 2; `{ "param": "eqBands", "atLeast": 5 }` shows it while `eqBands` is 5 or more, so a band's controls
+follow a band count and the rule does not go stale when the count's maximum moves. `param` is an integer or toggle
+parameter of the plugin (a choice, a toggle, or a travel with step 1), every value is 0 to 63, and a rule states one of
+`values` or `atLeast`; anything else is refused by name. The layout carries the rule as the extension's `visible` (the
+governing parameter's id) and `mask` (bit v set: shown while the value is v; `atLeast: n` sets bits n to 63), both in the
+fingerprint, and as `visibleWhen: { symbol, default }`, the governing control and its come-up value, for a renderer.
+
+The pages follow: a control the governing values hide takes no slot, and a section left with no control has no page.
+`omx-panel layout --pages --value eqBands=9` cuts at those values; a governing control left out reads its come-up value.
+A host cuts again when a governing value changes (a CLAP face announces its remote-controls changed). With a strip's
+band controls in band order, five a band, a band count of 4 gives the same page boundaries as before, with no hidden band
+on any page. The MOD GUI shows and hides each governed control as its governing port changes, and its screenshot draws
+the controls the come-up values show.
+
 ## The Easy face
 
 `tools/easy.mjs` picks the handful of controls a plugin opens on; every control is one click away, on the same processor.

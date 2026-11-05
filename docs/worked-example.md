@@ -42,9 +42,8 @@ image carries the channel), and `python3-lilv` and `sord` are installed with the
 
 `omx-panel` is this checkout, run as `omx-panel` through the link above (`/usr/local/bin` comes before
 `/usr/bin` on the path). The commands ran at `3ebf9b7`, the commit that adds `repeat.sh`; its omx-panel is
-`origin/main` at `15cc25bb9` (pull request 26 merged, so the readout fix of omx-panel#25 is in), and the branch
-adds only the example, this document, a line of the README and the exemption of the example's output files in
-`tools/check-spdx.mjs`. The released omx-panel 0.2.5, installed last, is run as `/usr/bin/omx-panel`
+`origin/main` at `15cc25bb9` (with the readout fix), and the branch
+adds only the example, this document and a line of the README. The released omx-panel 0.2.5, installed last, is run as `/usr/bin/omx-panel`
 once: it stops on ZamComp ([section 3](#the-released-025-on-zamcomp)). Every other
 command runs as an unprivileged user.
 
@@ -187,7 +186,7 @@ PASS template draws sidech with its declared travel and default
 PASS template draws readout gr as a display with its declared range
 PASS template draws readout outlevel as a display with its declared range
 PASS template draws exactly the 10 declared parameters
-PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1947 restrictions); all 21 the label errors of omx-contract#144)
+PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1947 restrictions); all 21 of them label errors)
 PASS sord_validate refuses a modgui property outside modgui-terms.ttl
 PASS a moved default makes modgui-gen --check fail
 ```
@@ -274,7 +273,7 @@ PASS template draws mak with its declared travel and default
 PASS template draws readout gr as a display with its declared range
 PASS template draws readout outlevel as a display with its declared range
 PASS template draws exactly the 10 declared parameters
-PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1938 restrictions); all 21 the label errors of omx-contract#144)
+PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1938 restrictions); all 21 of them label errors)
 PASS sord_validate refuses a modgui property outside modgui-terms.ttl
 PASS a moved default makes modgui-gen --check fail
 ```
@@ -292,7 +291,7 @@ $ /usr/bin/omx-panel modgui --descriptor examples/worked-example/zamcomp/zamcomp
 Error: modgui-gen: 'gr' is not a declared control input with a travel
 ```
 
-That is omx-panel#25: 0.2.5 looks a travel up for a readout. This checkout carries the fix.
+0.2.5 looks a travel up for a readout. This checkout carries the fix.
 
 ### LSP Limiter Mono, a CLAP plugin
 
@@ -322,7 +321,7 @@ omx-panel: examples/worked-example/lsp-limiter-mono/filter_mono.descriptor.json:
 [exit 1]
 ```
 
-That is omx-panel#27. [`survey-lsp-mono.sh`](../examples/worked-example/survey-lsp-mono.sh) scans and lays out
+[`survey-lsp-mono.sh`](../examples/worked-example/survey-lsp-mono.sh) scans and lays out
 every mono plugin of the file:
 
 ```
@@ -355,7 +354,7 @@ runs shown. Each file and line cited is at those commits. None of it was seen on
   Zynthian without the apt channel copy its `lv2/` bundles there and rescan the LV2 plugins from the admin
   menu. A plugin the rescan finds for the first time is disabled until enabled (`zynthian_lv2.py:619`).
 - The last commit of the zynthian-plugins repository (directories `dssi`, `ladspa`, `lv2`, `vst`) is
-  `648c84a`, dated 2016-09-21. The image's setup script installs LV2 plugins with `apt-get`, and the list
+  `648c84a`, from September 2016. The image's setup script installs LV2 plugins with `apt-get`, and the list
   names `zam-plugins` (zynthian-sys `scripts/setup_plugins_rbpi.sh:42-52`, the name on line 52); the recipe
   that builds zam-plugins from source, `scripts/recipes/install_zam.sh`, is commented out at
   `setup_plugins_rbpi.sh:94`. That the Debian package carries the same ZamComp as Fedora's, and puts it in
@@ -422,7 +421,7 @@ modgui:resourcesDirectory  file:///tmp/stage/ZamComp.lv2/modgui
 
 [`lilv-modgui.py`](../examples/worked-example/lilv-modgui.py) asks lilv, the library mod-ui reads LV2 data
 with, for the plugin's `modgui:gui`. The manifest line is added by hand: `omx-panel modgui` leaves the manifest
-as it is (omx-panel#28). Of two bundles with one plugin URI and one version, lilv keeps the first on
+as it is. Of two bundles with one plugin URI and one version, lilv keeps the first on
 `LV2_PATH` and ignores the other.
 
 The test over the whole staged bundle:
@@ -459,7 +458,7 @@ modgui-test: 1 check(s) failed
 [exit 1]
 ```
 
-The six errors besides the 21 of omx-contract#144 are ZamComp's own TTL's, and the installed bundle, untouched,
+The six errors besides the 21 label errors are ZamComp's own TTL's, and the installed bundle, untouched,
 has the same six against the same LV2 specifications:
 
 ```
@@ -525,9 +524,9 @@ CLAP host or plugin and the limiter's pages are not shown there.
 
 Verified, by the commands above: both plugins come from Fedora 44's own packages; `plugin-hostd-probe
 describe` writes a `scanned` descriptor of each; `omx-panel layout` lays out ZamComp with and without a panel
-file and the limiter, and stops on Filter Mono and three more of the 63 mono lsp plugins (omx-panel#27); `omx-panel modgui` writes ZamComp's MOD GUI with
+file and the limiter, and stops on Filter Mono and three more of the 63 mono lsp plugins; `omx-panel modgui` writes ZamComp's MOD GUI with
 and without a panel file, each bundle passing `tools/modgui-test.sh`, and refuses the CLAP limiter by name;
-omx-panel 0.2.5 stops on ZamComp's readout (omx-panel#25); lilv reads the MOD GUI from a copy of the bundle
+omx-panel 0.2.5 stops on ZamComp's readout; lilv reads the MOD GUI from a copy of the bundle
 once its manifest names `modgui.ttl`, and keeps the first of two bundles of one plugin on `LV2_PATH`.
 
 Not verified:

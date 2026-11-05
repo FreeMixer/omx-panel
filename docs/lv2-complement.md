@@ -4,7 +4,7 @@
 
 `tools/group-infer.mjs` ([group-inference.md](group-inference.md)) infers the port groups an LV2 plugin lacks.
 `tools/lv2-complement.mjs` (`omx-panel complement`, run at install time by `omx-complement-sync`) carries them to
-the programs that read plugins through lilv, the Zynthian touchscreen's jalv first: plugin-hostd#218, step G2.
+the programs that read plugins through lilv, the Zynthian touchscreen's jalv first.
 
 ```
 omx-panel complement --out <dir> [--lv2-path <a:b:...>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
@@ -67,7 +67,7 @@ For an installed bundle `<dir>/<name>.lv2` holding at least one plugin whose ver
   against the written file at its target (what lilv will read), and when either IRI is one the bundle already states,
   or another grouped plugin of the same file would take the same node (two plugin URIs ending in the same word), the
   bundle is refused (`group-iri-collision`). Refused rather than given a suffix: a node whose name cannot be predicted
-  from the plugin and the group symbol would surprise whoever looks it up, and over the 979 plugins on the desk the
+  from the plugin and the group symbol would surprise whoever looks it up, and over the 979 plugins on that workstation the
   guard refuses none (37 bundles, 84 grouped plugins, as before), so the conservative choice costs nothing measured.
 - **the marker** `.omx-complement-sync`, in the bundle, as omx-modgui-sync marks its own with `.omx-modgui-sync`:
 
@@ -88,7 +88,7 @@ For an installed bundle `<dir>/<name>.lv2` holding at least one plugin whose ver
 
 `lv2:displayPriority` is what zynthian-ui reads on a group node (`zyngine/zynthian_lv2.py`). It is not in the LV2
 vocabulary (the port-props extension defines `pprops:displayPriority`, for a port), so `sord_validate` reports it as an
-undefined property: over the 37 bundles written on the desk, those are the only messages it gives on ours that it does
+undefined property: over the 37 bundles written there, those are the only messages it gives on ours that it does
 not give on the installed files.
 
 ## What is not written
@@ -97,7 +97,7 @@ not give on the installed files.
   matrixmixer), fits one screen, or has no confident grouping is left exactly as it is, no bundle and no marker.
 - The installed files: never opened for writing.
 - A bundle the restatement cannot carry is **refused**, named on its own line with the reason, counted in the summary,
-  and never written (step G4 decides what the proxy fallback does with these):
+  and never written (what a proxy would do with these is not decided here):
   - `ttl-unreadable`: a file the reader cannot parse (`ttl-missing`: a `rdfs:seeAlso` file that does not exist);
   - `version-ceiling`: a version past lilv's `int` (2147483647), or a micro version a bump would take past it;
     `version-unreadable`: a version that is not an integer; `version-not-newer`: a bump that would still not be newer;
@@ -173,17 +173,17 @@ in place of the installed ones (the version comparison decides, not the order). 
 ours first, lilv meets the installed bundle second, finds it older and ignores it; ours last, it loads the installed
 bundle, then meets ours, replaces every plugin of it, drops the old bundle and prints a line for each replacement.
 
-Measured by the G2 review on the Fedora 44 desk with 979 plugins installed and the 37 bundles written, not
+Measured on a Fedora 44 workstation with 979 plugins installed and the 37 bundles written, not
 on a Zynthian: `lv2ls` takes 0.01 s over the installed folders alone, 0.03 s with ours first, and 0.37 s with ours
 last, when lilv also prints 1398 replace lines. Zynthian's `zynthian_envars*.sh` puts `/usr/local/lib/lv2` after the
 system folders, so on the touchscreen ours comes last: the costly order. Every program that builds a lilv world pays it
-at start (zynthian-ui, each jalv it spawns, mod-host, mod-ui). Step G4 measures it on the Pi, where the figure that
+at start (zynthian-ui, each jalv it spawns, mod-host, mod-ui). On a Pi, not measured yet, the figure that
 matters is what it adds to jalv's start and to zynthian-ui's plugin scan. Nothing here changes the search order: it is
 Zynthian's (and each distribution's) to set, and the result is the same either way.
 
 ## Measured
 
-Over the 979 plugins installed on a Fedora 44 desk, in 4.8 s: 84 grouped, 471 nothing to do, 424 without
+Over the 979 plugins installed on a Fedora 44 workstation, in 4.8 s: 84 grouped, 471 nothing to do, 424 without
 a confident grouping (G1's figures); 37 bundles written, holding 466 plugins (84 of them grouped), none refused, 25 MB
 (LSP's restated bundle is 22 MB, its installed TTL 16.9 MB). With the bundles on `LV2_PATH`, `lv2ls` lists the same 979
 plugins whatever the order of the search list; `lv2info` and python3-lilv load each complemented plugin from ours, at

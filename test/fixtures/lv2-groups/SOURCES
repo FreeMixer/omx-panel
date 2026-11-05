@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# The fixtures of test/group-infer.test.mjs: each directory holds TTL files copied byte for byte from an LV2 bundle
+# The fixtures of test/group-infer.test.mjs: each directory holds TTL files copied from an LV2 bundle
 # installed on a Fedora 44 desk (/usr/lib64/lv2), 2026-10-28. The files are the plugins' authors', under the licence
 # each package states (below, the RPM licence tag in full; the plugin's own doap:license is in its TTL). None of these
-# files carried a licence header to keep; they are copied whole and unchanged. Ours (omx-*) carry our own header.
+# files carried a licence header; each is copied whole, with two comment lines added at its top that state the licence
+# below and point here. Ours (omx-*) carry our own header.
 # One synthetic fixture, ours: synthetic/eq8-priorities.ttl is omx-eq8.ttl with lv2:displayPriority 30, 20 and 10 on
 # its three group nodes, because no installed plugin states a group priority (its header says so).
 #

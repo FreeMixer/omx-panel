@@ -18,7 +18,9 @@
  *
  * Usage: `node tools/modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>)
  * [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>] [--easy-first]` — `--check` writes nothing and refuses a
- * stale, missing or extra file byte for byte; `--emit-stdout` prints every text file and one digest line per
+ * stale, missing or extra file byte for byte; `--no-films` leaves out the knob and fader film strips (every bundle's
+ * same render of the look, which a tree need not track: `--check` then names a returning one EXTRA), and
+ * `--films-only` writes only them, into a built bundle, leaving its other files as they are; `--emit-stdout` prints every text file and one digest line per
  * image, writing nothing. `--stem` names the files (the bundle's name without .lv2 by default); `--source` is what
  * the banner names as their source (the descriptor and the panel files by default).
  */
@@ -29,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 import { parseFont } from './font.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { EASY_PAGE, keyOf, panelLayout } from './panel-description.mjs';
+import { EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
@@ -43,16 +45,13 @@ export const MODGUI_TTL = 'modgui.ttl';
 export const MODGUI_DIR = 'modgui';
 /** An integer travel with more steps than this is a continuous knob; fewer is a selector. */
 export const MAX_SELECTOR_STEPS = 16;
+/** The face's numbers, tools/look/geometry.json: the file the C renderer (renderer/) reads too. */
+const FACE = JSON.parse(readFileSync(join(TOOLS, 'look', 'geometry.json'), 'utf8'));
 /** The controls of one row of a section; a section with more wraps onto further rows. */
-export const ROW_CONTROLS = 8;
+export const ROW_CONTROLS = FACE.rowControls;
 
 /** The geometry, in CSS px: one set of numbers the template, the stylesheet and the raster read. */
-export const GEOMETRY = Object.freeze({
-  pad: 16, headH: 40, sectionTop: 52, sectionGap: 10, sectionPad: 8, sectionTitleH: 18,
-  cellW: 72, cellH: 76, knob: 48, knobTop: 4, switchW: 40, switchH: 20, switchTop: 18,
-  selectorW: 64, selectorH: 22, selectorTop: 17, faderW: 14, faderCap: 10,
-  radius: 10, sectionRadius: 6, filmFrames: 65, thumbScale: 0.5,
-});
+export const GEOMETRY = Object.freeze(FACE.geometry);
 
 /** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
  * the descriptor's to say, an index is not it, so the generator refuses and names the control. */
@@ -184,6 +183,14 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
     throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
   }
   const controls = descriptor.controls ?? [];
+  // a control a declared rule governs carries it: the governing port's symbol and the mask of the values that show it,
+  // and whether the come-up values show it
+  const rules = visibilityRules(descriptor, panel.visibleWhen, `modgui-gen: '${stem}'`);
+  for (const sym of rules.keys()) if (!panel.sections.some((s) => s.controls.includes(sym))) throw new Error(`modgui-gen: visibleWhen names '${sym}', which the panel does not draw`);
+  const shownBy = (symbol) => {
+    const r = rules.get(symbol);
+    return r ? { visibleWhen: { symbol: r.symbol, mask: r.mask }, shown: ((r.mask >> BigInt(r.default)) & 1n) === 1n } : { shown: true };
+  };
   const seen = new Set();
   // A trigger is momentary and how MOD-UI wires a momentary port is not verified: it is left off the face and reported.
   const skipped = [];
@@ -203,12 +210,12 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       if (!c) throw new Error(`modgui-gen: panel names '${symbol}', which '${stem}' has no control for`);
       if (c.readonly) {
         if (panel.widgets?.[symbol] !== undefined) throw new Error(`modgui-gen: '${symbol}' is a readout and takes no widget`);
-        return { symbol, name: c.name, widget: 'display', ...readoutRange(c) };
+        return { symbol, name: c.name, widget: 'display', ...readoutRange(c), ...shownBy(symbol) };
       }
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
-      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}) };
+      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
@@ -302,7 +309,7 @@ const palette = (tok) => ({
 });
 
 /** Text sizes and baselines, in px at scale 1: the template's 10 px small text and 14 px title. */
-const TEXT = Object.freeze({ brand: 10, brandBase: 14, title: 14, titleBase: 31, small: 10, sectionBase: 13, nameBase: 62, valueBase: 72 });
+const TEXT = Object.freeze(FACE.text);
 
 /** The default a control shows, with its unit: a number to three significant figures, an option's label, On or Off. */
 export function valueText(k) {
@@ -329,6 +336,8 @@ export function renderFace(lay, look, scale) {
     roundRect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g.sectionRadius * s, col.section);
     drawText(c, font, fitText(font, sec.label.toUpperCase(), TEXT.small * s, (sec.w - 2 * g.sectionPad) * s), (sec.x + g.sectionPad) * s, (sec.y + TEXT.sectionBase) * s, TEXT.small * s, col.inkDim);
     for (const k of sec.controls) {
+      // a control the come-up values hide is not on the screenshot, as the face hides it
+      if (!k.shown) continue;
       const x = sec.x + k.x, y = sec.y + k.y;
       if (k.widget === 'display') {
         drawDisplay(c, (x + (g.cellW - g.selectorW) / 2) * s, (y + g.selectorTop) * s, g.selectorW * s, g.selectorH * s, col);
@@ -388,7 +397,11 @@ const files = (stem) => ({
   thumbnail: `${MODGUI_DIR}/thumbnail-${stem}.png`,
   film: `${MODGUI_DIR}/knobs/omx-knob.png`,
   faderFilm: `${MODGUI_DIR}/knobs/omx-fader.png`,
+  script: `${MODGUI_DIR}/script-${stem}.js`,
 });
+
+/** Whether any control of the panel is shown by another control's value. */
+const governs = (panel) => panel.sections.some((x) => x.controls.some((k) => k.visibleWhen));
 
 /** Whether any control of the panel is drawn with `widget`. */
 const draws = (panel, widget) => panel.sections.some((x) => x.controls.some((k) => k.widget === widget));
@@ -414,7 +427,8 @@ export function emitModguiTtl(panel, source) {
         modgui:thumbnail <${f.thumbnail}> ;
         modgui:brand ${ttlStr(panel.brand)} ;
         modgui:label ${ttlStr(panel.name)} ;
-${ports ? `        modgui:port [
+${governs(panel) ? `        modgui:javascript <${f.script}> ;
+` : ''}${ports ? `        modgui:port [
 ${ports}        ] ;
 ` : ''}    ] .
 `;
@@ -423,11 +437,14 @@ ${ports}        ] ;
 /** The icon template, in MOD's documented format: every section and every control, laid out. */
 export function emitTemplate(panel, lay, source) {
   const g = GEOMETRY;
+  // a governed control names its governing port and the mask of the values that show it; the script reads them
+  const vis = (k) => (k.visibleWhen ? ` data-visible-port="${k.visibleWhen.symbol}" data-visible-mask="${k.visibleWhen.mask.toString(16)}"` : '');
+  const at = (k) => `left:${k.x}px;top:${k.y}px${k.shown ? '' : ';display:none'}`;
   const control = (k) => {
     // a readout is a display: its symbol and range, no default and no port role (MOD has none for an output port)
     if (k.widget === 'display') {
       const range = k.min === undefined ? '' : ` data-min="${k.min}" data-max="${k.max}"`;
-      return `            <div class="omx-control omx-display" style="left:${k.x}px;top:${k.y}px" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}>
+      return `            <div class="omx-control omx-display" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${vis(k)}>
                 <div class="omx-display-image"></div>
                 <span class="omx-control-title">${esc(k.name)}</span>
             </div>`;
@@ -444,7 +461,7 @@ export function emitTemplate(panel, lay, source) {
                     </div>
                 </div>`
         : `<div class="omx-${k.widget}-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}"></div>`;
-    return `            <div class="omx-control omx-${k.widget}" style="left:${k.x}px;top:${k.y}px" title="${esc(k.name)}" ${data}>
+    return `            <div class="omx-control omx-${k.widget}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}>
                 ${image}
                 <span class="omx-control-title">${esc(k.name)}</span>
             </div>`;
@@ -517,6 +534,31 @@ ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
 ` : ''}`;
 }
 
+/** The modgui's script, in MOD's documented format (a function of the event and MOD's helpers): on start and on each port
+ * change, every control that names the changed port as its governing one is shown while bit `value` of its mask is set. */
+export function emitScript(source) {
+  return `${banner('// ', source).join('\n')}
+function (event, funcs) {
+    var show = function (symbol, value) {
+        var v = Math.round(value);
+        event.icon.find('[data-visible-port="' + symbol + '"]').each(function () {
+            // the mask is 64 bits of hex: the half that holds bit v, read as a plain number
+            var hex = this.getAttribute('data-visible-mask');
+            while (hex.length < 16) hex = '0' + hex;
+            var word = parseInt(v < 32 ? hex.slice(8) : hex.slice(0, 8), 16);
+            var on = v >= 0 && v <= 63 && Math.floor(word / Math.pow(2, v % 32)) % 2 === 1;
+            this.style.display = on ? '' : 'none';
+        });
+    };
+    if (event.type === 'start') {
+        for (var i = 0; i < event.ports.length; i++) show(event.ports[i].symbol, event.ports[i].value);
+    } else if (event.type === 'change') {
+        show(event.symbol, event.value);
+    }
+}
+`;
+}
+
 /** Every file of a descriptor's modgui, as [path relative to the LV2 bundle, bytes], in a fixed order. `source`
  * is what the banner names the files were made from. */
 export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false }, look = loadLook()) {
@@ -531,6 +573,7 @@ export function generateModgui(descriptor, { panel: declared, stem, source, easy
     [f.thumbnail, renderFace(lay, look, GEOMETRY.thumbScale)],
     [f.film, renderFilm(look.tokens)],
     ...(draws(panel, 'fader') ? [[f.faderFilm, renderFaderFilm(look.tokens)]] : []),
+    ...(governs(panel) ? [[f.script, Buffer.from(emitScript(source))]] : []),
   ];
 }
 
@@ -560,18 +603,20 @@ export function withModguiSeeAlso(text, uri) {
   return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] [--no-films|--films-only] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
   const toStdout = argv.includes('--emit-stdout');
+  const noFilms = argv.includes('--no-films');
+  const filmsOnly = argv.includes('--films-only');
   const opt = (flag) => {
     const k = argv.indexOf(flag);
     return k >= 0 ? argv[k + 1] : undefined;
   };
   const out = opt('--out');
   const descriptorFile = opt('--descriptor') ?? (opt('--installed') && installedDescriptorFile(opt('--installed')));
-  if (!out || !descriptorFile) {
+  if (!out || !descriptorFile || (noFilms && filmsOnly)) {
     console.error(USAGE);
     process.exit(2);
   }
@@ -606,6 +651,11 @@ export function main(argv) {
     console.error(err.message);
     process.exit(3);
   }
+  // the film strips are every bundle's same render of the look: a tree that does not track them leaves them out, and
+  // its build writes only them into the built bundle
+  const films = new Set(Object.entries(files(stem)).filter(([k]) => k === 'film' || k === 'faderFilm').map(([, p]) => p));
+  if (noFilms) made = made.filter(([p]) => !films.has(p));
+  if (filmsOnly) made = made.filter(([p]) => films.has(p));
   for (const symbol of resolvePanel(descriptor, { panel, stem }).skipped) console.error(`modgui: skipped trigger control '${symbol}'`);
   if (toStdout) {
     for (const [p, bytes] of made) {
@@ -632,7 +682,7 @@ export function main(argv) {
       }
     }
   } else {
-    rmSync(join(dir, MODGUI_DIR), { recursive: true, force: true });
+    if (!filmsOnly) rmSync(join(dir, MODGUI_DIR), { recursive: true, force: true });
     for (const [p, bytes] of made) {
       mkdirSync(dirname(join(dir, p)), { recursive: true });
       writeFileSync(join(dir, p), bytes);
