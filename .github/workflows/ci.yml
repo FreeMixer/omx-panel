@@ -53,8 +53,8 @@ jobs:
           OMX_PANEL_LILV: required
         run: make test
       - id: handback-spdx
-        name: Every tracked file carries the licence and copyright lines
-        run: make spdx
+        name: Every file a comment can be written in opens with its licence and copyright
+        uses: FreeMixer/.github/.github/actions/spdx-check@c67b6d0e09fd9f7cf9a8dd24ff41ea30d99f893c
       - id: handback-copies
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies

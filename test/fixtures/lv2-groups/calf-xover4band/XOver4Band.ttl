@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
+# Copyright (C) its authors; see test/fixtures/lv2-groups/SOURCES
 @prefix : <http://calf.sourceforge.net/plugins/XOver4Band#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix lv2:  <http://lv2plug.in/ns/lv2core#> .
