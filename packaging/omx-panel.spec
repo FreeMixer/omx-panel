@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.10.1
+Version: 0.10.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -22,7 +22,7 @@ BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: (omx-contract-data >= 3.8.0 with omx-contract-data < 4)
-BuildRequires: (plugin-hostd-contract >= 0.18.0 with plugin-hostd-contract < 0.19)
+BuildRequires: (plugin-hostd-contract >= 0.19.0 with plugin-hostd-contract < 0.20)
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
@@ -37,7 +37,7 @@ BuildRequires: systemd-rpm-macros
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: (omx-contract-data >= 3.8.0 with omx-contract-data < 4)
-Requires: (plugin-hostd-contract >= 0.18.0 with plugin-hostd-contract < 0.19)
+Requires: (plugin-hostd-contract >= 0.19.0 with plugin-hostd-contract < 0.20)
 # the descriptors of omx-plugins' plugins, for modgui --installed
 Recommends: (omx-plugins-contract >= 0.15.0 with omx-plugins-contract < 0.20)
 Provides: bundled(nodejs-ajv)
@@ -87,6 +87,8 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Fri Nov 06 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.2-1
+- plugin-hostd-contract >= 0.19.0 and < 0.20, the contract of plugin-hostd 0.19
 * Thu Nov 05 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.1-1
 - Publish the Debian packages; 0.10.0 published only the RPMs
 
