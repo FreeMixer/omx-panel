@@ -14,6 +14,7 @@
  * served description is one. Its families, display kinds and sources, and the roles each family takes, are
  * tools/panel-description.mjs's, the one panel vocabulary.
  */
+import { barsOfDescription } from '../tools/bars.mjs';
 import { DISPLAY_KINDS, DISPLAY_SOURCES, FAMILIES, INDEXED_ROLES, ROLES, WIDGETS } from '../tools/panel-description.mjs';
 
 /** The panel families (§4), tools/panel-description.mjs's list. */
@@ -73,6 +74,15 @@ export interface PanelSection {
   readonly labelKey: string;
   /** Fallback text; never fingerprinted. */
   readonly label: string;
+  /** The section's bar group (docs/panel-layout.md "Bars"): runs of controls drawn as one row of faders. A view of the panel. */
+  readonly bars?: readonly BarRun[];
+}
+
+/** A run of a section's bars: its controls in order, one label and one list of tied controls (those an encoder changes beside the bar) each. */
+export interface BarRun {
+  readonly controls: readonly string[];
+  readonly labels: readonly string[];
+  readonly tied: readonly (readonly string[])[];
 }
 
 export interface PanelVisibleWhen {
@@ -302,6 +312,8 @@ export interface SkinOverrideSection {
   readonly labelKey?: string;
   readonly label?: string;
   readonly controls: readonly string[];
+  /** `true`: the section's controls are one bar group (the rule's checks refuse by name); `false`: no inference here. */
+  readonly bars?: boolean;
 }
 
 /** The override file, parsed and schema-checked (§6.3). Symbols are checked when it is applied. */
@@ -364,6 +376,7 @@ function schemaFault(o: Record<string, unknown>, dirId: string): string | null {
       if (!isObj(s) || !isStr(s['key']) || !KEY.test(s['key']) || keys.has(s['key'])) return 'sections';
       if ((s['labelKey'] !== undefined && (!isStr(s['labelKey']) || !KEY.test(s['labelKey']))) || !optStr(s['label'])) return 'sections';
       if (!Array.isArray(s['controls']) || !s['controls'].every(isStr)) return 'sections';
+      if (s['bars'] !== undefined && typeof s['bars'] !== 'boolean') return 'sections';
       keys.add(s['key']);
     }
   }
@@ -418,9 +431,9 @@ export function parseSkinOverride(text: string, dirId: string): { readonly ok: t
 
 /** An override entry the application dropped, and why; the rest of the file stands (§6.3). */
 export interface SkinDroppedEntry {
-  readonly field: 'roles' | 'sections' | 'labels' | 'visibleWhen' | 'displays';
+  readonly field: 'roles' | 'sections' | 'labels' | 'visibleWhen' | 'displays' | 'bars';
   readonly entry: string;
-  readonly reason: RoleDropReason | 'unknown-symbol' | 'unknown-section';
+  readonly reason: RoleDropReason | 'unknown-symbol' | 'unknown-section' | `PANEL_BARS_${string}`;
 }
 
 /**
@@ -467,6 +480,14 @@ export function applySkinOverride<D extends SkinDescription>(
       sections.push({ key, labelKey: '', label: 'More' });
       for (const c of rest) controls.push({ ...c, section: key });
     }
+    // the bar groups follow the rebuilt sections: a skin's `bars` word wins, else the rule over each section's controls
+    const asked = new Map(override.sections.map((s) => [s.key, s.bars]));
+    sections = sections.map((sec) => {
+      const { bars: _old, ...bare } = sec;
+      const { runs, refusal } = barsOfDescription(controls.filter((c) => c.section === sec.key), params, asked.get(sec.key));
+      if (refusal) dropped.push({ field: 'bars', entry: sec.key, reason: refusal.code as `PANEL_BARS_${string}` });
+      return runs.length ? { ...bare, bars: runs } : bare;
+    });
   }
   if (override.labels) {
     for (const [symbol, l] of Object.entries(override.labels)) {

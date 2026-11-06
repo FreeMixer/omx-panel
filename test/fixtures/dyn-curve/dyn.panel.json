@@ -1,0 +1,18 @@
+{
+  "family": "dynamics",
+  "sections": [
+    {
+      "key": "comp",
+      "label": "Compressor",
+      "controls": [
+        "threshold",
+        "ratio",
+        "attack",
+        "release",
+        "makeup"
+      ],
+      "graph": "dynamics-curve",
+      "basis": "exact"
+    }
+  ]
+}

@@ -88,6 +88,14 @@ bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fra
 /** A selector's reading: option `at` of `count`, and its label. */
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count, const char *text);
 
+/** The points of display `display` (its index among the description's `displays`), ascending in x: for an `eq_response` x in Hz (above
+ * zero, drawn on a log axis) and y in dB; for a `transfer_curve` input dB and output dB. They are what the host computed
+ * (`omx_curve_points` or its twin): the renderer scales them to the frame and draws the stroke, computes nothing, and prints the
+ * display's `basis` word (`exact` or `modelled`) in the caption place. Until points are set the frame and the caption stand. False,
+ * changing nothing, for an index with no curve on the panel, fewer than two points, a value that is not finite, an x that does not
+ * ascend. The points are copied. */
+bool omx_panel_view_set_curve(omx_panel_view_t *view, uint32_t display, const double *x, const double *y, uint32_t n);
+
 /** A governing control's integer value. A control the description shows only for certain values of another (its
  * `visibleWhen` and `mask`, a declared panel's visibleWhen) is shown while bit `value` of its mask is set: a hidden
  * control takes no cell and is not drawn, and a section left with none takes no space. Until it is set, each reads the

@@ -5,7 +5,7 @@
     "pad": 16, "headH": 40, "sectionTop": 52, "sectionGap": 10, "sectionPad": 8, "sectionTitleH": 18,
     "cellW": 72, "cellH": 76, "knob": 48, "knobTop": 4, "switchW": 40, "switchH": 20, "switchTop": 18,
     "selectorW": 64, "selectorH": 22, "selectorTop": 17, "faderW": 14, "faderCap": 10,
-    "radius": 10, "sectionRadius": 6, "filmFrames": 65, "thumbScale": 0.5
+    "radius": 10, "sectionRadius": 6, "curveH": 84, "curveGap": 6, "filmFrames": 65, "thumbScale": 0.5
   },
   "text": { "brand": 10, "brandBase": 14, "title": 14, "titleBase": 31, "small": 10, "sectionBase": 13, "nameBase": 62, "valueBase": 72 }
 }

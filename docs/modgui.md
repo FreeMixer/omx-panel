@@ -28,6 +28,13 @@ Every control's symbol, travel, default and label is the descriptor's. A toggle 
 integer travel of at most 16 steps, a selector over its values; every other travel a knob. The template lays out
 every section and every control; `modgui.ttl` lists the input controls of the first section as `modgui:port`. With `--easy-first` the Easy controls ([panel-layout.md](panel-layout.md)) are that first section, so a pedal's listed ports are them; a plugin's package turns it on when it regenerates its committed files, and `omx-modgui-sync` always does.
 
+A bar group ([panel-layout.md](panel-layout.md) "Bars"; a declared section's `bars: true` or `false` wins over the rule) is a row of
+faders: each control of a run is the fader widget, an ordinary `input-control-port` MOD moves live with its own fader film, its title
+the bar's label (`16'`, `1`..`16`). A declared `bars: true` that fails the rule's checks is refused by its code. A section whose
+display is a curve (`eq_response`, `transfer_curve`) has a row above its controls: a frame with the basis word (`exact` or
+`modelled`) in its caption; the curve itself waits on omx-dsp's twin (it is drawn at the come-up values, as a static polyline, once
+`curvePoints` is released).
+
 A readout (a `readonly` control: a gain reduction, a level) has no travel to turn and no default. It is drawn as a
 display: a frame in its cell carrying its symbol and its range, never a knob, a fader, a switch or a selector, and
 never looked up as a control input. MOD's template binds input control ports by role (`input-control-port`) and

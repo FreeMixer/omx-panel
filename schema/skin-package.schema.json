@@ -84,7 +84,8 @@
           "key": { "$ref": "#/$defs/key" },
           "labelKey": { "$ref": "#/$defs/key" },
           "label": { "type": "string" },
-          "controls": { "type": "array", "items": { "type": "string" } }
+          "controls": { "type": "array", "items": { "type": "string" } },
+          "bars": { "type": "boolean", "description": "true: this section's controls, in order, are one bar group (a row of thin faders; the bar rule's checks still apply and a section failing one drops its bars by name); false: no bar group is inferred here. Left out, the layout infers one where the rule holds." }
         }
       }
     },

@@ -10,7 +10,7 @@
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
- * {"at", "count", "text"}}, "integers": {"<symbol>": n}}, the last the governing values a visibility rule reads. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+ * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
  * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
@@ -145,6 +145,24 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
       fprintf(stderr, "omx-panel-render: state's integers name '%s', which governs no control of the panel\n", it->string);
       ok = 0;
     }
+  }
+  /* "curves": {"<display index>": {"x": [...], "y": [...]}}, the points a host computed for each display */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "curves")) {
+    cJSON *xs = cJSON_GetObjectItemCaseSensitive(it, "x"), *ys = cJSON_GetObjectItemCaseSensitive(it, "y"), *e;
+    int n = cJSON_IsArray(xs) ? cJSON_GetArraySize(xs) : -1;
+    double *x = n > 0 ? malloc((size_t)n * sizeof *x) : NULL, *y = n > 0 ? malloc((size_t)n * sizeof *y) : NULL;
+    int good = x && y && cJSON_IsArray(ys) && cJSON_GetArraySize(ys) == n;
+    for (int k = 0; good && k < n; k++) {
+      e = cJSON_GetArrayItem(xs, k);
+      good = cJSON_IsNumber(e), x[k] = good ? e->valuedouble : 0;
+      e = cJSON_GetArrayItem(ys, k);
+      good = good && cJSON_IsNumber(e), y[k] = good ? e->valuedouble : 0;
+    }
+    if (!good || !omx_panel_view_set_curve(v, (uint32_t)strtoul(it->string, NULL, 10), x, y, (uint32_t)n)) {
+      fprintf(stderr, "omx-panel-render: state's curve '%s' is no curve of the panel or its points are refused\n", it->string);
+      ok = 0;
+    }
+    free(x), free(y);
   }
   cJSON_Delete(root);
   return ok;

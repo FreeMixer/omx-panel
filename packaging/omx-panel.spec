@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.10.2
+Version: 0.11.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -87,6 +87,9 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Fri Nov 06 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.0-1
+- describe, the one derivation of a panel description: the family rule, the meaning inference, displays with their basis, refusals by code
+- Bars: a section's bar group in the layout, the skin and the MOD GUI; the renderer draws bars, curve frames and host points
 * Fri Nov 06 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.2-1
 - plugin-hostd-contract >= 0.19.0 and < 0.20, the contract of plugin-hostd 0.19
 * Thu Nov 05 2026 Pau Aliagas <linuxnow@gmail.com> - 0.10.1-1

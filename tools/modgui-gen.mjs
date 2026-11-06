@@ -29,9 +29,10 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseFont } from './font.mjs';
+import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
+import { basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
@@ -141,12 +142,18 @@ export class NothingToDraw extends Error {
   code = 'MODGUI_NOTHING_TO_DRAW';
 }
 
+/** The display kinds that are a curve on the face: a frame with the curve's basis word in its caption place. */
+const CURVES = ['eq_response', 'transfer_curve'];
+
+/** The curves of a panel section: a derived panel's are the layout's; a declared one's follow its `graph`. */
+const displaysOf = (descriptor, s) => s.displays ?? (CURVES.includes(DISPLAY_OF_GRAPH[s.graph]) ? [{ kind: DISPLAY_OF_GRAPH[s.graph], basis: basisOf(descriptor, s) }] : []);
+
 /** The panel a descriptor is drawn with: the declared one, else the layout's sections and family over its
  * groups and meanings (tools/panel-description.mjs); with `wantEasyFirst` (--easy-first), the Easy controls first. */
 export function panelOf(descriptor, declared, wantEasyFirst = false) {
   if (!declared) {
-    const x = panelLayout(descriptor);
-    const panel = { family: x.family, sections: x.sections.map((s, i) => ({ key: s.key, label: s.label, controls: x.controls.filter((c) => c.section === i).map((c) => c.symbol) })) };
+    const x = panelLayout(descriptor, { derive: true });
+    const panel = { family: x.family, sections: x.sections.map((s, i) => ({ key: s.key, label: s.label, controls: x.controls.filter((c) => c.section === i).map((c) => c.symbol), displays: x.displays.filter((d) => d.section === i && CURVES.includes(d.kind)).map((d) => ({ kind: d.kind, basis: d.basis })) })) };
     return wantEasyFirst ? easyFirst(panel, x.easy) : panel;
   }
   if (!wantEasyFirst) return declared;
@@ -198,6 +205,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   const sections = panel.sections.map((s) => ({
     key: s.key,
     label: s.label,
+    displays: displaysOf(descriptor, s),
     controls: s.controls.filter((symbol) => {
       if (!isTrigger(symbol)) return true;
       seen.add(symbol);
@@ -220,21 +228,41 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
+  // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
+  // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
+  for (const sec of sections) {
+    const word = panel.sections.find((p) => p.key === sec.key)?.bars;
+    const items = sec.controls.map((k) => ({ symbol: k.symbol, label: k.name, control: controls.find((x) => keyOf(x) === k.symbol) }));
+    const { runs, refusal } = barsOf(items, word);
+    if (refusal) throw new BarsRefused(`modgui-gen: '${stem}' section '${sec.key}' declares bars: ${refusal.why}`, refusal.code);
+    if (runs.length === 0) continue;
+    sec.bars = runs;
+    for (const run of runs) {
+      run.controls.forEach((symbol, at) => {
+        const k = sec.controls.find((x) => x.symbol === symbol);
+        k.widget = 'fader';
+        delete k.options;
+        k.bar = run.labels[at];
+      });
+    }
+  }
   return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, skipped };
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
 export function layout(panel) {
   const g = GEOMETRY;
-  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => s.controls.length)));
+  // a curve row needs a width of its own: three cells
+  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(s.controls.length, s.displays.length > 0 ? 3 : 0))));
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
     const rows = Math.ceil(s.controls.length / ROW_CONTROLS);
-    const h = g.sectionTitleH + rows * g.cellH + g.sectionPad / 2;
+    const curves = s.displays.length * (g.curveH + g.curveGap);
+    const h = g.sectionTitleH + curves + rows * g.cellH + g.sectionPad / 2;
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h,
-      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + Math.floor(j / ROW_CONTROLS) * g.cellH })),
+      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + curves + Math.floor(j / ROW_CONTROLS) * g.cellH })),
     };
     y += h + g.sectionGap;
     return sec;
@@ -335,6 +363,13 @@ export function renderFace(lay, look, scale) {
   for (const sec of lay.sections) {
     roundRect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g.sectionRadius * s, col.section);
     drawText(c, font, fitText(font, sec.label.toUpperCase(), TEXT.small * s, (sec.w - 2 * g.sectionPad) * s), (sec.x + g.sectionPad) * s, (sec.y + TEXT.sectionBase) * s, TEXT.small * s, col.inkDim);
+    // the curves: a frame with the basis word in the caption place; the points are drawn when a build has them (a host's curve is its own)
+    sec.displays.forEach((dsp, m) => {
+      const cx = (sec.x + g.sectionPad) * s, cy = (sec.y + g.sectionTitleH + m * (g.curveH + g.curveGap)) * s, cw = (sec.w - 2 * g.sectionPad) * s, ch = g.curveH * s;
+      roundRect(c, cx, cy, cw, ch, Math.min(4, ch / 4), col.rim);
+      roundRect(c, cx + 1, cy + 1, cw - 2, ch - 2, Math.min(3, ch / 4), col.body);
+      drawText(c, font, fitText(font, dsp.basis, TEXT.small * s, cw - 12 * s), cx + 6 * s, cy + ch - 5 * s, TEXT.small * s, col.inkDim);
+    });
     for (const k of sec.controls) {
       // a control the come-up values hide is not on the screenshot, as the face hides it
       if (!k.shown) continue;
@@ -352,7 +387,7 @@ export function renderFace(lay, look, scale) {
         drawKnob(c, (x + g.cellW / 2) * s, (y + g.knobTop + g.knob / 2) * s, (g.knob / 2) * s, travelFraction(k, k.def), col);
       }
       const mid = (x + g.cellW / 2) * s, fit = (g.cellW - 4) * s;
-      drawText(c, font, fitText(font, k.name, TEXT.small * s, fit), mid, (y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
+      drawText(c, font, fitText(font, k.bar ?? k.name, TEXT.small * s, fit), mid, (y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
       if (k.widget === 'selector') {
         const shown = fitText(font, valueText(k), TEXT.small * s, (g.selectorW - 8) * s);
         drawText(c, font, shown, mid, (y + g.selectorTop + g.selectorH / 2 + TEXT.small * 0.36) * s, TEXT.small * s, col.ink, 'centre');
@@ -461,14 +496,14 @@ export function emitTemplate(panel, lay, source) {
                     </div>
                 </div>`
         : `<div class="omx-${k.widget}-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}"></div>`;
-    return `            <div class="omx-control omx-${k.widget}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}>
+    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}>
                 ${image}
-                <span class="omx-control-title">${esc(k.name)}</span>
+                <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>
             </div>`;
   };
   const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
-${s.controls.map(control).join('\n')}
+${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px"><span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
         </div>`).join('\n');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
         <div class="mod-${dir} mod-${dir}-disconnected" title="{{name}}" mod-role="${dir}-${kind}-port" mod-port-symbol="{{symbol}}">
@@ -530,6 +565,8 @@ ${P} .omx-selector-list { display: none; position: absolute; left: 0; top: ${g.s
 ${P} .omx-selector-image.selecting .omx-selector-list, ${P} .omx-selector-image.open .omx-selector-list { display: block; }
 ${P} .omx-selector-option { padding: 2px 6px; font-size: 10px; text-align: left; white-space: nowrap; }
 ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
+` : ''}${panel.sections.some((x) => x.displays.length > 0) ? `${P} .omx-curve { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
+${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ` : ''}`;
 }

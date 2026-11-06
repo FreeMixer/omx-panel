@@ -30,9 +30,18 @@ its label, each control in its cell with its label and value text. The look (col
 `tools/look.json`, resolved from `tools/look/tokens.css`; the geometry and text sizes are
 `tools/look/geometry.json`, which `tools/modgui-gen.mjs` reads too. The renderer types no colour and no size.
 
-A meter fills along the foot of its frame to its reading. A display, a curve and an xy pad show a frame
-and their text for now; each gets its own drawing when a description carries what it needs (a curve's
-points, a pair of controls).
+A meter fills along the foot of its frame to its reading. A display and an xy pad show a frame and their text
+for now; an xy pad gets its own drawing when a description carries what it needs (a pair of controls).
+
+A section's `bars` (a bar group, [panel-layout.md](panel-layout.md) "Bars") is a row of faders: each control of a run is drawn as a fader,
+its label the bar's, in its own cell, so `omx_panel_view_control_rect` gives each bar's rectangle for hit-testing as for every control.
+
+A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
+controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
+(`omx_panel_view_set_curve`). The renderer computes no point: the host's are copied, ascending in x, and scaled to the frame, an
+`eq_response` on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` on linear dB with input
+and output on one span and the unity line. A display with no points draws the frame and the word alone. The state file of
+`omx-panel-render` gives them as `"curves": {"<display index>": {"x": [...], "y": [...]}}`.
 
 ## The C API
 

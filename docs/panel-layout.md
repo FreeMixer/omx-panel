@@ -85,6 +85,75 @@ meanings it would need: a transient designer (attack and sustain amounts, no thr
 not a compressor, so its family is `none`. Inference tries the families in the order of the table and
 takes the first whose meanings are all there; none fits, `none`.
 
+## One derivation: `describe`
+
+`tools/describe.mjs` is the one function every surface calls: `describe(descriptor, { overrides, applyOverride, skin, panel })`
+answers `{ description, refusals }` and never throws. The override layers go over the descriptor through omx-contract's
+`applyOverride` (the caller passes it), the layout runs over the effective descriptor, and the skin applies last. The description is
+the family, the `params` (each control's contract facts read from its `travel`: kind, unit and its token, scale, step, ends, default,
+a choice's labels; `log` over a floor at or below zero is served linear), the sections, the controls, the roles, the displays and the
+pages. A refusal is `{ code, args }`: `PANEL_NO_CONTROLS`, `PANEL_FAMILY_NOT_BACKED`, `PANEL_LAYOUT_INVALID`, a bar group's
+`PANEL_BARS_*`, `PANEL_OVERRIDE_*`, `PANEL_ROLE_DROPPED`, `PANEL_SKIN_DROPPED`. The description is `null` only where no panel can be
+made (no control, an invalid layout); a family the controls do not back is `none` with its refusal.
+
+### The family of a plugin that declares no panel
+
+One rule, the same on every surface, reading no list of plugins:
+
+1. The candidate comes from what the plugin declares about itself, carried in the descriptor's extension bag (`extensions.lv2`:
+   the class as a field or among `rdf:type`'s values; `extensions.clap["clap_plugin_descriptor.features"]`):
+
+   | LV2 class / CLAP feature | Candidate |
+   |---|---|
+   | `lv2:EQPlugin`, `lv2:ParaEQPlugin` / `equalizer` | `eq` |
+   | `lv2:CompressorPlugin` / `compressor` | `dynamics` |
+   | `lv2:GatePlugin`, `lv2:ExpanderPlugin` / `gate` | `gate` |
+   | `lv2:DistortionPlugin` / `distortion` | `drive` |
+
+   A plugin that declares nothing in the table has no candidate; one that declares two families has a family only when exactly
+   one of them passes step 2.
+2. The candidate is kept only when every required role of the family (`REQUIRED_ROLES`) is mapped to a control, by a descriptor word
+   or by the meaning inference below. Otherwise the family is `none` and the panel is the plain sections.
+3. A declared panel, or a user's override naming a `family`, wins and is applied as the layout applies it.
+
+The controls' meanings alone name no family for such a plugin: a plugin declares its class, or it has none.
+
+### The band inference
+
+A control with no `meaning` is read by `tools/meaning-infer.mjs` (only for a candidate `eq`): its symbol, name and unit give a band
+role (frequency, gain, Q or width, type, on) and the band it belongs to, as the console's heuristic did. Every role it yields carries
+`inferred: true`, with the contract token it reads the control in (`hz`, `db` or `coef` for a gain whose range stays above zero,
+`oct` or `none`). A band whose shape no parameter selects carries `shape` on its `band_freq` role; a `band_type` role carries
+`shapes`, one word per choice value from 0 (`off`, `bell`, `lowshelf`, `highshelf`, `highpass`, `lowpass`, `notch`, or `-`), read
+from the choice's labels, so a curve function receives shapes and parses no label. The inference is a derivation, never stored; an
+override file corrects it.
+
+### Displays and their basis
+
+A derived panel whose family has a closed form (`eq`, `dynamics`, `gate`, `drive`) gets its display (`eq_response` or
+`transfer_curve`) on the section holding its first required role, once the required roles are mapped. Every display carries a
+`basis`: `exact` only when an authored descriptor's declared section says `basis: exact` (the plugin's own audio runs the same closed
+form), else `modelled`, which every surface prints in the display's caption place. `basis` is a view and stays out of the canonical
+form.
+
+## Bars
+
+A section gains an optional `bars`: a list of runs `{ controls, labels, tied }`, one label and one `tied` list (the controls an
+encoder changes beside the selected bar) per bar. Every bar is still a control of the section; the field stays out of the canonical
+form and the fingerprint, and out of the CLAP extension.
+
+The rule (`tools/bars.mjs`): inside one section, at least 4 controls one after another that are each a visible, writable `travel`
+with the same ends, the same step (or all continuous), the same unit and the same scale, whose labels form one series: the same words
+with one varying number (`Band 1 Gain`, `Step 1`: the label is the number), a known footage (`16'`, `5 1/3'`, `8'`, `4'`,
+`2 2/3'`, `2'`, `1 3/5'`, `1 1/3'`, `1'`, also `DB <footage>`), or frequencies in strictly rising order (`100 Hz`, `1k`, `1.2 kHz`).
+A run of more than 16 is cut into runs of 16 (`MAX_BARS`). Runs over the same bands (the same length, different labels: an EQ's
+gains, frequencies and Qs) are one group: the run whose controls have a level meaning (`gain`) takes the bars and the others are its
+`tied`; with no meaning the first run in section order. Two runs over different bands are two groups. A declared section says
+`"bars": true` (its controls, in order, are one run; the rule's checks still apply and a failing one refuses the layout by
+`PANEL_BARS_TOO_FEW`, `_NOT_TRAVEL`, `_FACTS_DIFFER` or `_LABELS_NOT_SERIES`) or `"bars": false` (no inference there). A plugin that
+declares no panel gets its skin package's `skin.json` section word, the same `bars`; a skin that rebuilds the sections gets its bars
+recomputed over them, a failing `true` dropped by name.
+
 ## The widget
 
 The widget is a step of its own, `widgetOf(control, declared)`, before any skin. It picks one of the
