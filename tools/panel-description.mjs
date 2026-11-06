@@ -423,17 +423,16 @@ export const PAGE_SIZE = 8;
  * pages names each page by the controls it holds, "Band: Freq - Q". Left out, the cut is the plain one.
  * With `easyFirst` the Easy controls come first, on pages of their own named Easy, Easy 2, and do not repeat.
  * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) takes
- * no slot, and a section left with none has no page: a host cuts again when a governing value changes. */
+ * no slot, and its page stays. */
 export function pagesOf(x, { perPage, easyFirst = false, values = {} } = {}) {
   const size = perPage ?? PAGE_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
-  // a control the current values hide takes no slot: the pages are a function of the governing values
-  const shown = x.controls.filter((c) => isVisible(c, values));
-  x = { ...x, controls: shown };
-  const easy = (easyFirst ? x.easy : []).filter((symbol) => shown.some((c) => c.symbol === symbol));
+  // a control the current values hide keeps its slot, blank (the pages amendment, spec 7.14): the slots do not move with the governing values
+  const blank = new Set(x.controls.filter((c) => !isVisible(c, values)).map((c) => c.param));
+  const easy = (easyFirst ? x.easy : []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
-    const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
+    const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param).map((id) => (blank.has(id) ? null : id));
     while (ids.length < size) ids.push(null);
     easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: k === 0 ? EASY_PAGE : `${EASY_PAGE} ${k / size + 1}`, ids });
   }
@@ -457,7 +456,7 @@ export function pagesOf(x, { perPage, easyFirst = false, values = {} } = {}) {
       if (page.length) pages.push(page);
     }
     return pages.map((page, k) => {
-      const ids = page.map((c) => c.param);
+      const ids = page.map((c) => (blank.has(c.param) ? null : c.param));
       while (ids.length < size) ids.push(null);
       const held = page.length > 1 ? `${page[0].label} - ${page[page.length - 1].label}` : page[0].label;
       const pageName = pages.length === 1 ? s.label : perPage === undefined ? `${s.label} ${k + 1}` : `${s.label}: ${held}`;
