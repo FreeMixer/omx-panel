@@ -213,3 +213,12 @@ test('the description serves the Easy controls: the descriptor\'s own, in its or
   assert.deepEqual(describe({ ...d, easy: ['c2', 'c0'] }).description.easy, ['c2', 'c0']);
   assert.deepEqual(describe(descriptor(dyn(), lv2('lv2:CompressorPlugin'))).description.easy.length > 0, true);
 });
+test('the pages are cut after the skin applies: a skin that reorders the sections moves the first page', () => {
+  const d = descriptor(Array.from({ length: 5 }, (_, i) => travel(`N${i}`)));
+  const skin = { schema: 1, plugin: 'urn:test:plugin', licence: 'CC0-1.0', sections: [{ key: 'controls', controls: ['c3', 'c1', 'c0', 'c2', 'c4'] }] };
+  assert.deepEqual(describe(d).description.pages[0].ids.slice(0, 5), ['c0', 'c1', 'c2', 'c3', 'c4']);
+  assert.deepEqual(describe(d, { skin }).description.pages[0].ids.slice(0, 5), ['c3', 'c1', 'c0', 'c2', 'c4']);
+  // a skin's two sections are two pages, in its order
+  const two = { ...skin, sections: [{ key: 'b', label: 'B', controls: ['c4', 'c3'] }, { key: 'a', label: 'A', controls: ['c0', 'c1', 'c2'] }] };
+  assert.deepEqual(describe(d, { skin: two }).description.pages.map((p) => [p.pageName, p.ids.slice(0, 3)]), [['B', ['c4', 'c3', null]], ['A', ['c0', 'c1', 'c2']]]);
+});
