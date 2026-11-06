@@ -1,0 +1,106 @@
+{
+  "origin": "authored",
+  "plugin": {
+    "id": "urn:omx-panel:test:dyn",
+    "format": "lv2",
+    "uri": "urn:omx-panel:test:dyn",
+    "name": "Test Comp",
+    "vendor": "omx-panel tests",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "threshold",
+      "symbol": "threshold",
+      "name": "Threshold",
+      "label": "Threshold",
+      "kind": "travel",
+      "meaning": "threshold",
+      "group": [
+        "Compressor"
+      ],
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -18
+      }
+    },
+    {
+      "id": "ratio",
+      "symbol": "ratio",
+      "name": "Ratio",
+      "label": "Ratio",
+      "kind": "travel",
+      "meaning": "ratio",
+      "group": [
+        "Compressor"
+      ],
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "unit": "ratio",
+        "scale": "linear",
+        "default": 4
+      }
+    },
+    {
+      "id": "attack",
+      "symbol": "attack",
+      "name": "Attack",
+      "label": "Attack",
+      "kind": "travel",
+      "meaning": "attack",
+      "group": [
+        "Compressor"
+      ],
+      "travel": {
+        "min": 0.1,
+        "max": 100,
+        "unit": "ms",
+        "scale": "log",
+        "default": 10
+      }
+    },
+    {
+      "id": "release",
+      "symbol": "release",
+      "name": "Release",
+      "label": "Release",
+      "kind": "travel",
+      "meaning": "release",
+      "group": [
+        "Compressor"
+      ],
+      "travel": {
+        "min": 10,
+        "max": 1000,
+        "unit": "ms",
+        "scale": "log",
+        "default": 100
+      }
+    },
+    {
+      "id": "makeup",
+      "symbol": "makeup",
+      "name": "Makeup",
+      "label": "Makeup",
+      "kind": "travel",
+      "meaning": "makeup",
+      "group": [
+        "Compressor"
+      ],
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0
+      }
+    }
+  ],
+  "ports": []
+}

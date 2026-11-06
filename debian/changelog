@@ -1,3 +1,17 @@
+omx-panel (0.11.0) unstable; urgency=medium
+
+  * describe: the one derivation of a panel description. The family comes
+    from the plugin's own LV2 class or CLAP feature and is kept only when its
+    controls back the family's required roles. Includes the meaning
+    inference, displays with their basis, roles with shape and shapes, and
+    refusals by code.
+  * Bars: a section's bar group in the layout, the schema, the declaration
+    and the skin; the MOD GUI draws it as a row of faders.
+  * The renderer draws a bar group, a curve's frame with its basis word, and
+    the points a host gives (omx_panel_view_set_curve).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 06 Nov 2026 20:00:00 +0100
+
 omx-panel (0.10.2) unstable; urgency=medium
 
   * plugin-hostd-contract >= 0.19.0 and < 0.20, the contract of

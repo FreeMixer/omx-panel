@@ -19,7 +19,9 @@
  */
 import { createHash } from 'node:crypto';
 import { easyOf } from './easy.mjs';
-import { INDEXED_ROLES, ROLES } from './role-table.mjs';
+import { barsOf } from './bars.mjs';
+import { shapesOf } from './meaning-infer.mjs';
+import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
 import { meaningOfRole, servedToken } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
@@ -71,7 +73,10 @@ export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
 
 /** A section `graph` -> the display the extension names for it; a graph with none here is the
  * renderer's own (delay taps, a decay envelope, an LFO). */
-const DISPLAY_OF_GRAPH = { 'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve' };
+export const DISPLAY_OF_GRAPH = { 'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve' };
+/** The basis of a declared section's graph: `exact` only when an authored descriptor says so (the one-panel spec §5.3), else `modelled`. */
+export const basisOf = (descriptor, section) => (section.basis === 'exact' && descriptor.origin === 'authored' ? 'exact' : 'modelled');
+
 /** The displays a host computes from a family's roles in closed form. */
 const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'] };
 
@@ -145,6 +150,25 @@ export class NoControls extends Error {
   code = 'PANEL_NO_CONTROLS';
 }
 
+/** A declared family none of whose meanings the controls carry: a transient designer is no compressor (#138). */
+export class FamilyNotBacked extends Error {
+  code = 'PANEL_FAMILY_NOT_BACKED';
+}
+
+/** A section's declared `bars: true` that fails a check of the bar rule, by the check's code (tools/bars.mjs). */
+export class BarsRefused extends Error {
+  constructor(message, code) {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** Whether every required role of `family` (role-table.mjs REQUIRED_ROLES) is mapped at index 0 in `roles`: the one check that
+ * decides whether a family's view is drawn, for a declared family and a derived one alike. `none` needs nothing. */
+export function requiredRolesMapped(family, roles) {
+  return (REQUIRED_ROLES[family] ?? []).every((alt) => alt.some((role) => roles.some((r) => r.role === role && r.index === 0)));
+}
+
 /**
  * The key a layout names a control by: its symbol, else an LV2 control's id (its port symbol), else a CLAP
  * control's numeric id as `p<id>` (the id is the one thing a CLAP plugin keeps unique and stable, and a bare
@@ -164,7 +188,7 @@ function portsOf(ports = []) {
  * one their meanings make and the roles the ones their meanings play. `ns` is the label-key namespace
  * (without one the label keys are null); `choiceUnits` and `byKind` are a declaration's extras.
  */
-export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {} } = {}) {
+export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, derive = false } = {}) {
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
@@ -179,16 +203,16 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     return s;
   };
 
-  const { family, needs } = familyOf(all, panel ? panel.family : undefined, descriptor.plugin?.features);
+  const { family, needs } = forced !== undefined ? { family: forced } : familyOf(all, panel ? panel.family : undefined, descriptor.plugin?.features);
   // a declared family stands on its controls' meanings: a transient designer is no compressor
   if (needs) {
     const have = [...new Set(all.map((c) => c.meaning).filter(Boolean))];
-    throw new Error(`${where}: the ${family} family needs a control meaning ${needs.join(' or ')}, and its meanings are ${have.join(', ') || 'none'}: its family is none`);
+    throw new FamilyNotBacked(`${where}: the ${family} family needs a control meaning ${needs.join(' or ')}, and its meanings are ${have.join(', ') || 'none'}: its family is none`);
   }
 
   // the sections, each with the controls it lists: the declared panel's, else one per group path
   let listed;
-  if (panel) listed = panel.sections.map((s) => ({ key: snake(s.key), label: s.label, controls: s.controls, graph: s.graph }));
+  if (panel) listed = panel.sections.map((s) => ({ key: snake(s.key), label: s.label, controls: s.controls, graph: s.graph, bars: s.bars, basis: s.basis }));
   else {
     const groups = new Map();
     for (const c of all) {
@@ -234,13 +258,19 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
 
   const table = ROLES[family];
   const roles = [], unpublished = [];
-  const bind = (role, index, sym) => {
+  // `extra` is what an inference states about a role it binds: `inferred`, the `token` it reads the control in, a band's `shape`
+  const bind = (role, index, sym, extra = {}) => {
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
+    const token = extra.token ?? unitToken(unit);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
-    else if (!table[role].includes(unitToken(unit))) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
-    else roles.push({ role, index, symbol: sym, param: c.id, unit });
+    else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
+    else {
+      // a band-type role names the shape of each of its choice values, from the choice's own labels
+      const shapes = extra.shapes ?? (role === 'band_type' ? shapesOf(c) : undefined);
+      roles.push({ role, index, symbol: sym, param: c.id, unit, ...extra, ...(shapes ? { shapes } : {}) });
+    }
   };
   if (panel) {
     // an indexed role (an EQ band's) names every band's symbol in order: one row per band, its index the band's
@@ -259,13 +289,40 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
       else bind(role, n, keyOf(c));
       played.set(role, n + 1);
     }
+    // the bands the descriptor's words do not give: the inference's (tools/meaning-infer.mjs), only while the words leave the
+    // family's required roles unmapped, and then in place of the words' band roles
+    if (inferredRoles?.length && !requiredRolesMapped(family, roles)) {
+      const BAND = /^(band_|hpf_|lpf_)/;
+      for (let i = roles.length - 1; i >= 0; i--) if (BAND.test(roles[i].role)) roles.splice(i, 1);
+      for (const r of inferredRoles) bind(r.role, r.index, r.symbol, { inferred: true, token: r.unit, ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}) });
+    }
   }
 
   const displays = listed.flatMap((s, section) => {
     const kind = DISPLAY_OF_GRAPH[s.graph];
     if (!kind) return [];
     if (!CLOSED_FORMS[family]?.includes(kind)) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, and the ${family} family has no ${kind} a host computes`);
-    return [{ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`) }];
+    // `exact` only when an authored descriptor declares it (the one-panel spec §5.3); any other curve is modelled
+    const basis = basisOf(descriptor, s);
+    return [{ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
+  });
+  // a derived panel (derive: true): a family whose closed form is known draws it on the section holding its first required role, once
+  // every required role is mapped (the one-panel spec §3.1)
+  if (derive && !panel && CLOSED_FORMS[family] && requiredRolesMapped(family, roles)) {
+    const first = REQUIRED_ROLES[family][0].map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
+    const section = controls.find((c) => c.symbol === first.symbol)?.section;
+    if (section !== undefined) {
+      const kind = CLOSED_FORMS[family][0];
+      displays.push({ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
+    }
+  }
+
+  // the bar groups of each section (tools/bars.mjs): a declared `bars` word wins; a view of the panel, so out of the canonical form
+  listed.forEach((s, section) => {
+    const items = controls.filter((c) => c.section === section).map((c) => ({ symbol: c.symbol, label: c.label, control: control(c.symbol) }));
+    const { runs, refusal } = barsOf(items, s.bars);
+    if (refusal) throw new BarsRefused(`${where}: section '${s.key}' declares bars: ${refusal.why}`, refusal.code);
+    if (runs.length) sections[section].bars = runs;
   });
 
   // the contract's per-kind defaults: each channel kind the placement it is, the value inside the travel

@@ -43,11 +43,23 @@ typedef struct {
   char *gov;
   uint64_t mask;
   int64_t value;
+  /* the bar group (the section's `bars`): the bar's label, NULL for a control in no bar. A bar is drawn as a fader, labelled by the bar. */
+  char *bar;
 } control;
+
+/* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
+typedef struct {
+  int section;
+  int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
+  int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
+  char *basis;   /* "exact" or "modelled", printed in the caption place */
+  double *x, *y;
+  size_t n;
+} display;
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap;
 } geometry;
 
 typedef struct {
@@ -63,6 +75,8 @@ struct omx_panel_view {
   size_t nsections;
   control *controls;
   size_t ncontrols;
+  display *displays;
+  size_t ndisplays;
   char *brand, *name;
   int row_controls;
   geometry g;
@@ -143,6 +157,7 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, switchTop, &v->g, "geometry"); NUM(g, selectorW, &v->g, "geometry"); NUM(g, selectorH, &v->g, "geometry");
   NUM(g, selectorTop, &v->g, "geometry"); NUM(g, faderW, &v->g, "geometry"); NUM(g, faderCap, &v->g, "geometry");
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
+  NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
   NUM(t, brand, &v->t, "text"); NUM(t, brandBase, &v->t, "text"); NUM(t, title, &v->t, "text");
   NUM(t, titleBase, &v->t, "text"); NUM(t, small, &v->t, "text"); NUM(t, sectionBase, &v->t, "text");
   NUM(t, nameBase, &v->t, "text"); NUM(t, valueBase, &v->t, "text");
@@ -206,6 +221,55 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         goto bad;
       }
       c->gov = dup(gov), c->mask = (uint64_t)m, c->value = (int64_t)def->valuedouble;
+    }
+  }
+  /* the bar groups: a section's `bars` runs name their controls and labels in order */
+  cJSON_ArrayForEach(it, secs) {
+    cJSON *runs = cJSON_GetObjectItemCaseSensitive(it, "bars"), *run;
+    if (!runs || cJSON_IsNull(runs)) continue;
+    if (!cJSON_IsArray(runs)) {
+      fail(err, n, "description: a section's bars is not an array%s%s", NULL, NULL);
+      goto bad;
+    }
+    cJSON_ArrayForEach(run, runs) {
+      cJSON *syms = cJSON_GetObjectItemCaseSensitive(run, "controls"), *labs = cJSON_GetObjectItemCaseSensitive(run, "labels");
+      if (!cJSON_IsArray(syms) || !cJSON_IsArray(labs) || cJSON_GetArraySize(syms) != cJSON_GetArraySize(labs)) {
+        fail(err, n, "description: a bar run needs a controls array and a labels array of one length%s%s", NULL, NULL);
+        goto bad;
+      }
+      for (int k = 0; k < cJSON_GetArraySize(syms); k++) {
+        const char *sym = cJSON_GetStringValue(cJSON_GetArrayItem(syms, k)), *lab = cJSON_GetStringValue(cJSON_GetArrayItem(labs, k));
+        int at = -1;
+        for (size_t j = 0; sym && j < v->ncontrols; j++)
+          if (strcmp(v->controls[j].symbol, sym) == 0) at = (int)j;
+        if (at < 0 || !lab) {
+          fail(err, n, "description: a bar run names '%s', which is no control or has no label%s", sym ? sym : "(not a string)", NULL);
+          goto bad;
+        }
+        free(v->controls[at].bar);
+        v->controls[at].bar = dup(lab);
+      }
+    }
+  }
+  /* the displays: each on a section, its kind the curve's axes, its basis the caption */
+  cJSON *dis = cJSON_GetObjectItemCaseSensitive(root, "displays");
+  if (cJSON_IsArray(dis)) {
+    v->ndisplays = (size_t)cJSON_GetArraySize(dis);
+    v->displays = calloc(v->ndisplays ? v->ndisplays : 1, sizeof *v->displays);
+    i = 0;
+    cJSON_ArrayForEach(it, dis) {
+      display *d = &v->displays[i++];
+      cJSON *sec = cJSON_GetObjectItemCaseSensitive(it, "section");
+      const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
+      const char *basis = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "basis"));
+      if (!cJSON_IsNumber(sec) || sec->valueint < 0 || (size_t)sec->valueint >= v->nsections || !kind) {
+        fail(err, n, "description: a display lacks a section index or a kind%s%s", NULL, NULL);
+        goto bad;
+      }
+      /* only a closed-form curve has a place on the panel; a gain-reduction bar or a meter is a control's reading */
+      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0) ? sec->valueint : -1;
+      d->log_x = strcmp(kind, "eq_response") == 0, d->symmetric = d->log_x;
+      d->basis = dup(basis ? basis : "modelled");
     }
   }
   cJSON_Delete(root);
@@ -287,8 +351,9 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
   if (!v) return;
   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]);
   for (size_t i = 0; i < v->ncontrols; i++)
-    free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov);
-  free(v->sections), free(v->controls), free(v->brand), free(v->name);
+    free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
+  for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y);
+  free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
   omx_font_free(v->font);
   free(v);
 }
@@ -326,6 +391,25 @@ bool omx_panel_view_set_choice(omx_panel_view_t *v, uint32_t i, uint32_t at, uin
   return true;
 }
 
+bool omx_panel_view_set_curve(omx_panel_view_t *v, uint32_t index, const double *x, const double *y, uint32_t n) {
+  if (!v || !x || !y || n < 2) return false;
+  /* the index counts the description's displays; one with no place on the panel (a meter, a gain-reduction bar) takes no curve */
+  if (index >= v->ndisplays || v->displays[index].section < 0) return false;
+  display *d = &v->displays[index];
+  for (uint32_t k = 0; k < n; k++) {
+    if (!isfinite(x[k]) || !isfinite(y[k]) || (k && !(x[k] > x[k - 1])) || (d->log_x && !(x[k] > 0))) return false;
+  }
+  double *nx = malloc(n * sizeof *nx), *ny = malloc(n * sizeof *ny);
+  if (!nx || !ny) {
+    free(nx), free(ny);
+    return false;
+  }
+  memcpy(nx, x, n * sizeof *nx), memcpy(ny, y, n * sizeof *ny);
+  free(d->x), free(d->y);
+  d->x = nx, d->y = ny, d->n = n;
+  return true;
+}
+
 /* Whether control `c` is shown at its governing control's current value. */
 static int shown(const control *c) { return !c->gov || (c->value >= 0 && c->value <= 63 && ((c->mask >> c->value) & 1u)); }
 
@@ -345,6 +429,7 @@ typedef struct {
   double w, h;
   box *sections;     /* one per section */
   double *cx, *cy;   /* each control's cell, relative to its section */
+  int *curves;       /* one per section: how many curve rows it holds, above its controls */
   char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
 } laid;
 
@@ -352,7 +437,10 @@ typedef struct {
 static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
-            calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1)};
+            calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
+            calloc(v->nsections ? v->nsections : 1, sizeof(int))};
+  for (size_t k = 0; k < v->ndisplays; k++)
+    if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
   /* a hidden control takes no cell; a section the values empty takes no space (one declared empty keeps its title) */
   size_t most = 0;
   for (size_t s = 0; s < v->nsections; s++) {
@@ -361,6 +449,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
       if (v->controls[i].section == (int)s) all++, k += shown(&v->controls[i]);
     L.drawn[s] = k > 0 || all == 0;
     if (k > most) most = k;
+    if (L.curves[s] && most < 3) most = 3; /* a curve row needs a width of its own */
   }
   if (most > (size_t)per_row) most = (size_t)per_row;
   double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
@@ -371,10 +460,10 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
     for (size_t i = 0; i < v->ncontrols; i++) {
       if (v->controls[i].section != (int)s || !shown(&v->controls[i])) continue;
       L.cx[i] = g->sectionPad + (double)(j % per_row) * g->cellW;
-      L.cy[i] = g->sectionTitleH + floor((double)j / per_row) * g->cellH;
+      L.cy[i] = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + floor((double)j / per_row) * g->cellH;
       j++;
     }
-    double rows = ceil((double)j / per_row), h = g->sectionTitleH + rows * g->cellH + g->sectionPad / 2;
+    double rows = ceil((double)j / per_row), h = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + rows * g->cellH + g->sectionPad / 2;
     L.sections[s] = (box){g->pad, y, section_w, h};
     last = y + h;
     y += h + g->sectionGap;
@@ -384,7 +473,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   return L;
 }
 
-static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn); }
+static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn), free(L->curves); }
 
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;
@@ -455,6 +544,40 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
   free(cps);
 }
 
+/* A curve: its frame, its axis, the points the host gave as a polyline, and the basis word in the caption place. The axes come from the
+ * points alone: an eq_response is a log frequency axis with the dB symmetric about 0, to the next 6 dB; a transfer_curve is linear dB,
+ * input and output on one span, with the unity line. No point is computed here. With no points the frame and the caption stand: a
+ * modelled curve is never read as the plugin's response, so the word is always there. */
+static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double x, double y, double w, double h, double s,
+                       const palette *col) {
+  d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+  double ix = x + 5 * s, iy = y + 5 * s, iw = w - 10 * s, ih = h - 10 * s - 12 * s;
+  if (c->n >= 2) {
+    double x0, x1, lo, hi;
+    if (c->symmetric) {
+      double m = 6;
+      for (size_t k = 0; k < c->n; k++) m = fmax(m, fabs(c->y[k]));
+      hi = ceil(m / 6) * 6, lo = -hi;
+      x0 = log10(c->x[0]), x1 = log10(c->x[c->n - 1]);
+      d->segment(d->ctx, ix, iy + ih / 2, ix + iw, iy + ih / 2, fmax(0.5, 0.5 * s), col->rim);
+    } else {
+      lo = fmin(c->x[0], c->y[0]), hi = fmax(c->x[c->n - 1], c->y[0]);
+      for (size_t k = 0; k < c->n; k++) lo = fmin(lo, c->y[k]), hi = fmax(hi, c->y[k]);
+      x0 = lo, x1 = hi;
+      d->segment(d->ctx, ix, iy + ih, ix + iw, iy, fmax(0.5, 0.5 * s), col->rim);
+    }
+    double px = 0, py = 0;
+    for (size_t k = 0; k < c->n; k++) {
+      double u = ((c->log_x ? log10(c->x[k]) : c->x[k]) - x0) / (x1 - x0);
+      double qx = ix + u * iw, qy = iy + ih - ((c->y[k] - lo) / (hi - lo)) * ih;
+      if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->accent);
+      px = qx, py = qy;
+    }
+  }
+  text(d, font, c->basis, 0, w - 12 * s, x + 6 * s, y + h - 5 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+}
+
 /* The layout a box of width x height device px at `scale` gets, and the scale it is drawn at: the controls a row that
  * let the panel be drawn largest in the box, the most of them at a tie. At its natural size (or larger) the panel is
  * drawn as laid out; smaller than that it reflows, then shrinks. */
@@ -508,12 +631,18 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
     d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
     text(d, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
          T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+    int row = 0;
+    for (size_t m = 0; m < v->ndisplays; m++) {
+      if (v->displays[m].section != (int)si) continue;
+      draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s,
+                 (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
+    }
     for (size_t i = 0; i < v->ncontrols; i++) {
       const control *k = &v->controls[i];
       if (k->section != (int)si || !shown(k)) continue;
       double x = sec.x + L.cx[i], y = sec.y + L.cy[i];
       int reading = 0;
-      switch (k->w) {
+      switch (k->bar ? W_FADER : k->w) {
       case W_SWITCH:
         draw_switch(d, (x + (g->cellW - g->switchW) / 2) * s, (y + g->switchTop) * s, g->switchW * s, g->switchH * s, k->fraction >= 0.5, col);
         break;
@@ -532,8 +661,8 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
         reading = 1;
       }
       double mid = (x + g->cellW / 2) * s, w = (g->cellW - 4) * s;
-      text(d, font, k->label, 0, w, mid, (y + T->nameBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
-      if (k->w == W_SELECTOR)
+      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + T->nameBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
+      if (!k->bar && k->w == W_SELECTOR)
         text(d, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
              T->small * s, col->ink, OMX_ALIGN_CENTRE);
       else if (!reading || k->text[0])

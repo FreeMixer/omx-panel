@@ -25,6 +25,10 @@ const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
  * the MOD GUI face the generator committed for it, where one exists. */
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
+  // a bar group (nine drawbars by their footage, a section of its own) beside two knobs: the rule finds the run, the renderer and the MOD GUI draw it as a row of faders
+  { name: 'organ', descriptor: 'test/fixtures/organ/organ.descriptor.json', stem: 'organ' },
+  // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
+  { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn' },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];

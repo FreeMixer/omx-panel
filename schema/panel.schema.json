@@ -63,6 +63,16 @@
       "title": "Visibility rule",
       "description": "Shown while `param` holds one of `values`, or, for a count, while it is `atLeast` n."
     },
+    "bars": {
+      "type": "boolean",
+      "title": "Bar group",
+      "description": "A declared section's `bars`: true, the section's controls in order are one bar group (a row of thin faders, one per control, the label of each under it); the bar rule's checks still apply (at least 4 controls, each a visible writable travel with the same ends, step, unit and scale, labels in one series) and a failing one refuses the layout by code. false, no bar group is inferred in the section. Left out, tools/bars.mjs infers one where the rule holds. The field is a view of the panel: it stays out of the canonical form and the fingerprint."
+    },
+    "basis": {
+      "enum": ["exact", "modelled"],
+      "title": "Display basis",
+      "description": "A declared section graph's `basis`: `exact` when the plugin's own audio runs the closed form the curve draws (only an authored descriptor can say so), else `modelled`, which every surface prints beside the curve."
+    },
     "perPage": {
       "type": "integer",
       "minimum": 1,
