@@ -182,6 +182,8 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   let description = {
     family: layout.family,
     fingerprint: panelFingerprint(layout),
+    // the Easy controls, a view of the panel (the descriptor's own list, else the roles', tools/easy.mjs)
+    easy: layout.easy,
     params,
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: layout.controls.map((c) => ({ symbol: c.symbol, section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),

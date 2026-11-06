@@ -206,3 +206,10 @@ test('a skin section says bars: false to remove them, true to make one; a failin
   assert.equal(forced.description.sections[0].bars, undefined);
   assert.deepEqual(forced.refusals.map((r) => [r.code, r.args.reason]), [[DESCRIBE_CODES.skinDropped, 'PANEL_BARS_FACTS_DIFFER']]);
 });
+
+// -- the pages amendment (spec 7.14): describe serves `easy`, cuts after the skin
+test('the description serves the Easy controls: the descriptor\'s own, in its order', () => {
+  const d = descriptor([travel('A'), travel('B'), travel('C')]);
+  assert.deepEqual(describe({ ...d, easy: ['c2', 'c0'] }).description.easy, ['c2', 'c0']);
+  assert.deepEqual(describe(descriptor(dyn(), lv2('lv2:CompressorPlugin'))).description.easy.length > 0, true);
+});
