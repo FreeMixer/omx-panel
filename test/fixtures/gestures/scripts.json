@@ -1,0 +1,1615 @@
+{
+  "description": "Scripted gestures for the parity fixtures (one-panel spec 7.5 and 7.8): each entry is a control built from a fixture descriptor, a script of events with timestamps, and the value the reference answers (worked by hand from the declared travel, not by the module). On every surface the value is within one declared step of this in the control's own unit; reset and tap are exact.",
+  "scripts": [
+    {
+      "name": "omx-eq band: drag the node",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 105,
+          "y": 83
+        },
+        {
+          "t": 40,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 120,
+          "y": 63
+        },
+        {
+          "t": 60,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 170,
+          "y": 43
+        },
+        {
+          "t": 80,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 170,
+          "y": 43
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 284.5648446793987,
+          "gain": 6.6,
+          "q": 1
+        },
+        "word": "drag",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-eq band: fine drag is 0.3 of the drag",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 120,
+          "y": 63,
+          "fine": true
+        },
+        {
+          "t": 40,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 170,
+          "y": 43,
+          "fine": true
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 170,
+          "y": 43
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 155.48240370204235,
+          "gain": 4.08,
+          "q": 1
+        },
+        "word": "fine",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-eq band: reset is the gain only, frequency and Q keep",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        },
+        {
+          "t": 150,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        },
+        {
+          "t": 210,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 500,
+          "gain": 3,
+          "q": 2
+        },
+        "word": "reset",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "omx-eq band: arrow keys step the gain",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2
+        }
+      },
+      "script": [
+        {
+          "t": 20,
+          "type": "key",
+          "key": "ArrowUp"
+        },
+        {
+          "t": 40,
+          "type": "key",
+          "key": "ArrowUp"
+        },
+        {
+          "t": 60,
+          "type": "key",
+          "key": "ArrowUp"
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 500,
+          "gain": 10.08,
+          "q": 2
+        },
+        "word": "step",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-eq band: encoder 3 is the Q",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2
+        }
+      },
+      "script": [
+        {
+          "t": 20,
+          "type": "detent",
+          "n": 1,
+          "encoder": 3
+        },
+        {
+          "t": 40,
+          "type": "detent",
+          "n": 1,
+          "encoder": 3
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2.165558749553145
+        },
+        "word": "second",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-eq band: two fingers together double the Q",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "a",
+          "ptype": "touch",
+          "x": 100,
+          "y": 80
+        },
+        {
+          "t": 100,
+          "type": "down",
+          "id": "b",
+          "ptype": "touch",
+          "x": 110,
+          "y": 90
+        },
+        {
+          "t": 150,
+          "type": "move",
+          "id": "b",
+          "ptype": "touch",
+          "x": 120,
+          "y": 100
+        },
+        {
+          "t": 200,
+          "type": "up",
+          "id": "b",
+          "ptype": "touch",
+          "x": 120,
+          "y": 100
+        },
+        {
+          "t": 220,
+          "type": "up",
+          "id": "a",
+          "ptype": "touch",
+          "x": 100,
+          "y": 80
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 500,
+          "gain": 9,
+          "q": 4
+        },
+        "word": "second",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-eq band: a tap selects and changes nothing",
+      "descriptor": "test/fixtures/eq-marks/eq.descriptor.json",
+      "control": {
+        "widget": "handle",
+        "target": {
+          "x": 84,
+          "y": 63,
+          "w": 40,
+          "h": 40
+        },
+        "plot": {
+          "w": 400,
+          "h": 200
+        },
+        "members": {
+          "freq": "f0",
+          "gain": "g0",
+          "q": "q0"
+        },
+        "start": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 104,
+          "y": 83
+        }
+      ],
+      "expect": {
+        "value": {
+          "freq": 500,
+          "gain": 9,
+          "q": 2
+        },
+        "word": "select",
+        "selected": "handle",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "omx-comp threshold: drag",
+      "descriptor": "test/fixtures/dyn-curve/dyn.descriptor.json",
+      "control": {
+        "widget": "fader",
+        "target": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 220
+        },
+        "travelPx": 200,
+        "member": "threshold",
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 100
+        },
+        {
+          "t": 40,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 140
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 140
+        }
+      ],
+      "expect": {
+        "value": -30,
+        "word": "drag",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-comp threshold: fine drag",
+      "descriptor": "test/fixtures/dyn-curve/dyn.descriptor.json",
+      "control": {
+        "widget": "fader",
+        "target": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 220
+        },
+        "travelPx": 200,
+        "member": "threshold",
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 100,
+          "fine": true
+        },
+        {
+          "t": 40,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 140,
+          "fine": true
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 140
+        }
+      ],
+      "expect": {
+        "value": -21.6,
+        "word": "fine",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-comp threshold: two wheel notches",
+      "descriptor": "test/fixtures/dyn-curve/dyn.descriptor.json",
+      "control": {
+        "widget": "fader",
+        "target": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 220
+        },
+        "travelPx": 200,
+        "member": "threshold",
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 20,
+          "type": "wheel",
+          "n": 1
+        },
+        {
+          "t": 40,
+          "type": "wheel",
+          "n": 1
+        }
+      ],
+      "expect": {
+        "value": -16.8,
+        "word": "step",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-comp threshold: a coarse arrow is five steps",
+      "descriptor": "test/fixtures/dyn-curve/dyn.descriptor.json",
+      "control": {
+        "widget": "fader",
+        "target": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 220
+        },
+        "travelPx": 200,
+        "member": "threshold",
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "key",
+          "key": "ArrowUp",
+          "shift": true
+        }
+      ],
+      "expect": {
+        "value": -15,
+        "word": "step",
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "omx-comp threshold: double-tap resets to the default",
+      "descriptor": "test/fixtures/dyn-curve/dyn.descriptor.json",
+      "control": {
+        "widget": "fader",
+        "target": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 220
+        },
+        "travelPx": 200,
+        "member": "threshold",
+        "start": {
+          "value": -40
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        },
+        {
+          "t": 200,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        },
+        {
+          "t": 260,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        }
+      ],
+      "expect": {
+        "value": -18,
+        "word": "reset",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "omx-comp threshold: a tap changes nothing",
+      "descriptor": "test/fixtures/dyn-curve/dyn.descriptor.json",
+      "control": {
+        "widget": "fader",
+        "target": {
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "h": 220
+        },
+        "travelPx": 200,
+        "member": "threshold",
+        "start": {
+          "value": -40
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 60
+        }
+      ],
+      "expect": {
+        "value": -40,
+        "word": "select",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "8-band graphic EQ: a sweep paints, one gesture",
+      "control": {
+        "widget": "bar",
+        "members": [
+          {
+            "symbol": "g0",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 0,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g1",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 32,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g2",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 64,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g3",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 96,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g4",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 128,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g5",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 160,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g6",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 192,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g7",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 224,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          }
+        ]
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 15,
+          "y": 120
+        },
+        {
+          "t": 10,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 20,
+          "y": 100
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 47,
+          "y": 60
+        },
+        {
+          "t": 30,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 180
+        },
+        {
+          "t": 40,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 111,
+          "y": 240
+        },
+        {
+          "t": 50,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 207,
+          "y": 0
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 207,
+          "y": 0
+        }
+      ],
+      "expect": {
+        "value": {
+          "g0": 2,
+          "g1": 6,
+          "g2": -6,
+          "g3": -12,
+          "g4": -4,
+          "g5": 4,
+          "g6": 12,
+          "g7": 0
+        },
+        "word": "paint",
+        "gestures": 1,
+        "undo": 1,
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "8-band graphic EQ: a tap on a bar selects it and changes nothing",
+      "control": {
+        "widget": "bar",
+        "members": [
+          {
+            "symbol": "g0",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 0,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g1",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 32,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g2",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 64,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g3",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 96,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g4",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 128,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g5",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 160,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g6",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 192,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g7",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 224,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          }
+        ],
+        "start": {
+          "g2": 5
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 100
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 100
+        }
+      ],
+      "expect": {
+        "value": {
+          "g0": 0,
+          "g1": 0,
+          "g2": 5,
+          "g3": 0,
+          "g4": 0,
+          "g5": 0,
+          "g6": 0,
+          "g7": 0
+        },
+        "word": "select",
+        "selected": "g2",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "8-band graphic EQ: a double-tap resets one bar, its own entry",
+      "control": {
+        "widget": "bar",
+        "members": [
+          {
+            "symbol": "g0",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 0,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g1",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 32,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g2",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 64,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g3",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 96,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g4",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 128,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g5",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 160,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g6",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 192,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g7",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 224,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          }
+        ],
+        "start": {
+          "g2": 5,
+          "g3": 7
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 100
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 100
+        },
+        {
+          "t": 150,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 100
+        },
+        {
+          "t": 210,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 79,
+          "y": 100
+        }
+      ],
+      "expect": {
+        "value": {
+          "g0": 0,
+          "g1": 0,
+          "g2": 0,
+          "g3": 7,
+          "g4": 0,
+          "g5": 0,
+          "g6": 0,
+          "g7": 0
+        },
+        "word": "reset",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "8-band graphic EQ: a mouse sweep drags the pressed bar and paints nothing",
+      "control": {
+        "widget": "bar",
+        "members": [
+          {
+            "symbol": "g0",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 0,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g1",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 32,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g2",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 64,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g3",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 96,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g4",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 128,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g5",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 160,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g6",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 192,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          },
+          {
+            "symbol": "g7",
+            "min": -12,
+            "max": 12,
+            "def": 0,
+            "scale": "linear",
+            "target": {
+              "x": 224,
+              "y": 0,
+              "w": 30,
+              "h": 240
+            }
+          }
+        ]
+      },
+      "mouse": true,
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "mouse",
+          "x": 15,
+          "y": 120
+        },
+        {
+          "t": 10,
+          "type": "move",
+          "id": "p",
+          "ptype": "mouse",
+          "x": 20,
+          "y": 100
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "mouse",
+          "x": 60,
+          "y": 60
+        },
+        {
+          "t": 30,
+          "type": "up",
+          "id": "p",
+          "ptype": "mouse",
+          "x": 60,
+          "y": 60
+        }
+      ],
+      "expect": {
+        "value": {
+          "g0": 4,
+          "g1": 0,
+          "g2": 0,
+          "g3": 0,
+          "g4": 0,
+          "g5": 0,
+          "g6": 0,
+          "g7": 0
+        },
+        "word": "drag",
+        "tolerance": "step",
+        "changed": [
+          "g0"
+        ]
+      }
+    },
+    {
+      "name": "setBfree upper drawbars: a sweep paints whole numbers",
+      "descriptor": "test/fixtures/organ/organ.descriptor.json",
+      "control": {
+        "widget": "bar",
+        "member": null,
+        "symbols": [
+          "db0",
+          "db1",
+          "db2",
+          "db3",
+          "db4",
+          "db5",
+          "db6",
+          "db7",
+          "db8"
+        ],
+        "geometry": {
+          "w": 20,
+          "pitch": 24,
+          "h": 160
+        },
+        "start": {}
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 10,
+          "y": 80
+        },
+        {
+          "t": 10,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 12,
+          "y": 70
+        },
+        {
+          "t": 20,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 36,
+          "y": 0
+        },
+        {
+          "t": 30,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 60,
+          "y": 160
+        },
+        {
+          "t": 40,
+          "type": "move",
+          "id": "p",
+          "ptype": "touch",
+          "x": 84,
+          "y": 120
+        },
+        {
+          "t": 50,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 84,
+          "y": 120
+        }
+      ],
+      "expect": {
+        "value": {
+          "db0": 5,
+          "db1": 8,
+          "db2": 0,
+          "db3": 2,
+          "db4": 0,
+          "db5": 0,
+          "db6": 0,
+          "db7": 0,
+          "db8": 0
+        },
+        "word": "paint",
+        "gestures": 1,
+        "tolerance": "step"
+      }
+    },
+    {
+      "name": "setBfree drawbar: a tap selects and changes nothing",
+      "descriptor": "test/fixtures/organ/organ.descriptor.json",
+      "control": {
+        "widget": "bar",
+        "member": null,
+        "symbols": [
+          "db0",
+          "db1",
+          "db2",
+          "db3",
+          "db4",
+          "db5",
+          "db6",
+          "db7",
+          "db8"
+        ],
+        "geometry": {
+          "w": 20,
+          "pitch": 24,
+          "h": 160
+        },
+        "start": {
+          "db2": 3
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 58,
+          "y": 60
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 58,
+          "y": 60
+        }
+      ],
+      "expect": {
+        "value": {
+          "db0": 8,
+          "db1": 8,
+          "db2": 3,
+          "db3": 0,
+          "db4": 0,
+          "db5": 0,
+          "db6": 0,
+          "db7": 0,
+          "db8": 0
+        },
+        "word": "select",
+        "selected": "db2",
+        "tolerance": "exact"
+      }
+    },
+    {
+      "name": "setBfree drawbar: a double-tap resets to the default",
+      "descriptor": "test/fixtures/organ/organ.descriptor.json",
+      "control": {
+        "widget": "bar",
+        "member": null,
+        "symbols": [
+          "db0",
+          "db1",
+          "db2",
+          "db3",
+          "db4",
+          "db5",
+          "db6",
+          "db7",
+          "db8"
+        ],
+        "geometry": {
+          "w": 20,
+          "pitch": 24,
+          "h": 160
+        },
+        "start": {
+          "db2": 3
+        }
+      },
+      "script": [
+        {
+          "t": 0,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 58,
+          "y": 60
+        },
+        {
+          "t": 60,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 58,
+          "y": 60
+        },
+        {
+          "t": 150,
+          "type": "down",
+          "id": "p",
+          "ptype": "touch",
+          "x": 58,
+          "y": 60
+        },
+        {
+          "t": 210,
+          "type": "up",
+          "id": "p",
+          "ptype": "touch",
+          "x": 58,
+          "y": 60
+        }
+      ],
+      "expect": {
+        "value": {
+          "db0": 8,
+          "db1": 8,
+          "db2": 8,
+          "db3": 0,
+          "db4": 0,
+          "db5": 0,
+          "db6": 0,
+          "db7": 0,
+          "db8": 0
+        },
+        "word": "reset",
+        "tolerance": "exact"
+      }
+    }
+  ]
+}

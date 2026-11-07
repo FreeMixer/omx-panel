@@ -42,6 +42,8 @@ const TOOLS = dirname(fileURLToPath(import.meta.url));
 /** The shared widgets, schema/panel.schema.json's `$defs.widget`: the one list a plugin's schema, this generator
  * and the console name a control's widget from. */
 export const WIDGETS = Object.freeze(JSON.parse(readFileSync(join(TOOLS, '..', 'schema', 'panel.schema.json'), 'utf8')).$defs.widget.enum);
+/** The widgets the MOD GUI draws: the controls a plugin's own parameters take; the others are read-only or a graph. */
+export const DRAWN_WIDGETS = Object.freeze(['knob', 'fader', 'switch', 'selector']);
 export const MODGUI_TTL = 'modgui.ttl';
 export const MODGUI_DIR = 'modgui';
 /** An integer travel with more steps than this is a continuous knob; fewer is a selector. */
@@ -122,6 +124,7 @@ export function widgetFor(panel, symbol, p) {
   const named = panel.widgets?.[symbol];
   if (named === undefined) return widgetOf(p);
   if (!WIDGETS.includes(named)) throw new Error(`modgui-gen: '${symbol}' names widget '${named}', none of ${WIDGETS.join(', ')}`);
+  if (!DRAWN_WIDGETS.includes(named)) throw new Error(`modgui-gen: '${symbol}' names widget '${named}', which the MOD GUI does not draw (it draws ${DRAWN_WIDGETS.join(', ')})`);
   if (!widgetFits(named, p)) throw new Error(`modgui-gen: '${symbol}' cannot be drawn as a ${named}`);
   return named;
 }
