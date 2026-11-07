@@ -424,3 +424,13 @@ test('the MOD GUI draws the four widgets a plugin\'s parameters take, and refuse
   assert.equal(widgetFor({ widgets: { a: 'selector' } }, 'a', p), 'selector');
   assert.throws(() => widgetFor({ widgets: { a: 'meter' } }, 'a', p), /does not draw/);
 });
+
+test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', async () => {
+  const twin = await import('@openmixer/omx-dsp').then((x) => x, () => null);
+  if (!twin) return; // the curve needs the twin; test/modgui-curve.test.mjs skips the same way
+  const { generateModgui } = await import('../dist/tools/modgui-gen.mjs');
+  const read = (f) => JSON.parse(readFileSync(join(ROOT, 'test/fixtures', f), 'utf8'));
+  const page = new Map(generateModgui(read('eq-marks/eq.descriptor.json'), { panel: read('eq-marks/eq.panel.json'), stem: 'x', source: 'test' })).get('modgui/icon-x.html').toString();
+  assert.match(page, /<polyline class="omx-curve-line" fill="none" points="[^"]+"/, 'the curve polyline is drawn');
+  assert.equal(page.match(/<circle /g).length, 2, 'the two marks are drawn');
+});
