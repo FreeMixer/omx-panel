@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "title": "One gesture vocabulary",
+  "description": "Every surface moves a panel's controls with these gestures, declared once; each surface maps its own inputs onto them. tools/gestures.mjs is the reference every surface is checked against; docs/panel-gestures.md explains the table. The timings, the thresholds and the table live here and nowhere else in the repo.",
+  "timings": {
+    "longPressMs": { "default": 500, "description": "A press held this long without a drag is a long-press: the word `more`." },
+    "doubleTapMs": { "default": 300, "description": "A second tap that begins within this time of the first tap's release is a double-tap." },
+    "palmGuardMs": { "default": 300, "description": "Two pointers of one type that both begin inside a control's target within this time of each other are a pinch; a later one is not." },
+    "safetyHoldMs": { "default": 800, "floor": 800, "description": "How long a control marked `hold` must be held before it acts. A surface may lengthen it and never shorten it below the floor." },
+    "claimMs": { "default": 300, "description": "After a step, the control still belongs to the stepper and shows its value text for this long." }
+  },
+  "thresholds": {
+    "dragStartPx": 10,
+    "fineRatio": 0.3,
+    "stepFraction": 0.01,
+    "coarseSteps": 5,
+    "defaultTravelPx": 200
+  },
+  "words": {
+    "drag": "Move the value with the pointer, relative to where the drag began.",
+    "fine": "A drag at 0.3 of the drag's travel.",
+    "step": "One declared step, else 1% of the normalised travel; coarse is 5 steps. A wheel notch, an encoder detent and an arrow key are one step.",
+    "second": "A handle's Q, by pinch or encoder 3.",
+    "reset": "The declared default, and nothing for a control that declares none. A band's reset is its gain: frequency and Q keep.",
+    "more": "The surface's precise editor or menu. Never a value change.",
+    "select": "Select a bar or a handle. Never a value change.",
+    "toggle": "Flip a switch, on release inside its target.",
+    "paint": "A drag that leaves the pressed bar's column: every bar the pointer enters takes its height, absolute."
+  },
+  "inputs": ["tap", "doubleTap", "longPress", "drag", "dragFine", "wheel", "wheelCoarse", "detent", "detentCoarse", "encoder3", "arrow", "arrowCoarse", "arrowSecond", "backspace", "pinch", "sweep"],
+  "table": {
+    "knob": { "drag": "drag", "dragFine": "fine", "wheel": "step", "wheelCoarse": "step", "detent": "step", "detentCoarse": "step", "arrow": "step", "arrowCoarse": "step", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" },
+    "fader": { "drag": "drag", "dragFine": "fine", "wheel": "step", "wheelCoarse": "step", "detent": "step", "detentCoarse": "step", "arrow": "step", "arrowCoarse": "step", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" },
+    "switch": { "tap": "toggle", "backspace": "reset", "longPress": "more" },
+    "selector": { "drag": "drag", "wheel": "step", "wheelCoarse": "step", "detent": "step", "detentCoarse": "step", "arrow": "step", "arrowCoarse": "step", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" },
+    "xy": { "drag": "drag", "dragFine": "fine", "arrow": "step", "arrowCoarse": "step", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" },
+    "meter": {},
+    "display": {},
+    "curve": {},
+    "bar": { "drag": "drag", "dragFine": "fine", "sweep": "paint", "wheel": "step", "wheelCoarse": "step", "detent": "step", "detentCoarse": "step", "arrow": "step", "arrowCoarse": "step", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" },
+    "handle": { "drag": "drag", "dragFine": "fine", "arrow": "step", "arrowCoarse": "step", "wheel": "second", "arrowSecond": "second", "encoder3": "second", "pinch": "second", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" }
+  },
+  "paint": { "touch": "required", "mouse": "optional" },
+  "exceptions": []
+}

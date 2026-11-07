@@ -9,10 +9,14 @@
         "knob",
         "fader",
         "switch",
-        "selector"
+        "selector",
+        "meter",
+        "display",
+        "curve",
+        "xy"
       ],
       "title": "Widget",
-      "description": "The shared widgets a control is drawn with, by the names the console reads (its `auto` is a control left out of `widgets`): a knob or a fader for a travel, a switch for a toggle, a selector for an integer travel or labelled values. The schema, tools/modgui-gen.mjs and the console read this one list; a new one is added here once, and in each renderer, for every plugin."
+      "description": "The standard widgets of docs/panel-layout.md, by the names the console reads (its `auto` is a control left out of `widgets`): a knob or a fader for a travel, a switch for a toggle, a selector for an integer travel or labelled values, a meter or a display for a read-only control, a curve for a section's graph, an xy for a pair. Each has its gestures in schema/gestures.json; the MOD GUI draws the first four. The schema, tools/modgui-gen.mjs and the console read this one list; a new one is added here once, and in each renderer, for every plugin."
     },
     "indexedRole": {
       "enum": [
