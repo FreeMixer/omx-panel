@@ -187,13 +187,25 @@ audio inputs and outputs with their channels, whether one is a side-chain, and t
 
 ## Pages
 
-`omx-panel layout --pages` cuts each section's controls, in the section's order, into pages of eight (the
-CLAP remote-controls surface); a section of several pages numbers them (`Filter 1`, `Filter 2`). A
-surface with another number of encoders asks for it: `--pages --per-page N` (`perPage` in
-`schema/panel.schema.json`, default 8). Then a group that fits a page is not split across two (the page
-ends early), a group wider than N is cut, and a section of several pages names each page by the controls
-it holds (`Band: Freq - Q`). Every page carries N slots, a short page's last ones `null`. Left out, the
-output is the plain cut of eight, unchanged.
+Every surface pages a plugin's controls from the one description, cut at its own width by one function: omx-panel's
+`pagesOf(description, { perPage, remote })`. No surface builds, stores or reorders pages, and the CLAP remote-controls
+emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch and the Mackie 8, CLAP remote-controls 8;
+`perPage` left out is eight) and a surface declares nothing else. The sequence:
+
+1. **The Easy controls first**, on pages of their own named `Easy`, `Easy 2` (the description's `easy`; a skin's `easy` wins,
+   see [skin-package.md](skin-package.md)). A symbol of no control is no slot.
+2. **Then the plugin's declared remote-controls pages, as given**, when the host that has the instance reports them (`remote`:
+   `[{ name, ids }]`, a slot a control's id or `null`). They replace the derived pages and are not edited, so an Easy control may
+   also sit on its remote page; a slot of no control is blank. The served description carries none.
+3. **Else the sections in their effective order** (a skin's `sections` win), each cut at the width with **a group kept whole at
+   every width**: a page ends early rather than split a group, and a group longer than a page is the only one split, on pages of
+   its own, never mixed with its neighbour. A control with no group is its own. A derived page holds a control once, so the Easy
+   controls are not repeated. A section of several pages names each page by the controls it holds (`Band: Freq - Q`).
+
+Every page carries `perPage` slots, a short page's last ones `null`. Below two encoders a bar group (the Bars section)
+is plain controls, one a page. `omx-panel layout --pages [--per-page N]` cuts the layout; `omx-panel describe --pages
+[--per-page N] [--skin file] [--remote file]` serves the same cut over the whole derivation, the skin applied first, as JSON
+to a surface that is not node. The page sequence of the parity fixtures is held at 4 and 8 (`test/pages-fixtures.test.mjs`).
 
 ## Visibility
 
@@ -206,7 +218,7 @@ parameter of the plugin (a choice, a toggle, or a travel with step 1), every val
 governing parameter's id) and `mask` (bit v set: shown while the value is v; `atLeast: n` sets bits n to 63), both in the
 fingerprint, and as `visibleWhen: { symbol, default }`, the governing control and its come-up value, for a renderer.
 
-The pages follow: a control the governing values hide takes no slot, and a section left with no control has no page.
+The pages follow: a control the governing values hide keeps its slot, blank, so the slots after it do not move; a section whose controls are all hidden keeps its page, every slot blank.
 `omx-panel layout --pages --value eqBands=9` cuts at those values; a governing control left out reads its come-up value.
 A host cuts again when a governing value changes (a CLAP face announces its remote-controls changed). With a strip's
 band controls in band order, five a band, a band count of 4 gives the same page boundaries as before, with no hidden band
@@ -241,10 +253,10 @@ the controls the come-up values show.
 A face can set any control that is not a reading, a trigger or a bypass. The list is a view of the panel, so it stays out of
 the canonical serialisation and the fingerprint.
 
-`omx-panel layout --pages --easy-first` puts the Easy controls first, on pages named `Easy`, `Easy 2`, with no control on two
-pages; a scanned descriptor takes the `easy` of the descriptor the plugin's package installed under the same plugin id, as a scan
-has nothing to read one from. Without the flag the pages are the page rule's. `omx-panel modgui --easy-first` draws the Easy
-controls as a MOD GUI's first section and lists them as `modgui:port`.
+The pages put the Easy controls first (see Pages), on pages named `Easy`, `Easy 2`, with no control on two derived pages. With
+`omx-panel layout --pages --easy-first` a scanned descriptor takes the `easy` of the descriptor the plugin's package installed
+under the same plugin id, as a scan has nothing to read one from. `omx-panel modgui --easy-first` draws the Easy controls as a
+MOD GUI's first section and lists them as `modgui:port`.
 
 ## Verbatim
 
