@@ -129,6 +129,8 @@ export interface SkinDescription {
   readonly controls: readonly PanelControl[];
   readonly roles: readonly PanelRole[];
   readonly displays: readonly PanelDisplay[];
+  /** The Easy controls by symbol, in order: the first pages of every surface (one-panel spec 7.14). */
+  readonly easy?: readonly string[];
 }
 
 /** Why D6 dropped a role entry (§3d): the rest of the description stands. */
@@ -326,6 +328,8 @@ export interface SkinOverride {
   readonly family?: PanelFamily;
   readonly roles?: Readonly<Record<string, string>>;
   readonly sections?: readonly SkinOverrideSection[];
+  /** The user's Easy list, control symbols in order; wins over the description's. Pages are never stored (7.14). */
+  readonly easy?: readonly string[];
   readonly labels?: Readonly<Record<string, { readonly labelKey?: string; readonly label?: string }>>;
   readonly visibleWhen?: Readonly<Record<string, { readonly param: string; readonly values: readonly number[] }>>;
   readonly displays?: readonly PanelDisplay[];
@@ -368,6 +372,8 @@ function schemaFault(o: Record<string, unknown>, dirId: string): string | null {
   if (!fam(o['houseView'])) return 'houseView';
   const roles = o['roles'];
   if (roles !== undefined && (!isObj(roles) || !Object.values(roles).every(isStr))) return 'roles';
+  const easy = o['easy'];
+  if (easy !== undefined && (!Array.isArray(easy) || !easy.every(isStr))) return 'easy';
   const sections = o['sections'];
   if (sections !== undefined) {
     if (!Array.isArray(sections)) return 'sections';
@@ -431,7 +437,7 @@ export function parseSkinOverride(text: string, dirId: string): { readonly ok: t
 
 /** An override entry the application dropped, and why; the rest of the file stands (§6.3). */
 export interface SkinDroppedEntry {
-  readonly field: 'roles' | 'sections' | 'labels' | 'visibleWhen' | 'displays' | 'bars';
+  readonly field: 'roles' | 'sections' | 'easy' | 'labels' | 'visibleWhen' | 'displays' | 'bars';
   readonly entry: string;
   readonly reason: RoleDropReason | 'unknown-symbol' | 'unknown-section' | `PANEL_BARS_${string}`;
 }
@@ -528,7 +534,16 @@ export function applySkinOverride<D extends SkinDescription>(
       return ok;
     });
   }
-  return { description: { ...description, family, sections, controls, roles, displays } as D, dropped };
+  // the user's Easy list wins over the description's; a symbol of no control is dropped by name, a repeat is kept once
+  let easy: readonly string[] | undefined = description.easy;
+  if (override.easy) {
+    easy = override.easy.filter((symbol, at) => {
+      const ok = controls.some((c) => c.symbol === symbol) && override.easy!.indexOf(symbol) === at;
+      if (!ok) dropped.push({ field: 'easy', entry: symbol, reason: 'unknown-symbol' });
+      return ok;
+    });
+  }
+  return { description: { ...description, family, sections, controls, roles, displays, ...(easy ? { easy } : {}) } as D, dropped };
 }
 
 /** The words the view lint refuses (§7.3): an accident catcher, NOT a security control. */

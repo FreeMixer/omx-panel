@@ -19,6 +19,9 @@ const example = () => JSON.parse(readFileSync(join(ROOT, 'examples/skins/org.exa
 const CASES = [
   ['the example', () => {}],
   ['no licence', (d) => { delete d.licence; }],
+  ['an Easy list', (d) => { d.easy = ['time', 'mix']; }],
+  ['an Easy list that is not a list', (d) => { d.easy = 'time'; }],
+  ['an Easy list with a number in it', (d) => { d.easy = ['time', 3]; }],
   ['a blank licence', (d) => { d.licence = ' '; }],
   ['an SPDX expression as the licence', (d) => { d.licence = 'GPL-3.0-or-later AND CC-BY-4.0'; }],
   ['no schema version', (d) => { delete d.schema; }],

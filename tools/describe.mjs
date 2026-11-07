@@ -21,7 +21,8 @@
  *   `basis`: `exact` only when an authored descriptor declares it, else `modelled`;
  * - the ROLES carry `unit` (the contract token), `inferred`, a band's `shape` and a band-type role's `shapes`;
  * - the SECTIONS carry `bars` (tools/bars.mjs), a view of the panel that stays out of the fingerprint;
- * - the skin applies last, by `applySkinOverride`.
+ * - the skin applies last of the derivation, by `applySkinOverride` (its sections, its `easy`), and the PAGES are cut after it by
+ *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
 import { inferBands } from './meaning-infer.mjs';
@@ -131,7 +132,7 @@ const refuse = (code, args = {}) => ({ code, args });
  * The description of `descriptor` and the refusals, as the header says. `description` is null when no panel can be made
  * (no control, an invalid layout); a declared family the controls do not back is `none` with its refusal.
  */
-export function describe(descriptor, { overrides = [], applyOverride, skin, panel, ns, where } = {}) {
+export function describe(descriptor, { overrides = [], applyOverride, skin, panel, ns, where, perPage, remote } = {}) {
   const refusals = [];
   const plugin = descriptor.plugin?.id;
   let effective = descriptor, userFamily;
@@ -199,12 +200,12 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     for (const d of applied.dropped) refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin, field: d.field, entry: d.entry, reason: d.reason }));
   }
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
-  description = { ...description, pages: pagesOfDescription(description, effective, layout) };
+  description = { ...description, pages: pagesOfDescription(description, effective, layout, { perPage, remote }) };
   return { description, refusals };
 }
 
 /** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */
-function pagesOfDescription(description, effective, layout) {
+function pagesOfDescription(description, effective, layout, { perPage, remote }) {
   const idOf = new Map(effective.controls.map((c) => [keyOf(c), c.id]));
   const groupOf = new Map(layout.controls.map((c) => [c.symbol, c[GROUP]]));
   const default_ = (symbol) => description.params.find((p) => p.symbol === symbol)?.default ?? 0;
@@ -218,6 +219,6 @@ function pagesOfDescription(description, effective, layout) {
       ...(gov ? { visible: idOf.get(gov.param), mask: gov.values.reduce((m, v) => m | (1n << BigInt(v)), 0n), visibleWhen: { symbol: gov.param, default: default_(gov.param) } } : { visible: null, mask: 0n }),
     };
   });
-  return pagesOf({ sections: description.sections, controls });
+  return pagesOf({ sections: description.sections, controls, easy: description.easy }, { perPage, remote });
 }
 
