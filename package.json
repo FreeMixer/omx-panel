@@ -50,6 +50,10 @@
       "types": "./dist/tools/easy.d.mts",
       "default": "./dist/tools/easy.mjs"
     },
+    "./gestures": {
+      "types": "./dist/tools/gestures.d.mts",
+      "default": "./dist/tools/gestures.mjs"
+    },
     "./compare": {
       "types": "./dist/tools/compare.d.mts",
       "default": "./dist/tools/compare.mjs"

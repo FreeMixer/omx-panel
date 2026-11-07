@@ -27,7 +27,7 @@
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
   ([skin-package.md](skin-package.md)).
 - The importer: `omx-panel import` turns a MOD GUI bundle into a skin package.
-- The widgets a panel names (`schema/panel.schema.json`): knob, fader, switch, selector.
+- The widgets a panel names (`schema/panel.schema.json`): knob, fader, switch, selector, meter, display, curve, xy; their gestures are in [panel-gestures.md](panel-gestures.md).
 - The renderer: a C library that draws a panel description in the omx look into a plain pixel buffer, the MOD GUI's
   face to the bit, at any size and scale, for a plugin window, a host's inline view or the console
   ([renderer.md](renderer.md)).
