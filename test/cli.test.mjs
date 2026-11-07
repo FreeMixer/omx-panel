@@ -47,7 +47,8 @@ test('layout: a descriptor under its declared panel, as JSON, canonical text and
   const canonical = run(...args, '--canonical');
   assert.match(canonical.stdout, /^org\.openmixer\.panel-description\/1\nfamily\tdelay\nsection\t0\tdelay\tfx\.delay\.section\.delay\n/);
   const pages = JSON.parse(run(...args, '--pages').stdout);
-  assert.deepEqual(pages.map((p) => [p.pageName, p.ids.filter((i) => i !== null).length]), [['Delay', 5]]);
+  assert.deepEqual(pages.map((p) => [p.pageName, p.ids.filter((i) => i !== null).length]), [['Easy', 4], ['Delay', 1]]);
+  assert.deepEqual(pages.flatMap((p) => p.ids).filter((i) => i !== null).length, 5, 'every control once');
 });
 
 test('modgui: --check over omx-plugins\' committed omx-delay MOD GUI is clean', () => {

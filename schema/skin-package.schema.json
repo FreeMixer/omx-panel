@@ -89,6 +89,11 @@
         }
       }
     },
+    "easy": {
+      "description": "The user's Easy controls by symbol, in order; they are the first pages of every surface and win over the description's list. A symbol of no control is dropped by name. Pages are never stored: no field carries them.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
     "labels": {
       "description": "Control symbol to the label the skin shows.",
       "type": "object",

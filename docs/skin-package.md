@@ -34,6 +34,7 @@ verdict on every broken copy of the example. A file holds:
 | `family` | a panel family; replaces the description's |
 | `roles` | role (`time`, `band_freq[2]`) to control symbol; replaces the description's roles, each checked against the family |
 | `sections` | `[{ key, labelKey?, label?, controls }]`; replaces the sections and their order; a control named nowhere goes to a last section, never hidden |
+| `easy` | control symbols in order; the user's Easy list, the first pages of every surface, winning over the description's; a symbol of no control is dropped by name. Pages are never stored: no field carries them |
 | `labels` | control symbol to `{ labelKey?, label? }` |
 | `visibleWhen` | control symbol to `{ param, values }`, the integer values 0 to 63 that show it |
 | `displays` | `[{ kind, section, source, ... }]`, the displays the panel draws |

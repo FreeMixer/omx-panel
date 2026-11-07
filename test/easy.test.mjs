@@ -109,24 +109,22 @@ test('a declared panel\'s easy wins over the descriptor\'s', () => {
   assert.deepEqual(panelLayout({ ...delay, easy: ['time'] }, { panel }).easy, ['tone']);
 });
 
-test('easyFirst: the Easy page comes first, no control twice, and the plain pages stay as they were', () => {
+test('the Easy page comes first, no control twice, and the declared list moves nothing else', () => {
   const l = panelLayout({ ...delay, easy: ['time', 'tone'] });
-  const first = pagesOf(l, { easyFirst: true });
+  const first = pagesOf(l);
   assert.equal(first[0].pageName, 'Easy');
   assert.deepEqual(first[0].ids.filter((v) => v !== null), [2, 1]);
   const all = first.flatMap((p) => p.ids).filter((v) => v !== null);
   assert.equal(new Set(all).size, all.length, 'no control on two pages');
   assert.deepEqual([...all].sort((a, b) => a - b), [0, 1, 2, 3, 4]);
-  assert.ok(pagesOf(l).every((p) => p.pageName !== 'Easy'), 'without the flag the page rule is untouched');
-  assert.deepEqual(pagesOf(l), pagesOf(panelLayout(delay)), 'and the declared list does not change them');
 });
 
-test('easyFirst at four controls a page: more than four Easy controls run on to "Easy 2"', () => {
+test('at two controls a page: more than two Easy controls run on to "Easy 2"', () => {
   const l = panelLayout({ ...delay, easy: ['time', 'tone', 'feedback', 'pingpong'] });
-  assert.deepEqual(pagesOf(l, { easyFirst: true, perPage: 2 }).slice(0, 2).map((p) => [p.pageName, p.ids]), [['Easy', [2, 1]], ['Easy 2', [3, 0]]]);
+  assert.deepEqual(pagesOf(l, { perPage: 2 }).slice(0, 2).map((p) => [p.pageName, p.ids]), [['Easy', [2, 1]], ['Easy 2', [3, 0]]]);
 });
 
-test('the command prints the pages with --easy-first', () => {
+test('the command prints the pages, Easy first', () => {
   const dir = mkdtempSync(join(tmpdir(), 'easy-'));
   const file = join(dir, 'd.json');
   writeFileSync(file, JSON.stringify({ ...delay, easy: ['tone'] }));

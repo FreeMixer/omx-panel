@@ -8,6 +8,9 @@
  *   layout --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]
  *                                                        the panel laid out from a descriptor, as JSON (or its canonical
  *                                                        serialisation, or its pages of eight, the Easy ones first)
+ *   describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <label-key namespace>] [--remote <file>] [--pages --per-page N]
+ *                                                        the one derivation (tools/describe.mjs): { description, refusals } as JSON, or with
+ *                                                        --pages just the pages, the Easy ones first, cut at N by the one cut
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *                                                        in, { doc, ring, moves, unknown } out
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
@@ -38,6 +41,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
+  + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N]]\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
@@ -129,6 +133,46 @@ async function layout(argv) {
   else process.stdout.write(`${JSON.stringify(x, (_k, v) => (typeof v === 'bigint' ? v.toString(16) : v), 2)}\n`);
 }
 
+/**
+ * The description of a descriptor, for a surface that is not node (spec 7.14): the one derivation, the skin applied, and with
+ * `--pages` the pages cut by the one cut at `--per-page N` (eight when left out), `--remote <file>` the host's declared
+ * remote-controls pages (`[{ name, ids }]`).
+ */
+async function describeCommand(argv) {
+  const opt = (flag) => {
+    const k = argv.indexOf(flag);
+    return k >= 0 ? argv[k + 1] : undefined;
+  };
+  const file = opt('--descriptor');
+  if (!file) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { describe } = await import(join(TOOLS, 'describe.mjs'));
+  const raw = opt('--per-page');
+  const perPage = raw === undefined ? undefined : /^[0-9]+$/.test(raw) ? Number(raw) : NaN;
+  if (perPage !== undefined && !(Number.isInteger(perPage) && perPage >= 1)) {
+    process.stderr.write(`omx-panel: --per-page must be a whole number of at least 1, not ${raw}\n`);
+    process.exit(2);
+  }
+  try {
+    const json = (f) => JSON.parse(readFileSync(f, 'utf8'));
+    const out = describe(json(file), {
+      panel: opt('--panel') ? json(opt('--panel')) : undefined,
+      skin: opt('--skin') ? json(opt('--skin')) : undefined,
+      remote: opt('--remote') ? json(opt('--remote')) : undefined,
+      ns: opt('--ns'), where: file, perPage,
+    });
+    if (argv.includes('--pages')) {
+      if (!out.description) throw new Error(`no panel: ${out.refusals.map((r) => r.code).join(', ')}`);
+      process.stdout.write(`${JSON.stringify(out.description.pages, null, 2)}\n`);
+    } else process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+  } catch (err) {
+    process.stderr.write(`omx-panel: ${err.code ? `${err.code}: ` : ''}${err.message}\n`);
+    process.exit(1);
+  }
+}
+
 /** One step of Compare for a host that is not JavaScript (docs/compare.md): JSON in, JSON out, no state between runs. */
 async function compare(argv) {
   const m = await import(join(TOOLS, 'compare.mjs'));
@@ -192,6 +236,7 @@ async function descriptors(argv) {
 
 if (command === 'validate') validate(args);
 else if (command === 'layout') await layout(args);
+else if (command === 'describe') await describeCommand(args);
 else if (command === 'compare') await compare(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');

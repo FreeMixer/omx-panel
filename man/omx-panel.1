@@ -12,6 +12,20 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .IR "skin.json | skin-package-directory" ...
 .br
 .B omx-panel
+.B describe
+.B \-\-descriptor
+.I file
+.RB [ \-\-panel
+.IR file ]
+.RB [ \-\-skin
+.IR file ]
+.RB [ \-\-remote
+.IR file ]
+.RB [ \-\-pages
+.RB [ \-\-per\-page
+.IR N ]]
+.br
+.B omx-panel
 .B vocabulary
 .RI [ package / name ]...
 .br
@@ -19,6 +33,15 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .B descriptors
 .B \-\-installed
 .SH DESCRIPTION
+.B omx-panel describe
+prints the panel description of a descriptor and its refusals as JSON; with
+.B \-\-pages
+only the pages, the Easy controls first, cut at
+.I N
+slots (eight when left out) by the one cut every surface uses, the skin applied first and a
+.B \-\-remote
+file's declared pages, as given, replacing the derived ones.
+.PP
 .B omx-panel validate
 reads each skin given, a
 .I skin.json

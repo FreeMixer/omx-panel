@@ -216,9 +216,23 @@ test('the description serves the Easy controls: the descriptor\'s own, in its or
 test('the pages are cut after the skin applies: a skin that reorders the sections moves the first page', () => {
   const d = descriptor(Array.from({ length: 5 }, (_, i) => travel(`N${i}`)));
   const skin = { schema: 1, plugin: 'urn:test:plugin', licence: 'CC0-1.0', sections: [{ key: 'controls', controls: ['c3', 'c1', 'c0', 'c2', 'c4'] }] };
-  assert.deepEqual(describe(d).description.pages[0].ids.slice(0, 5), ['c0', 'c1', 'c2', 'c3', 'c4']);
-  assert.deepEqual(describe(d, { skin }).description.pages[0].ids.slice(0, 5), ['c3', 'c1', 'c0', 'c2', 'c4']);
+  // a skin with an empty Easy list: the first page is the first section's
+  const bare = { ...skin, easy: [] };
+  const plain = describe(d, { skin: { schema: 1, plugin: 'urn:test:plugin', licence: 'CC0-1.0', easy: [] } }).description.pages;
+  assert.deepEqual(plain[0].ids.slice(0, 5), ['c0', 'c1', 'c2', 'c3', 'c4']);
+  assert.deepEqual(describe(d, { skin: bare }).description.pages[0].ids.slice(0, 5), ['c3', 'c1', 'c0', 'c2', 'c4']);
   // a skin's two sections are two pages, in its order
   const two = { ...skin, sections: [{ key: 'b', label: 'B', controls: ['c4', 'c3'] }, { key: 'a', label: 'A', controls: ['c0', 'c1', 'c2'] }] };
-  assert.deepEqual(describe(d, { skin: two }).description.pages.map((p) => [p.pageName, p.ids.slice(0, 3)]), [['B', ['c4', 'c3', null]], ['A', ['c0', 'c1', 'c2']]]);
+  assert.deepEqual(describe(d, { skin: { ...two, easy: [] } }).description.pages.map((p) => [p.pageName, p.ids.slice(0, 3)]), [['B', ['c4', 'c3', null]], ['A', ['c0', 'c1', 'c2']]]);
+});
+
+test('a skin\'s `easy` wins over the description\'s, in the skin\'s order, and a symbol of no control is dropped by name', () => {
+  const d = { ...descriptor(Array.from({ length: 5 }, (_, i) => travel(`N${i}`))), easy: ['c0', 'c1'] };
+  const skin = { schema: 1, plugin: 'urn:test:plugin', licence: 'CC0-1.0', easy: ['c4', 'nope', 'c2'] };
+  assert.deepEqual(describe(d).description.easy, ['c0', 'c1']);
+  const { description, refusals } = describe(d, { skin });
+  assert.deepEqual(description.easy, ['c4', 'c2']);
+  assert.deepEqual(description.pages[0].ids.slice(0, 2), ['c4', 'c2']);
+  assert.equal(description.pages[0].pageName, 'Easy');
+  assert.deepEqual(refusals.map((r) => [r.code, r.args.field, r.args.entry, r.args.reason]), [[DESCRIBE_CODES.skinDropped, 'easy', 'nope', 'unknown-symbol']]);
 });
