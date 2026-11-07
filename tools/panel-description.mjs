@@ -69,6 +69,8 @@ export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 /** The display kinds and sources, by enum value. */
 export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter'];
 export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
+/** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
+export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
 export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
 
 /** A section `graph` -> the display the extension names for it; a graph with none here is the
@@ -296,6 +298,16 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
       for (let i = roles.length - 1; i >= 0; i--) if (BAND.test(roles[i].role)) roles.splice(i, 1);
       for (const r of inferredRoles) bind(r.role, r.index, r.symbol, { inferred: true, token: r.unit, ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}) });
     }
+  }
+
+  // the origin of a band a planter owns (spec 7.6, 7.7): a declared panel's `origins`, band_freq symbol -> origin word, an authored
+  // descriptor's alone; a descriptor has none of its own and nothing is inferred
+  for (const [sym, origin] of Object.entries(panel?.origins ?? {})) {
+    if (descriptor.origin !== 'authored') throw new Error(`${where}: origins names '${sym}', and only an authored descriptor declares an origin`);
+    if (!BAND_ORIGINS.includes(origin)) throw new Error(`${where}: '${sym}' has the origin '${origin}', none of ${BAND_ORIGINS.join(', ')}`);
+    const r = roles.find((x) => x.role === 'band_freq' && x.symbol === sym);
+    if (!r) throw new Error(`${where}: origins names '${sym}', which is no band_freq role of the panel`);
+    r.origin = origin;
   }
 
   const displays = listed.flatMap((s, section) => {

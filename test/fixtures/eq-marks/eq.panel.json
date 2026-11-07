@@ -1,0 +1,52 @@
+{
+  "family": "eq",
+  "sections": [
+    {
+      "key": "eq",
+      "label": "EQ",
+      "controls": [
+        "f0",
+        "g0",
+        "q0",
+        "t0",
+        "f1",
+        "g1",
+        "q1",
+        "t1",
+        "f2",
+        "g2",
+        "q2",
+        "t2"
+      ],
+      "graph": "eq-curve",
+      "basis": "exact",
+      "bars": false
+    }
+  ],
+  "roles": {
+    "band_freq": [
+      "f0",
+      "f1",
+      "f2"
+    ],
+    "band_gain": [
+      "g0",
+      "g1",
+      "g2"
+    ],
+    "band_q": [
+      "q0",
+      "q1",
+      "q2"
+    ],
+    "band_type": [
+      "t0",
+      "t1",
+      "t2"
+    ]
+  },
+  "origins": {
+    "f1": "fbs-fixed",
+    "f2": "hrp"
+  }
+}

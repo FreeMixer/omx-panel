@@ -55,6 +55,10 @@ typedef struct {
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
+  /* the marks a host hands with the points: one per band a planter owns, none by default */
+  double *mark_freq, *mark_depth;
+  char *mark_letter;
+  size_t nmarks;
 } display;
 
 typedef struct {
@@ -352,7 +356,7 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]);
   for (size_t i = 0; i < v->ncontrols; i++)
     free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
-  for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y);
+  for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter);
   free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
   omx_font_free(v->font);
   free(v);
@@ -407,6 +411,24 @@ bool omx_panel_view_set_curve(omx_panel_view_t *v, uint32_t index, const double 
   memcpy(nx, x, n * sizeof *nx), memcpy(ny, y, n * sizeof *ny);
   free(d->x), free(d->y);
   d->x = nx, d->y = ny, d->n = n;
+  return true;
+}
+
+bool omx_panel_view_set_marks(omx_panel_view_t *v, uint32_t index, const double *freq, const double *depth, const char *letters, uint32_t n) {
+  if (!v || index >= v->ndisplays || v->displays[index].section < 0 || (n && (!freq || !depth || !letters))) return false;
+  display *d = &v->displays[index];
+  /* a mark sits on an eq_response: its frequency is on the log axis */
+  for (uint32_t k = 0; k < n; k++)
+    if (!(freq[k] > 0) || !isfinite(freq[k]) || !isfinite(depth[k]) || !d->log_x) return false;
+  double *nf = malloc((n ? n : 1) * sizeof *nf), *nd = malloc((n ? n : 1) * sizeof *nd);
+  char *nl = malloc(n ? n : 1);
+  if (!nf || !nd || !nl) {
+    free(nf), free(nd), free(nl);
+    return false;
+  }
+  if (n) memcpy(nf, freq, n * sizeof *nf), memcpy(nd, depth, n * sizeof *nd), memcpy(nl, letters, n);
+  free(d->mark_freq), free(d->mark_depth), free(d->mark_letter);
+  d->mark_freq = nf, d->mark_depth = nd, d->mark_letter = nl, d->nmarks = n;
   return true;
 }
 
@@ -573,6 +595,14 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
       double qx = ix + u * iw, qy = iy + ih - ((c->y[k] - lo) / (hi - lo)) * ih;
       if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->accent);
       px = qx, py = qy;
+    }
+    /* the marks, on the log axis at the band's own depth: a disc and its planter's letter above */
+    for (size_t k = 0; k < c->nmarks; k++) {
+      double u = (log10(c->mark_freq[k]) - x0) / (x1 - x0);
+      double qx = ix + u * iw, qy = iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih;
+      char one[2] = {c->mark_letter[k], 0};
+      d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
+      text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
     }
   }
   text(d, font, c->basis, 0, w - 12 * s, x + 6 * s, y + h - 5 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);

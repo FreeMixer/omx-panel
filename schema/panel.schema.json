@@ -68,6 +68,12 @@
       "title": "Bar group",
       "description": "A declared section's `bars`: true, the section's controls in order are one bar group (a row of thin faders, one per control, the label of each under it); the bar rule's checks still apply (at least 4 controls, each a visible writable travel with the same ends, step, unit and scale, labels in one series) and a failing one refuses the layout by code. false, no bar group is inferred in the section. Left out, tools/bars.mjs infers one where the rule holds. The field is a view of the panel: it stays out of the canonical form and the fingerprint."
     },
+    "origins": {
+      "type": "object",
+      "additionalProperties": { "enum": ["fbs-fixed", "fbs-live", "hrp", "room-mode"] },
+      "title": "Band origins",
+      "description": "A declared panel's band_freq symbol to the planter that owns the band (the console's BAND_ORIGINS). Only an authored descriptor declares one; a surface draws a mark at each such band on the curve and infers none."
+    },
     "basis": {
       "enum": ["exact", "modelled"],
       "title": "Display basis",

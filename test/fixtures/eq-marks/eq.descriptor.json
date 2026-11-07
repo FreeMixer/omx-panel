@@ -1,0 +1,265 @@
+{
+  "origin": "authored",
+  "plugin": {
+    "id": "urn:omx-panel:test:eq",
+    "format": "lv2",
+    "uri": "urn:omx-panel:test:eq",
+    "name": "Test EQ",
+    "vendor": "omx-panel tests",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "f0",
+      "symbol": "f0",
+      "name": "Freq 1",
+      "label": "Freq 1",
+      "kind": "travel",
+      "meaning": "frequency",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 120
+      }
+    },
+    {
+      "id": "g0",
+      "symbol": "g0",
+      "name": "Gain 1",
+      "label": "Gain 1",
+      "kind": "travel",
+      "meaning": "gain",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": -18,
+        "max": 18,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 3
+      }
+    },
+    {
+      "id": "q0",
+      "symbol": "q0",
+      "name": "Q 1",
+      "label": "Q 1",
+      "kind": "travel",
+      "meaning": "q",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": 0.3,
+        "max": 16,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      }
+    },
+    {
+      "id": "t0",
+      "symbol": "t0",
+      "name": "Type 1",
+      "label": "Type 1",
+      "kind": "choice",
+      "group": [
+        "EQ"
+      ],
+      "ids": [
+        "off",
+        "bell",
+        "lowshelf",
+        "highshelf"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Low shelf",
+        "High shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": "bell"
+    },
+    {
+      "id": "f1",
+      "symbol": "f1",
+      "name": "Freq 2",
+      "label": "Freq 2",
+      "kind": "travel",
+      "meaning": "frequency",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 1000
+      }
+    },
+    {
+      "id": "g1",
+      "symbol": "g1",
+      "name": "Gain 2",
+      "label": "Gain 2",
+      "kind": "travel",
+      "meaning": "gain",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": -18,
+        "max": 18,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -9
+      }
+    },
+    {
+      "id": "q1",
+      "symbol": "q1",
+      "name": "Q 2",
+      "label": "Q 2",
+      "kind": "travel",
+      "meaning": "q",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": 0.3,
+        "max": 16,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 4.0
+      }
+    },
+    {
+      "id": "t1",
+      "symbol": "t1",
+      "name": "Type 2",
+      "label": "Type 2",
+      "kind": "choice",
+      "group": [
+        "EQ"
+      ],
+      "ids": [
+        "off",
+        "bell",
+        "lowshelf",
+        "highshelf"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Low shelf",
+        "High shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": "bell"
+    },
+    {
+      "id": "f2",
+      "symbol": "f2",
+      "name": "Freq 3",
+      "label": "Freq 3",
+      "kind": "travel",
+      "meaning": "frequency",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 3150
+      }
+    },
+    {
+      "id": "g2",
+      "symbol": "g2",
+      "name": "Gain 3",
+      "label": "Gain 3",
+      "kind": "travel",
+      "meaning": "gain",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": -18,
+        "max": 18,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -6
+      }
+    },
+    {
+      "id": "q2",
+      "symbol": "q2",
+      "name": "Q 3",
+      "label": "Q 3",
+      "kind": "travel",
+      "meaning": "q",
+      "group": [
+        "EQ"
+      ],
+      "travel": {
+        "min": 0.3,
+        "max": 16,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 8.0
+      }
+    },
+    {
+      "id": "t2",
+      "symbol": "t2",
+      "name": "Type 3",
+      "label": "Type 3",
+      "kind": "choice",
+      "group": [
+        "EQ"
+      ],
+      "ids": [
+        "off",
+        "bell",
+        "lowshelf",
+        "highshelf"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Low shelf",
+        "High shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": "bell"
+    }
+  ],
+  "ports": []
+}

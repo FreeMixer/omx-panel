@@ -23,12 +23,19 @@ const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 /** The panels drawn: ours (omx-delay, a declared panel) and a third party's LV2 plugin (ZamComp, scanned), the latter
  * both as the layout lays it out from the scan alone and under the panel the worked example writes for it. Each names
  * the MOD GUI face the generator committed for it, where one exists. */
+/** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`, not yet released): a fixture that draws a curve needs it, and
+ * is skipped without it unless OMX_PANEL_DSP=required. */
+export const HAVE_TWIN = await import('@openmixer/omx-dsp').then(() => true, () => false);
+export const skipWithoutTwin = (fx) => (fx.needsTwin && !HAVE_TWIN ? { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' } : {});
+
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
   // a bar group (nine drawbars by their footage, a section of its own) beside two knobs: the rule finds the run, the renderer and the MOD GUI draw it as a row of faders
   { name: 'organ', descriptor: 'test/fixtures/organ/organ.descriptor.json', stem: 'organ' },
   // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
-  { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn' },
+  { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn', needsTwin: true },
+  // an EQ whose bands two planters own: the static curve through omx-dsp's twin, and a mark at each planted band
+  { name: 'eq-marks', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
@@ -69,8 +76,16 @@ export function stateFile(fx, dir, readings = {}) {
     else if (k.widget === 'switch') values[k.symbol] = { fraction: k.def >= 0.5 ? 1 : 0, text };
     else values[k.symbol] = { fraction: modgui.travelFraction(k, k.def), text };
   }
+  // the points and marks the MOD GUI's static curve was drawn from, handed to the renderer as a host would
+  const curves = {}, marks = {};
+  let at = 0;
+  for (const sec of p.sections) for (const dsp of sec.displays) {
+    if (dsp.curve?.points) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
+    if (dsp.curve?.marks?.length) marks[at] = dsp.curve.marks.map((m) => ({ freq: m.freq, depth: m.depthDb, letter: modgui.ORIGIN_LETTER[m.origin] }));
+    at++;
+  }
   const file = join(dir, `${fx.name}.state.json`);
-  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values }, null, 2));
+  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values, curves, marks }, null, 2));
   return file;
 }
 
@@ -149,4 +164,60 @@ export function rects(description, { scale = 1, size } = {}) {
   const args = ['--description', description, '--data', DATA, '--scale', String(scale), '--rects'];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   return execFileSync(CLI, args, { encoding: 'utf8' }).trim().split('\n').slice(1).map((l) => l.split(' ').map(Number));
+}
+
+// ------------------------------------------------------------------------- the tolerance mode of the parity check (spec 7.5, Q7)
+// Where the rasteriser is ours (the renderer against the MOD GUI face) the check is `compare`, exact. A surface that draws with another
+// rasteriser (the console in a browser, Zynthian's Tk) is held to the renderer's drawing by the three checks below: the stroke of the
+// curve layer within `px` of the other's both ways, the bars' heights within a pixel, and the bars' count, order and labels equal as text.
+
+const look = JSON.parse(readFileSync(join(ROOT, 'tools', 'look.json'), 'utf8')).tokens;
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+
+/** The stroke pixels of the curve layer inside `frame` ({x, y, w, h}, device px): a pixel that is the accent over the frame's body, part
+ * way (a hairline's edge pixels blend): along the body-to-accent line by at least 0.4 and off it by less than 25. The frame's own rim and
+ * its caption are outside the inner area; no text is read. */
+export function strokePixels(img, frame, inset = 5) {
+  const accent = rgb(look['--accent']), body = rgb(look['--surface-3']);
+  const d = accent.map((c, k) => c - body[k]), dd = d.reduce((s, v) => s + v * v, 0);
+  const out = [];
+  for (let y = frame.y + inset; y < frame.y + frame.h - inset - 12; y++) for (let x = frame.x + inset; x < frame.x + frame.w - inset; x++) {
+    const i = (y * img.w + x) * 4, p = [0, 1, 2].map((k) => img.data[i + k] - body[k]);
+    const t = p.reduce((s, v, k) => s + v * d[k], 0) / dd;
+    if (t > 0.4 && Math.hypot(...p.map((v, k) => v - t * d[k])) < 25) out.push([x, y]);
+  }
+  return out;
+}
+
+/** Whether every stroke pixel of `a` is within `px` of a stroke pixel of `b` and the other way round: `{ ok, missing, extra }`, the pixels of
+ * `a` with none near in `b` and of `b` with none near in `a`. `px` is 1 for the console, 2 for Tk, at 1x. */
+export function strokeParity(a, b, px) {
+  const near = (set, [x, y]) => set.some(([sx, sy]) => Math.hypot(sx - x, sy - y) <= px);
+  const missing = a.filter((p) => !near(b, p)), extra = b.filter((p) => !near(a, p));
+  return { ok: a.length > 0 && missing.length === 0 && extra.length === 0, missing, extra };
+}
+
+/** Each bar's measure in a rendering: `rects` are the bars' control cells (`rects()`), the measure the height of the fader cap above the foot of
+ * the fader (the cap is the look's `--ink-dim`), in device px; `null` for a cell with no cap. */
+export function barHeights(img, rects) {
+  const cap = rgb(look['--ink-dim']);
+  return rects.map(([x, y, w, h]) => {
+    const cx = Math.round(x + w / 2);
+    for (let yy = Math.round(y); yy < Math.round(y + h); yy++) {
+      const i = (yy * img.w + cx) * 4;
+      if ([0, 1, 2].every((k) => Math.abs(img.data[i + k] - cap[k]) <= 2)) return Math.round(y + h) - yy;
+    }
+    return null;
+  });
+}
+
+/** Two sets of bars, each `{ labels, heights }`: the count, the order and the labels equal as text, every height within `px` (1). */
+export function barParity(a, b, px = 1) {
+  const faults = [];
+  if (a.labels.length !== b.labels.length) faults.push(`count ${a.labels.length} against ${b.labels.length}`);
+  else {
+    a.labels.forEach((l, i) => { if (l !== b.labels[i]) faults.push(`label ${i}: '${l}' against '${b.labels[i]}'`); });
+    a.heights.forEach((h, i) => { if (h === null || b.heights[i] === null || Math.abs(h - b.heights[i]) > px) faults.push(`height ${i}: ${h} against ${b.heights[i]}`); });
+  }
+  return { ok: faults.length === 0, faults };
 }
