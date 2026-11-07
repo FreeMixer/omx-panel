@@ -32,7 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
+import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
@@ -145,6 +145,71 @@ export class NothingToDraw extends Error {
 /** The display kinds that are a curve on the face: a frame with the curve's basis word in its caption place. */
 const CURVES = ['eq_response', 'transfer_curve'];
 
+/**
+ * The curve function of omx-dsp, its TypeScript twin (`@openmixer/omx-dsp`, `curvePoints`): never vendored here. A tree that does not
+ * have it draws each curve's frame and caption alone, and says so by `curve: { code: 'no-twin' }`; with `OMX_PANEL_DSP=required` its
+ * absence is an error (the release gate).
+ */
+const TWIN = await import('@openmixer/omx-dsp').catch((err) => {
+  if (process.env.OMX_PANEL_DSP === 'required') throw err;
+  return null;
+});
+/** The rate a static curve is computed at, and the grid it is sampled on. */
+export const STATIC_CURVE = Object.freeze({ sampleRate: 48000, points: 128 });
+/** The one letter a mark wears: one per planter family, as the console's band-origin.ts names it. */
+export const ORIGIN_LETTER = Object.freeze({ 'fbs-fixed': 'F', 'fbs-live': 'F', hrp: 'H', 'room-mode': 'R' });
+
+/** The terms of a curve request from a layout's roles, each at its come-up value, in the unit the description gives the role. */
+function curveTerms(descriptor, x) {
+  const roles = new Set(TWIN.CURVE_WORDS.roles);
+  const control = (symbol) => descriptor.controls.find((c) => keyOf(c) === symbol);
+  const valueOf = (c) => (c.kind === 'choice' ? (c.values ?? c.ids.map((_, i) => i))[Math.max(0, c.ids.indexOf(c.default))] : c.kind === 'toggle' ? (c.default === true ? 1 : 0) : (c.travel.default ?? c.travel.min));
+  return x.roles.filter((r) => roles.has(r.role)).map((r) => {
+    const value = valueOf(control(r.symbol));
+    return {
+      role: r.role, index: r.index, value, unit: r.token ?? unitTokenOf(r.unit),
+      ...(r.shape ? { shape: r.shape } : {}),
+      ...(r.role === 'band_type' && r.shapes ? { shape: r.shapes[value] } : {}),
+      ...(r.origin ? { origin: r.origin } : {}),
+    };
+  });
+}
+
+/** The static curve of one display at the come-up values: `{ points, marks }`, or `{ code }` where the twin draws none. */
+function staticCurve(descriptor, x, dsp) {
+  if (!TWIN) return { code: 'no-twin' };
+  const answer = TWIN.curvePoints({ kind: dsp.kind, family: x.family, ...STATIC_CURVE, terms: curveTerms(descriptor, x) });
+  return 'code' in answer ? { code: answer.code } : { points: answer.points, marks: answer.marks };
+}
+
+/**
+ * Where a curve's stroke, axis and marks fall inside its frame of `cw` x `ch` device px at scale `s`, relative to the frame's corner: the
+ * mapping of renderer/src/view.c `draw_curve`, operation for operation (an eq_response on a log frequency axis with the dB symmetric about 0
+ * to the next 6 dB; a transfer_curve on linear dB, input and output on one span), so the two rasterisers draw one stroke.
+ */
+export function curveGeometry(curve, kind, cw, ch, s) {
+  const pts = curve?.points;
+  if (!pts || pts.length < 2) return null;
+  const ix = 5 * s, iy = 5 * s, iw = cw - 10 * s, ih = ch - 10 * s - 12 * s;
+  const eq = kind === 'eq_response';
+  let lo, hi, x0, x1, axis;
+  if (eq) {
+    let m = 6;
+    for (const p of pts) m = Math.max(m, Math.abs(p.y));
+    hi = Math.ceil(m / 6) * 6, lo = -hi;
+    x0 = Math.log10(pts[0].x), x1 = Math.log10(pts[pts.length - 1].x);
+    axis = [ix, iy + ih / 2, ix + iw, iy + ih / 2];
+  } else {
+    lo = Math.min(pts[0].x, pts[0].y), hi = Math.max(pts[pts.length - 1].x, pts[0].y);
+    for (const p of pts) lo = Math.min(lo, p.y), hi = Math.max(hi, p.y);
+    x0 = lo, x1 = hi;
+    axis = [ix, iy + ih, ix + iw, iy];
+  }
+  const at = (xv, yv) => [ix + (((eq ? Math.log10(xv) : xv) - x0) / (x1 - x0)) * iw, iy + ih - ((yv - lo) / (hi - lo)) * ih];
+  const marks = eq ? (curve.marks ?? []).map((m) => ({ at: at(m.freq, m.depthDb), letter: ORIGIN_LETTER[m.origin] ?? '?' })) : [];
+  return { axis, poly: pts.map((p) => at(p.x, p.y)), marks };
+}
+
 /** The curves of a panel section: a derived panel's are the layout's; a declared one's follow its `graph`. */
 const displaysOf = (descriptor, s) => s.displays ?? (CURVES.includes(DISPLAY_OF_GRAPH[s.graph]) ? [{ kind: DISPLAY_OF_GRAPH[s.graph], basis: basisOf(descriptor, s) }] : []);
 
@@ -228,6 +293,11 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
+  // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
+  if (sections.some((sec) => sec.displays.length > 0)) {
+    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
+    for (const sec of sections) for (const dsp of sec.displays) dsp.curve = staticCurve(descriptor, x, dsp);
+  }
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
   // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
   for (const sec of sections) {
@@ -369,6 +439,15 @@ export function renderFace(lay, look, scale) {
       roundRect(c, cx, cy, cw, ch, Math.min(4, ch / 4), col.rim);
       roundRect(c, cx + 1, cy + 1, cw - 2, ch - 2, Math.min(3, ch / 4), col.body);
       drawText(c, font, fitText(font, dsp.basis, TEXT.small * s, cw - 12 * s), cx + 6 * s, cy + ch - 5 * s, TEXT.small * s, col.inkDim);
+      const geo = curveGeometry(dsp.curve, dsp.kind, cw, ch, s);
+      if (!geo) return;
+      const [ax, ay, bx, by] = geo.axis;
+      segment(c, cx + ax, cy + ay, cx + bx, cy + by, Math.max(0.5, 0.5 * s), col.rim);
+      for (let k = 1; k < geo.poly.length; k++) segment(c, cx + geo.poly[k - 1][0], cy + geo.poly[k - 1][1], cx + geo.poly[k][0], cy + geo.poly[k][1], Math.max(0.75, 0.75 * s), col.accent);
+      for (const m of geo.marks) {
+        disc(c, cx + m.at[0], cy + m.at[1], Math.max(2, 2.5 * s), col.ink);
+        drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, col.ink, 'centre');
+      }
     });
     for (const k of sec.controls) {
       // a control the come-up values hide is not on the screenshot, as the face hides it
@@ -501,9 +580,17 @@ export function emitTemplate(panel, lay, source) {
                 <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>
             </div>`;
   };
+  // a curve's stroke, its axis and its marks, a static SVG in the frame's own px: the geometry the raster draws
+  const plot = (dsp, w) => {
+    const geo = curveGeometry(dsp.curve, dsp.kind, w, g.curveH, 1);
+    if (!geo) return '';
+    const n = (v) => Math.round(v * 100) / 100;
+    const marks = geo.marks.map((m) => `<circle cx="${n(m.at[0])}" cy="${n(m.at[1])}" r="2.5"/><text x="${n(m.at[0])}" y="${n(m.at[1] - 5)}" text-anchor="middle">${m.letter}</text>`).join('');
+    return `<svg class="omx-curve-plot" width="${w}" height="${g.curveH}" viewBox="0 0 ${w} ${g.curveH}"><line class="omx-curve-axis" x1="${n(geo.axis[0])}" y1="${n(geo.axis[1])}" x2="${n(geo.axis[2])}" y2="${n(geo.axis[3])}"/><polyline class="omx-curve-line" fill="none" points="${geo.poly.map((p) => `${n(p[0])},${n(p[1])}`).join(' ')}"/>${marks}</svg>`;
+  };
   const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
-${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px"><span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
+${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
         </div>`).join('\n');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
         <div class="mod-${dir} mod-${dir}-disconnected" title="{{name}}" mod-role="${dir}-${kind}-port" mod-port-symbol="{{symbol}}">
@@ -566,6 +653,11 @@ ${P} .omx-selector-image.selecting .omx-selector-list, ${P} .omx-selector-image.
 ${P} .omx-selector-option { padding: 2px 6px; font-size: 10px; text-align: left; white-space: nowrap; }
 ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
 ` : ''}${panel.sections.some((x) => x.displays.length > 0) ? `${P} .omx-curve { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
+${P} .omx-curve-plot { position: absolute; left: 0; top: 0; }
+${P} .omx-curve-axis { stroke: ${tok['--border-strong']}; stroke-width: 0.5; }
+${P} .omx-curve-line { stroke: ${tok['--accent']}; stroke-width: 1.5; stroke-linejoin: round; }
+${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
+${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
 ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ` : ''}`;

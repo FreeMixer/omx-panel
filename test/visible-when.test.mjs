@@ -7,7 +7,7 @@
  *
  *   1. the rule is carried into the description's `visible` and `mask` (and the fingerprint), and refused when it is
  *      not one;
- *   2. the page cut drops what the values hide: eqBands 4 shows bands 1..4 and no page of eight holds a hidden band,
+ *   2. the page cut keeps a hidden control's slot, blank (spec 7.14): eqBands 4 shows bands 1..4 and no page of eight holds a hidden band,
  *      eqBands 9 shows 9;
  *   3. the MOD GUI hides what the come-up values hide and its script follows the governing port;
  *   4. the schema's rule takes either form and refuses the rest.
@@ -119,14 +119,15 @@ test('eqBands 4 (its come-up value): bands 1..4 shown, and no page of eight hold
     // the switch, the count and four bands: 22 controls
     assert.equal(pages.flatMap((p) => p.ids).filter((id) => id !== null).length, 22);
   }
-  assert.equal(pagesOf(x).length, 3);
+  // hidden bands keep their slots, blank: the cut does not change with the values
+  assert.equal(pagesOf(x).length, pagesOf(x, { values: { eqBands: 32 } }).length);
 });
 
 test('eqBands 9: bands 1..9 shown; the cut follows the value, not the come-up one', () => {
   const d = strip(4);
   const x = panelLayout(d, { panel: declared() });
   for (const perPage of [undefined, 8]) pagesShowBands(pagesOf(x, { perPage, values: { eqBands: 9 } }), d, 9);
-  assert.equal(pagesOf(x, { values: { eqBands: 9 } }).length, 6);
+  assert.equal(pagesOf(x, { values: { eqBands: 9 } }).length, pagesOf(x).length);
   pagesShowBands(pagesOf(x, { values: { eqBands: 32 } }), d, 32);
   // the same at come-up: a strip that comes up with nine bands
   const d9 = strip(9);
@@ -136,12 +137,14 @@ test('eqBands 9: bands 1..9 shown; the cut follows the value, not the come-up on
   pagesShowBands(pagesOf(json, { values: { eqBands: 9 } }), d, 9);
 });
 
-test('a section the values empty has no page', () => {
+test('a section the values empty keeps its page, every slot blank', () => {
   const d = strip(1);
   const panel = declared();
   panel.sections = [{ key: 'head', label: 'Head', controls: ['eqOn', 'eqBands'] }, ...upTo(BANDS).map((n) => ({ key: `band_${n}`, label: `Band ${n}`, controls: bandSymbols(n) }))];
   const pages = pagesOf(panelLayout(d, { panel }), { perPage: 8, values: { eqBands: 3 } });
-  assert.deepEqual(pages.map((p) => p.pageName), ['Head', 'Band 1', 'Band 2', 'Band 3']);
+  assert.equal(pages.length, 33);
+  assert.deepEqual(pages.slice(0, 4).map((p) => p.pageName), ['Head', 'Band 1', 'Band 2', 'Band 3']);
+  assert.ok(pages.slice(4).every((p) => p.ids.every((id) => id === null)));
 });
 
 test('sabotage: atLeast read as an equality shows one band, and the check goes red', () => {

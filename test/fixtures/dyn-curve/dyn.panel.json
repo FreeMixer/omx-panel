@@ -14,5 +14,12 @@
       "graph": "dynamics-curve",
       "basis": "exact"
     }
-  ]
+  ],
+  "roles": {
+    "threshold": "threshold",
+    "ratio": "ratio",
+    "attack": "attack",
+    "release": "release",
+    "makeup": "makeup"
+  }
 }

@@ -53,8 +53,10 @@ const withCurves = (dir, curves, kind) => {
 
 test('with no points the display is its frame and its basis word, and no stroke', () => {
   const dir = scratch();
-  const img = render(descriptionFile(fx, dir), stateFile(fx, dir));
-  assert.deepEqual(strokes(img, FRAME), []);
+  const state = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
+  const bare = join(dir, 'bare.state.json');
+  writeFileSync(bare, JSON.stringify({ ...state, curves: {}, marks: {} }));
+  assert.deepEqual(strokes(render(descriptionFile(fx, dir), bare), FRAME), []);
 });
 
 test('a transfer curve is drawn at the frame positions the points map to: linear dB, one span for input and output', () => {

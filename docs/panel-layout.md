@@ -134,7 +134,9 @@ A derived panel whose family has a closed form (`eq`, `dynamics`, `gate`, `drive
 `transfer_curve`) on the section holding its first required role, once the required roles are mapped. Every display carries a
 `basis`: `exact` only when an authored descriptor's declared section says `basis: exact` (the plugin's own audio runs the same closed
 form), else `modelled`, which every surface prints in the display's caption place. `basis` is a view and stays out of the canonical
-form.
+form. A declared panel's `origins` (band_freq symbol to the planter that owns the band, an authored descriptor's only) gives the role an `origin`, and a surface draws a mark there; nothing is inferred.
+
+The description also serves `easy` (the Easy controls) and its `pages`, cut after the skin applies; a control the values hide keeps its slot in a page, blank.
 
 ## Bars
 

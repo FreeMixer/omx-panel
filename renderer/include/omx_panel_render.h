@@ -96,6 +96,12 @@ bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t 
  * ascend. The points are copied. */
 bool omx_panel_view_set_curve(omx_panel_view_t *view, uint32_t display, const double *x, const double *y, uint32_t n);
 
+/** The marks of display `display`, an `eq_response`: one per band a planter owns (not the operator's), at its frequency in Hz (above zero) and
+ * its own depth in dB, with the one letter of its planter (`letters`, one char each). Drawn as a disc on the curve's axes and the letter
+ * above it, with the points' axes. The marks come from the host with the points; the renderer infers none and, with none set, draws none.
+ * False, changing nothing, for an index with no curve or no log axis, or a frequency that is not above zero or a value not finite. */
+bool omx_panel_view_set_marks(omx_panel_view_t *view, uint32_t display, const double *freq, const double *depth, const char *letters, uint32_t n);
+
 /** A governing control's integer value. A control the description shows only for certain values of another (its
  * `visibleWhen` and `mask`, a declared panel's visibleWhen) is shown while bit `value` of its mask is set: a hidden
  * control takes no cell and is not drawn, and a section left with none takes no space. Until it is set, each reads the

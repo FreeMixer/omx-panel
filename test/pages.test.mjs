@@ -41,3 +41,22 @@ test('a group that fits a page is not split; one wider than a page is cut', () =
 test('N must be a whole number of at least 1', () => {
   for (const perPage of [0, -1, 2.5, NaN]) assert.throws(() => pagesOf(band(), { perPage }), /--per-page/);
 });
+
+// the one ruling of the pages amendment (spec 7.14): a control the values hide keeps its slot, blank
+const hidden = (c) => ({ ...c, visible: 9, mask: 0n, visibleWhen: { symbol: 'gov', default: 0 } });
+test('a hidden control keeps its slot, blank: the controls after it do not move up, at both widths', () => {
+  const x = band();
+  x.controls[1] = hidden(x.controls[1]);
+  assert.deepEqual(pagesOf(x, { perPage: 8 }).map((p) => p.ids), [[1, null, 3, 4, 5, null, null, null]]);
+  assert.deepEqual(pagesOf(x, { perPage: 4 }).map((p) => p.ids), [[1, null, 3, 4], [5, null, null, null]]);
+});
+test('a section every control of which is hidden still has its page, all blank', () => {
+  const x = band();
+  x.controls = x.controls.map(hidden);
+  assert.deepEqual(pagesOf(x, { perPage: 8 }).map((p) => p.ids), [[null, null, null, null, null, null, null, null]]);
+});
+test('the values show a hidden control in its own slot', () => {
+  const x = band();
+  x.controls[1] = { ...hidden(x.controls[1]), mask: 1n << 3n };
+  assert.deepEqual(pagesOf(x, { perPage: 8, values: { gov: 3 } })[0].ids.slice(0, 3), [1, 2, 3]);
+});

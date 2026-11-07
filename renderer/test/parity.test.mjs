@@ -10,11 +10,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { CLI, DATA, FIXTURES, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
+import { skipWithoutTwin, CLI, DATA, FIXTURES, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
 
 for (const fx of FIXTURES) {
   for (const scale of [1, 0.5, 2]) {
-    test(`${fx.name} at ${scale}x is the MOD GUI face, pixel for pixel`, () => {
+    test(`${fx.name} at ${scale}x is the MOD GUI face, pixel for pixel`, skipWithoutTwin(fx), () => {
       const dir = scratch();
       const want = face(fx, scale);
       const drawn = render(descriptionFile(fx, dir), stateFile(fx, dir), { scale });
@@ -24,7 +24,7 @@ for (const fx of FIXTURES) {
     });
   }
   if (fx.screenshot) {
-    test(`${fx.name}: the committed MOD GUI screenshot is what the renderer draws`, () => {
+    test(`${fx.name}: the committed MOD GUI screenshot is what the renderer draws`, skipWithoutTwin(fx), () => {
       const dir = scratch();
       const shot = decodePng(readFileSync(join(ROOT, fx.screenshot)));
       const d = compare(render(descriptionFile(fx, dir), stateFile(fx, dir)), shot);

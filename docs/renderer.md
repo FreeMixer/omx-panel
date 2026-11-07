@@ -40,7 +40,9 @@ A display of the description that is a curve (`eq_response`, `transfer_curve`) h
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
 (`omx_panel_view_set_curve`). The renderer computes no point: the host's are copied, ascending in x, and scaled to the frame, an
 `eq_response` on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` on linear dB with input
-and output on one span and the unity line. A display with no points draws the frame and the word alone. The state file of
+and output on one span and the unity line. A display with no points draws the frame and the word alone. `omx_panel_view_set_marks` gives an `eq_response` its marks, one per band a planter owns (frequency, depth, the planter's letter): a disc on the curve and the letter above it; the renderer infers none. The state file's `"marks"` is `{"<display index>": [{"freq", "depth", "letter"}]}`.
+
+The parity of a surface that draws with another rasteriser is held in `renderer/test/harness.mjs`: `strokeParity` (every stroke pixel of the curve layer within 1 px for the console, 2 px for Tk, of the other's, both ways), `barHeights` and `barParity` (heights within a pixel, count, order and labels equal as text). The state file of
 `omx-panel-render` gives them as `"curves": {"<display index>": {"x": [...], "y": [...]}}`.
 
 ## The C API

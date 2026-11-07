@@ -164,6 +164,24 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
     }
     free(x), free(y);
   }
+  /* "marks": {"<display index>": [{"freq", "depth", "letter"}, ...]} */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "marks")) {
+    int n = cJSON_IsArray(it) ? cJSON_GetArraySize(it) : -1;
+    double *f = malloc((size_t)(n > 0 ? n : 1) * sizeof *f), *dp = malloc((size_t)(n > 0 ? n : 1) * sizeof *dp);
+    char *l = malloc((size_t)(n > 0 ? n : 1));
+    int good = n >= 0 && f && dp && l;
+    for (int k = 0; good && k < n; k++) {
+      cJSON *m = cJSON_GetArrayItem(it, k), *fr = cJSON_GetObjectItemCaseSensitive(m, "freq"), *de = cJSON_GetObjectItemCaseSensitive(m, "depth");
+      const char *le = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(m, "letter"));
+      good = cJSON_IsNumber(fr) && cJSON_IsNumber(de) && le && le[0] && !le[1];
+      if (good) f[k] = fr->valuedouble, dp[k] = de->valuedouble, l[k] = le[0];
+    }
+    if (!good || !omx_panel_view_set_marks(v, (uint32_t)strtoul(it->string, NULL, 10), f, dp, l, (uint32_t)n)) {
+      fprintf(stderr, "omx-panel-render: state's marks '%s' are no marks of an eq curve of the panel\n", it->string);
+      ok = 0;
+    }
+    free(f), free(dp), free(l);
+  }
   cJSON_Delete(root);
   return ok;
 }

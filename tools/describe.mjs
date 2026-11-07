@@ -25,7 +25,7 @@
  */
 import { applySkinOverride } from '../src/skin-package.js';
 import { inferBands } from './meaning-infer.mjs';
-import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 
 /** The refusal codes of the derivation, beside the layout's and the bar rule's. */
 export const DESCRIBE_CODES = {
@@ -182,6 +182,8 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   let description = {
     family: layout.family,
     fingerprint: panelFingerprint(layout),
+    // the Easy controls, a view of the panel (the descriptor's own list, else the roles', tools/easy.mjs)
+    easy: layout.easy,
     params,
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: layout.controls.map((c) => ({ symbol: c.symbol, section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),
@@ -190,13 +192,32 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
       return { role, index, symbol, unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
     }),
     displays: layout.displays.map((d) => ({ kind: d.kind, section: d.sectionKey, source: d.source, meterIds: d.meters, curveIndex: d.curve, floor: d.floor, labelKey: d.labelKey ?? '', label: d.label, basis: d.basis ?? 'modelled' })),
-    pages: pagesOf({ ...layout, controls: layout.controls.filter((c) => params.find((p) => p.symbol === c.symbol)?.kind === 'number') }),
   };
   if (skin) {
     const applied = applySkinOverride(description, skin);
     description = applied.description;
     for (const d of applied.dropped) refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin, field: d.field, entry: d.entry, reason: d.reason }));
   }
+  // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
+  description = { ...description, pages: pagesOfDescription(description, effective, layout) };
   return { description, refusals };
+}
+
+/** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */
+function pagesOfDescription(description, effective, layout) {
+  const idOf = new Map(effective.controls.map((c) => [keyOf(c), c.id]));
+  const groupOf = new Map(layout.controls.map((c) => [c.symbol, c[GROUP]]));
+  const default_ = (symbol) => description.params.find((p) => p.symbol === symbol)?.default ?? 0;
+  const numeric = (c) => description.params.find((p) => p.symbol === c.symbol)?.kind === 'number';
+  const controls = description.controls.filter(numeric).map((c) => {
+    const at = description.sections.findIndex((s) => s.key === c.section);
+    const gov = c.visibleWhen;
+    return {
+      symbol: c.symbol, label: c.label || description.params.find((p) => p.symbol === c.symbol)?.name || c.symbol, section: at, param: idOf.get(c.symbol),
+      ...(groupOf.get(c.symbol) ? { [GROUP]: groupOf.get(c.symbol) } : {}),
+      ...(gov ? { visible: idOf.get(gov.param), mask: gov.values.reduce((m, v) => m | (1n << BigInt(v)), 0n), visibleWhen: { symbol: gov.param, default: default_(gov.param) } } : { visible: null, mask: 0n }),
+    };
+  });
+  return pagesOf({ sections: description.sections, controls });
 }
 
