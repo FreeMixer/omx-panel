@@ -141,10 +141,13 @@ test('a section the values empty keeps its page, every slot blank', () => {
   const d = strip(1);
   const panel = declared();
   panel.sections = [{ key: 'head', label: 'Head', controls: ['eqOn', 'eqBands'] }, ...upTo(BANDS).map((n) => ({ key: `band_${n}`, label: `Band ${n}`, controls: bandSymbols(n) }))];
-  const pages = pagesOf(panelLayout(d, { panel }), { perPage: 8, values: { eqBands: 3 } });
-  assert.equal(pages.length, 33);
-  assert.deepEqual(pages.slice(0, 4).map((p) => p.pageName), ['Head', 'Band 1', 'Band 2', 'Band 3']);
-  assert.ok(pages.slice(4).every((p) => p.ids.every((id) => id === null)));
+  const all = pagesOf(panelLayout(d, { panel }), { perPage: 8, values: { eqBands: 3 } });
+  // the Easy page leads (the one cut, spec 7.14); the sections' pages follow
+  assert.equal(all[0].pageName, 'Easy');
+  const pages = all.slice(1).filter((p) => p.pageName !== 'Head');
+  assert.equal(pages.length, 32);
+  assert.deepEqual(pages.slice(0, 3).map((p) => p.pageName), ['Band 1', 'Band 2', 'Band 3']);
+  assert.ok(pages.slice(3).every((p) => p.ids.every((id) => id === null)));
 });
 
 test('sabotage: atLeast read as an equality shows one band, and the check goes red', () => {

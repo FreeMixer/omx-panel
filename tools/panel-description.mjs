@@ -425,54 +425,77 @@ export const GROUP = Symbol('group');
 /** The name of the Easy controls' page and of a MOD GUI's first section. */
 export const EASY_PAGE = 'Easy';
 
-/** The surface's slots per page, CLAP_REMOTE_CONTROLS_COUNT. */
+/** The slots per page a caller that states no width gets: CLAP_REMOTE_CONTROLS_COUNT. A surface states its own. */
 export const PAGE_SIZE = 8;
 
-/** The pages of clap.remote-controls/2 by the page rule: each section's controls in order, cut into
- * pages of `perPage` (default eight, the surface's slots), a section of several pages numbering them; a
- * short page's slots are null. With `perPage` stated, a group that fits a page is not split across two
- * (a page ends early to keep it whole; a group wider than a page is cut), and a section of several
- * pages names each page by the controls it holds, "Band: Freq - Q". Left out, the cut is the plain one.
- * With `easyFirst` the Easy controls come first, on pages of their own named Easy, Easy 2, and do not repeat.
- * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) takes
- * no slot, and its page stays. */
-export function pagesOf(x, { perPage, easyFirst = false, values = {} } = {}) {
+/**
+ * THE one cut of a panel into control-surface pages (the pages amendment, one-panel spec 7.14). Every surface pages a
+ * plugin's controls through this function at its own width, `perPage` (a surface that states none gets eight); no surface
+ * builds, stores or reorders pages. The sequence:
+ *
+ * 1. the Easy controls (`x.easy`, symbols; a skin's list wins in `describe`), on pages of their own named Easy, Easy 2;
+ * 2. then the plugin's declared remote-controls pages, as the host reports them (`remote`: `[{ name, ids }]`, a slot a
+ *    control's param id or null), replacing the derived ones; a declared page is not edited, so an Easy control may also
+ *    sit on its remote page, and a slot of no control is blank;
+ * 3. else the sections in order, each cut at the width with a group kept whole at every width: a page ends early to keep
+ *    a group together, a group longer than a page is the only one split, starting on a page of its own and ending
+ *    on one, never mixed with its neighbour. A derived page holds a control once. A control with no group is its own.
+ *    A section of several pages names each page by the controls it holds, "Band: Freq - Q".
+ *
+ * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) keeps its
+ * slot, blank: the slots do not move with the governing values. Below two encoders a group is plain controls (one a page).
+ */
+export function pagesOf(x, { perPage, remote, values = {} } = {}) {
   const size = perPage ?? PAGE_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
-  // a control the current values hide keeps its slot, blank (the pages amendment, spec 7.14): the slots do not move with the governing values
   const blank = new Set(x.controls.filter((c) => !isVisible(c, values)).map((c) => c.param));
-  const easy = (easyFirst ? x.easy : []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
+  const known = new Set(x.controls.map((c) => c.param));
+  const slot = (id) => (id === null || id === undefined || !known.has(id) || blank.has(id) ? null : id);
+  const pad = (ids) => {
+    const out = ids.map(slot);
+    while (out.length < size) out.push(null);
+    return out;
+  };
+  const easy = (x.easy ?? []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
-    const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param).map((id) => (blank.has(id) ? null : id));
-    while (ids.length < size) ids.push(null);
-    easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: k === 0 ? EASY_PAGE : `${EASY_PAGE} ${k / size + 1}`, ids });
+    const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
+    easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: k === 0 ? EASY_PAGE : `${EASY_PAGE} ${k / size + 1}`, ids: pad(ids) });
+  }
+  if (Array.isArray(remote) && remote.length > 0) {
+    const declared = remote.flatMap((r) => {
+      const name = String(r.name ?? '');
+      const pages = [];
+      for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: k === 0 ? name : `${name} ${k / size + 1}`, ids: pad(r.ids.slice(k, k + size)) });
+      return pages;
+    });
+    return [...easyPages, ...declared];
   }
   return [...easyPages, ...x.sections.flatMap((s, section) => {
     const cs = x.controls.filter((c) => c.section === section && !easy.includes(c.symbol));
     const pages = [];
-    if (perPage === undefined) for (let k = 0; k < cs.length; k += size) pages.push(cs.slice(k, k + size));
-    else {
-      let page = [];
-      for (let i = 0; i < cs.length; ) {
-        let j = i + 1;
-        while (j < cs.length && cs[j][GROUP] === cs[i][GROUP]) j++;
-        const run = cs.slice(i, j);
-        i = j;
-        if (run.length <= size && page.length + run.length > size) { pages.push(page); page = []; }
-        for (const c of run) {
-          if (page.length === size) { pages.push(page); page = []; }
-          page.push(c);
-        }
-      }
+    let page = [];
+    const flush = () => {
       if (page.length) pages.push(page);
+      page = [];
+    };
+    for (let i = 0; i < cs.length; ) {
+      let j = i + 1;
+      if (cs[i][GROUP]) while (j < cs.length && cs[j][GROUP] === cs[i][GROUP]) j++;
+      const run = cs.slice(i, j);
+      i = j;
+      // a group that fits ends the page early rather than split; a longer one starts and ends on a page of its own
+      if (run.length > size || page.length + run.length > size) flush();
+      for (const c of run) {
+        if (page.length === size) flush();
+        page.push(c);
+      }
+      if (run.length > size) flush();
     }
-    return pages.map((page, k) => {
-      const ids = page.map((c) => (blank.has(c.param) ? null : c.param));
-      while (ids.length < size) ids.push(null);
-      const held = page.length > 1 ? `${page[0].label} - ${page[page.length - 1].label}` : page[0].label;
-      const pageName = pages.length === 1 ? s.label : perPage === undefined ? `${s.label} ${k + 1}` : `${s.label}: ${held}`;
-      return { section, sectionName: s.label, pageName, ids };
+    flush();
+    return pages.map((p, k) => {
+      const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
+      return { section, sectionName: s.label, pageName: pages.length === 1 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
     });
   })];
 }
