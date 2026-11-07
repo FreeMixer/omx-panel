@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # One gesture vocabulary
 
 Every surface moves a panel's controls with one set of gestures, declared once here and in `schema/gestures.json`; each
@@ -6,8 +8,7 @@ timestamps, it answers the value in the control's own unit and the begin and end
 checked against it, and the parity fixtures carry scripted gestures (`test/fixtures/gestures/scripts.json`). A panel
 description gains nothing: the table is keyed by the standard widget, and by a bar and a curve handle bound by their roles.
 
-The console's own gesture table (`2026-08-04-processing-view-layout.md` §9) is the law this conforms to. It adds two
-things to it: painting across a bar group, and the timings declared here.
+The console's own gesture table is the law this conforms to. It adds two things to it: painting across a bar group, and the timings declared here.
 
 ## The words
 
